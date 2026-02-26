@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import logoImage from "./6214ff04ba3c68672b23d6cf.png";
 import d20Image from "./D20_icon.png";
-import { getDecks, saveDecks } from "./supabase.js";
+import { getDecks, saveDecks } from "./supabaseClient.js";
 
 const PLAYERS = ["baum", "mary", "pascal", "wewy"];
 
@@ -224,23 +224,7 @@ function useIsMobile() {
 
 function useDarkMode() {
   const [isDark, setIsDark] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(DARK_MODE_KEY);
-    if (saved !== null) {
-      setIsDark(saved === "true");
-    }
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) {
-      localStorage.setItem(DARK_MODE_KEY, isDark.toString());
-    }
-  }, [isDark, loaded]);
-
-  return [isDark, setIsDark, loaded];
+  return [isDark, setIsDark, true];
 }
 
 function winRate(d) {
