@@ -111,19 +111,19 @@ Update color coding and thresholds accordingly:
 ### Author Attribution
 When making commits on behalf of the user:
 
-1. **Before committing**, set Git user name to "Kimi":
+1. **Before committing**, set Git user to "Kimi":
    ```bash
    git config user.name "Kimi"
+   git config user.email "kimi@kimi.co"
    ```
 
 2. **Make and push the commit** as usual
 
-3. **After committing**, restore the original user name:
+3. **After committing**, restore the original user:
    ```bash
    git config user.name "pascal müller"
+   git config user.email "54896623+Cinemaker123@users.noreply.github.com"
    ```
-
-The email should remain unchanged (your GitHub noreply email) throughout.
 
 ## Environment Variables
 
