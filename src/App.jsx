@@ -589,13 +589,8 @@ function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggleDark }
               fontWeight: 800,
               fontSize: isMobile ? 18 : 22,
               color: "#fff",
-            }}>Globale Statistiken</span>
+            }}>Gesamtübersicht</span>
           </div>
-          <span style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: isMobile ? 12 : 14,
-            color: "rgba(255,255,255,0.8)",
-          }}>Übersicht über alle Spieler</span>
         </button>
       </div>
     </div>
@@ -1120,7 +1115,7 @@ function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         <span style={{
           fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 16, color: isDark ? "#f0f0f0" : "#1a1a2e",
           flex: 1,
-        }}>Globale Statistiken</span>
+        }}>Gesamtübersicht</span>
         <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
       </div>
 
