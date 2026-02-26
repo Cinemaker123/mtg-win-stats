@@ -1166,14 +1166,14 @@ function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                 />
                 <StatCard 
                   label="Bestes Deck" 
-                  value={stats.bestDeck ? stats.bestDeck.name : "-"}
+                  value={stats.bestDeck ? stats.bestDeck.name.charAt(0).toUpperCase() + stats.bestDeck.name.slice(1) : "-"}
                   sub={stats.bestDeck ? `${stats.bestDeck.winRate}% von ${stats.bestDeck.player}` : "Noch keine Daten"}
                   accent="#f39c12" 
                   icon="🏆"
                 />
                 <StatCard 
                   label="Meistgespielt" 
-                  value={stats.mostPlayed ? stats.mostPlayed.name : "-"}
+                  value={stats.mostPlayed ? stats.mostPlayed.name.charAt(0).toUpperCase() + stats.mostPlayed.name.slice(1) : "-"}
                   sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${stats.mostPlayed.player}` : "Noch keine Daten"}
                   accent="#9b59b6" 
                   icon="🎯"
@@ -1209,7 +1209,7 @@ function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       fontSize: 14, fontWeight: 800, color: "#fff",
                       fontFamily: "'Outfit', sans-serif",
                       textTransform: "uppercase",
-                    }}>{p.player[0]}</div>
+                    }}>{p.player[0].toUpperCase()}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: isDark ? "#f0f0f0" : "#1a1a2e", textTransform: "capitalize" }}>
                         {p.player}
@@ -1223,7 +1223,7 @@ function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                         {p.winRate}%
                       </div>
                       <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>
-                        {p.totalWins}S / {p.totalLosses}N
+                        {p.totalWins}W / {p.totalLosses}L
                       </div>
                     </div>
                     {/* Win rate bar */}
@@ -1244,7 +1244,7 @@ function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             {stats.allDecks.length > 0 && (
               <div>
                 <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 18, color: isDark ? "#f0f0f0" : "#1a1a2e", marginBottom: 12 }}>
-                  Top 5 Decks (nach Winrate)
+                  Top 5 Decks
                 </div>
                 <div style={{ 
                   background: isDark ? "#252536" : "#fff",
@@ -1267,12 +1267,12 @@ function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                         background: PLAYER_COLORS[deck.player],
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 10, fontWeight: 700, color: "#fff",
-                      }}>{deck.player[0]}</div>
+                      }}>{deck.player[0].toUpperCase()}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: isDark ? "#f0f0f0" : "#1a1a2e", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {deck.name}
+                          {deck.name.charAt(0).toUpperCase() + deck.name.slice(1)}
                         </div>
-                        <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>
+                        <div style={{ fontSize: 10, color: isDark ? "#888" : "#888", textTransform: "capitalize" }}>
                           {deck.player}
                         </div>
                       </div>
@@ -1281,7 +1281,7 @@ function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                           {deck.winRate}%
                         </div>
                         <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>
-                          {deck.wins}S / {deck.losses}N
+                          {deck.wins}W / {deck.losses}L
                         </div>
                       </div>
                     </div>
