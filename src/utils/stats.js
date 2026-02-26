@@ -47,7 +47,8 @@ export function getDynamicStats(decks) {
   const leastPlayed = sortedByPlays[0];
   const maxPlays = Math.max(...decks.map(d => d.wins + d.losses));
   const minPlays = leastPlayed ? leastPlayed.wins + leastPlayed.losses : 0;
-  const playsAreSimilar = (maxPlays - minPlays) <= 2;
+  // Show "Least played" only when there's a meaningful gap (3+ games difference)
+  const hasPlayDiscrepancy = (maxPlays - minPlays) >= 3;
 
   const stats = [];
 
@@ -79,7 +80,8 @@ export function getDynamicStats(decks) {
     });
   }
 
-  if (leastPlayed && playsAreSimilar) {
+  // Only show "Least played" when one deck is significantly behind others
+  if (leastPlayed && hasPlayDiscrepancy) {
     stats.push({
       label: "Wenig gespielt",
       value: leastPlayed.name,
