@@ -570,13 +570,16 @@ function TrackerView({ player, onBack, isDark, onToggleDark }) {
       .finally(() => setLoading(false));
   }, [player]);
 
-  // Save to Supabase whenever decks change
+  // Save to Supabase whenever decks change (debounced)
   useEffect(() => {
     if (!loaded) return;
-    saveDecks(player, decks).catch(e => {
-      console.error("Failed to save to Supabase:", e);
-      setImportMsg("Speichern fehlgeschlagen. Änderungen gehen möglicherweise verloren.");
-    });
+    const timeout = setTimeout(() => {
+      saveDecks(player, decks).catch(e => {
+        console.error("Failed to save to Supabase:", e);
+        setImportMsg("Speichern fehlgeschlagen. Änderungen gehen möglicherweise verloren.");
+      });
+    }, 300); // 300ms debounce
+    return () => clearTimeout(timeout);
   }, [decks, loaded, player]);
 
   const updateDeck = (idx, fn) => setDecks(ds => ds.map((d, i) => i === idx ? fn(d) : d));

@@ -40,38 +40,39 @@ export async function getDecks(player) {
 
 /**
  * Save all decks for a player (replaces existing)
+ * Uses upsert to handle race conditions from rapid clicking
  * @param {string} player - player name
  * @param {Array} decks - array of deck objects
  */
 export async function saveDecks(player, decks) {
-  // Delete existing decks for this player
-  const { error: deleteError } = await supabase
-    .from(TABLE_NAME)
-    .delete()
-    .eq('player', player)
-  
-  if (deleteError) {
-    console.error('Error deleting old decks:', deleteError)
-    throw deleteError
+  if (decks.length === 0) {
+    // If no decks, delete all for this player
+    const { error } = await supabase
+      .from(TABLE_NAME)
+      .delete()
+      .eq('player', player)
+    if (error) throw error
+    return
   }
   
-  // Insert new decks
-  if (decks.length === 0) return
-  
-  const rows = decks.map(deck => ({
-    player,
-    name: deck.name,
-    wins: deck.wins,
-    losses: deck.losses,
-  }))
-  
-  const { error: insertError } = await supabase
-    .from(TABLE_NAME)
-    .insert(rows)
-  
-  if (insertError) {
-    console.error('Error saving decks:', insertError)
-    throw insertError
+  // Upsert each deck individually to avoid conflicts
+  // This handles race conditions where multiple saves happen simultaneously
+  for (const deck of decks) {
+    const { error } = await supabase
+      .from(TABLE_NAME)
+      .upsert({
+        player,
+        name: deck.name,
+        wins: deck.wins,
+        losses: deck.losses,
+      }, {
+        onConflict: 'player,name'
+      })
+    
+    if (error) {
+      console.error('Error upserting deck:', error)
+      throw error
+    }
   }
 }
 
