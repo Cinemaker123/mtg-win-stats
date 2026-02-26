@@ -275,7 +275,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 16, color: p.winRate >= 50 ? "#27ae60" : "#e74c3c" }}>
+                      <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 16, 
+                        // 4-player pod context: >50% legendary, 25-50% good, <25% struggling
+                        color: parseFloat(p.winRate) > 50 ? "#27ae60" : parseFloat(p.winRate) >= 25 ? "#f39c12" : "#e74c3c" }}>
                         {p.winRate}%
                       </div>
                       <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>
@@ -333,7 +335,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                         </div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 14, color: deck.winRate >= 50 ? "#27ae60" : "#e74c3c" }}>
+                        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 14, 
+                          // 4-player pod context: >50% legendary, 25-50% good, <25% struggling
+                          color: parseFloat(deck.winRate) > 50 ? "#27ae60" : parseFloat(deck.winRate) >= 25 ? "#f39c12" : "#e74c3c" }}>
                           {deck.winRate}%
                         </div>
                         <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>

@@ -52,12 +52,27 @@ export function getDynamicStats(decks) {
 
   const stats = [];
 
+  // 4-player pod context: 25% = average (1 in 4 wins)
+  // >50% = legendary (2x average), 25-50% = above average, <25% = below average
+  const wrPercent = overallWR * 100;
+  let wrAccent, wrIcon, wrLabel;
+  if (wrPercent > 50) {
+    wrAccent = "#2ecc71"; // Green - legendary
+    wrIcon = "🏆";
+  } else if (wrPercent >= 25) {
+    wrAccent = "#f39c12"; // Orange - above average  
+    wrIcon = "📈";
+  } else {
+    wrAccent = "#e74c3c"; // Red - below average
+    wrIcon = "📉";
+  }
+  
   stats.push({
     label: "Gesamt-Winrate",
-    value: `${Math.round(overallWR * 100)}%`,
+    value: `${Math.round(wrPercent)}%`,
     sub: `${totalWins}W – ${totalGames - totalWins}L · ${decks.length} Deck${decks.length !== 1 ? "s" : ""}`,
-    accent: overallWR >= 0.5 ? "#2ecc71" : "#e74c3c",
-    icon: overallWR >= 0.5 ? "🏆" : "📉",
+    accent: wrAccent,
+    icon: wrIcon,
   });
 
   if (best && (best.wins + best.losses) >= 2) {
