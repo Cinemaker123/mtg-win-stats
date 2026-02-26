@@ -75,9 +75,9 @@ Since this is a 4-player Commander pod:
 - **<25%** = Struggling 📉 (below statistical average)
 
 Update color coding and thresholds accordingly:
-- Green (#2ecc71) for >50%
-- Orange (#f39c12) for 25-50%
-- Red (#e74c3c) for <25%
+- **Dark Green (#1e8449)** for >50% (legendary)
+- **Green (#2ecc71)** for 25-50% (good)
+- **Red (#e74c3c)** for <25% (struggling)
 
 ## Features
 

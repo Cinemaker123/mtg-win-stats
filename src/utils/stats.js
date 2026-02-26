@@ -53,17 +53,17 @@ export function getDynamicStats(decks) {
   const stats = [];
 
   // 4-player pod context: 25% = average (1 in 4 wins)
-  // >50% = legendary (2x average), 25-50% = above average, <25% = below average
+  // <25% = struggling (red), 25-50% = good (green), >50% = legendary (dark green)
   const wrPercent = overallWR * 100;
-  let wrAccent, wrIcon, wrLabel;
+  let wrAccent, wrIcon;
   if (wrPercent > 50) {
-    wrAccent = "#2ecc71"; // Green - legendary
+    wrAccent = "#1e8449"; // Dark green - legendary (2x+ average)
     wrIcon = "🏆";
   } else if (wrPercent >= 25) {
-    wrAccent = "#f39c12"; // Orange - above average  
+    wrAccent = "#2ecc71"; // Green - good (above 1-in-4 baseline)
     wrIcon = "📈";
   } else {
-    wrAccent = "#e74c3c"; // Red - below average
+    wrAccent = "#e74c3c"; // Red - struggling (below average)
     wrIcon = "📉";
   }
   

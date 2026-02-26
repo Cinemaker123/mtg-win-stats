@@ -319,11 +319,11 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                           <div style={{ height: 8, background: isDark ? "#353545" : "#f0f0f0", borderRadius: 99, overflow: "hidden" }}>
                             <div style={{
                               height: "100%", width: `${wr*100}%`,
-                              // 4-player pod: >50% = legendary (green), 25-50% = good (orange), <25% = struggling (red)
+                              // 4-player pod: <25% red (struggling), 25-50% green (good), >50% dark green (legendary)
                               background: wr > 0.5 
-                                ? "linear-gradient(90deg,#27ae60,#2ecc71)" 
+                                ? "linear-gradient(90deg,#1e8449,#27ae60)" 
                                 : wr >= 0.25 
-                                  ? "linear-gradient(90deg,#f39c12,#f1c40f)"
+                                  ? "linear-gradient(90deg,#27ae60,#2ecc71)"
                                   : "linear-gradient(90deg,#e74c3c,#e67e22)",
                               borderRadius: 99, transition: "width 0.5s cubic-bezier(.4,0,.2,1)",
                             }}/>
