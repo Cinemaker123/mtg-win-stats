@@ -40,7 +40,7 @@ export async function getDecks(player) {
 
 /**
  * Save all decks for a player (replaces existing)
- * Uses upsert to handle race conditions from rapid clicking
+ * Uses bulk upsert for efficiency (single API call vs N+1)
  * @param {string} player - player name
  * @param {Array} decks - array of deck objects
  */
@@ -55,24 +55,24 @@ export async function saveDecks(player, decks) {
     return
   }
   
-  // Upsert each deck individually to avoid conflicts
-  // This handles race conditions where multiple saves happen simultaneously
-  for (const deck of decks) {
-    const { error } = await supabase
-      .from(TABLE_NAME)
-      .upsert({
+  // Bulk upsert all decks in a single API call
+  // Much more efficient than individual upserts (N+1 → 1)
+  const { error } = await supabase
+    .from(TABLE_NAME)
+    .upsert(
+      decks.map(deck => ({
         player,
         name: deck.name,
         wins: deck.wins,
         losses: deck.losses,
-      }, {
-        onConflict: 'player,name'
-      })
-    
-    if (error) {
-      console.error('Error upserting deck:', error)
-      throw error
-    }
+        updated_at: new Date().toISOString(),
+      })),
+      { onConflict: 'player,name' }
+    )
+  
+  if (error) {
+    console.error('Error upserting decks:', error)
+    throw error
   }
 }
 
