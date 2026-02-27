@@ -1,7 +1,16 @@
+// React
+
+// Hooks
 import { useIsMobile } from "../hooks/useIsMobile.js";
-import { Logo } from "../components/Logo.jsx";
+
+// Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
+import { Logo } from "../components/Logo.jsx";
+
+// Utils
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+
+// Styles
 import styles from "./LandingPage.module.css";
 
 export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggleDark }) {

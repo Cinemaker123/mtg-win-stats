@@ -1,9 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+// React
+import { useEffect, useMemo, useState } from "react";
+
+// Hooks
 import { useIsMobile } from "../hooks/useIsMobile.js";
+
+// Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { StatCard } from "../components/StatCard.jsx";
+
+// Utils / API
 import { getDecks } from "../supabaseClient.js";
-import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, getWinRateTier } from "../utils/stats.js";
+import { getWinRateTier, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+
+// Styles
 import styles from "./GlobalStatsView.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {

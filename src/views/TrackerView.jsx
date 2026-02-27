@@ -1,11 +1,22 @@
-import { useState, useEffect } from "react";
-import { useIsMobile } from "../hooks/useIsMobile.js";
+// React
+import { useEffect, useState } from "react";
+
+// Hooks
 import { useDecks } from "../hooks/useDecks.js";
+import { useIsMobile } from "../hooks/useIsMobile.js";
+
+// Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
+
+// Utils
 import { PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+
+// Sub-components
 import { DashboardTab } from "./tracker/DashboardTab.jsx";
 import { DecksTab } from "./tracker/DecksTab.jsx";
 import { ImportPanel } from "./tracker/ImportPanel.jsx";
+
+// Styles
 import styles from "./TrackerView.module.css";
 
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
