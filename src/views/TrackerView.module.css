@@ -283,7 +283,7 @@
   border-radius: 8px;
   border: none;
   background: var(--color-surface-elevated);
-  color: #bbb;
+  color: var(--color-text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -293,7 +293,7 @@
 }
 
 .deleteButton:hover {
-  background: #fce4e4;
+  background: var(--color-btn-loss-bg);
   color: var(--color-error);
 }
 

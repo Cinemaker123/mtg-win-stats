@@ -31,8 +31,23 @@
 
   /* Semantic Colors */
   --color-success: #27ae60;
+  --color-success-light: #2ecc71;
   --color-error: #e74c3c;
+  --color-error-dark: #c0392b;
   --color-warning: #f39c12;
+
+  /* Win/Loss Gradients */
+  --gradient-win: linear-gradient(90deg, var(--color-success), var(--color-success-light));
+  --gradient-loss: linear-gradient(90deg, var(--color-error), var(--color-error-dark));
+
+  /* Button Backgrounds */
+  --color-btn-win-bg: #d5f5e3;
+  --color-btn-win-hover: #a9dfbf;
+  --color-btn-loss-bg: #fce4e4;
+  --color-btn-loss-hover: #f1a9a0;
+  --color-btn-neutral-bg: #f0f0f0;
+  --color-btn-neutral-hover: #ddd;
+  --color-btn-neutral-text: #777;
 
   /* Shadows */
   --shadow-sm: 0 1px 8px rgba(0, 0, 0, 0.06);
@@ -83,6 +98,15 @@
   --shadow-md: 0 1px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
   --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  /* Button Backgrounds - Dark Mode */
+  --color-btn-win-bg: rgba(39, 174, 96, 0.2);
+  --color-btn-win-hover: rgba(39, 174, 96, 0.35);
+  --color-btn-loss-bg: rgba(231, 76, 60, 0.2);
+  --color-btn-loss-hover: rgba(231, 76, 60, 0.35);
+  --color-btn-neutral-bg: rgba(255, 255, 255, 0.1);
+  --color-btn-neutral-hover: rgba(255, 255, 255, 0.2);
+  --color-btn-neutral-text: #999;
 }
 
 /* Base styles */

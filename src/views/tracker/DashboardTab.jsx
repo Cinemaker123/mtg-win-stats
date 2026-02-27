@@ -41,7 +41,7 @@ export function DashboardTab({ decks }) {
           </div>
           <div className={styles.card}>
             <div className={styles.legend}>
-              {[["#27ae60","Siege"],["#e74c3c","Niederlagen"]].map(([c,l]) => (
+              {[["var(--color-success)","Siege"],["var(--color-error)","Niederlagen"]].map(([c,l]) => (
                 <div key={l} className={styles.legendItem}>
                   <div className={styles.legendColor} style={{ background: c }} />
                   <span className={styles.legendLabel}>{l}</span>

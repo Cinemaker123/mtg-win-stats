@@ -17,7 +17,7 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
   const total = deck.wins + deck.losses;
   const winPct = total === 0 ? 50 : (deck.wins / total) * 100;
   const lossPct = 100 - winPct;
-  const wrColor = total === 0 ? "#aaa" : (winPct >= 50 ? "#27ae60" : "#e74c3c");
+  const wrColor = total === 0 ? "var(--color-text-muted)" : (winPct >= 50 ? "var(--color-success)" : "var(--color-error)");
 
   return (
     <div className={styles.deckCard}>
@@ -46,7 +46,7 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
           className={styles.winLossSection}
           style={{
             width: `${winPct}%`,
-            background: "linear-gradient(90deg,#27ae60,#2ecc71)",
+            background: "var(--gradient-win)",
             minWidth: deck.wins > 0 ? 30 : 0,
           }}
         >
@@ -56,7 +56,7 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
           className={styles.winLossSection}
           style={{
             width: `${lossPct}%`,
-            background: "linear-gradient(90deg,#e74c3c,#c0392b)",
+            background: "var(--gradient-loss)",
             minWidth: deck.losses > 0 ? 30 : 0,
           }}
         >
@@ -67,11 +67,11 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
       {/* Row 3: Controls */}
       <div className={styles.controls}>
         <span className={styles.controlLabelWin}>W</span>
-        <Btn onClick={onIncWin} bg="#d5f5e3" color="#27ae60" hoverBg="#a9dfbf" title="Sieg hinzufügen">+</Btn>
-        <Btn onClick={onDecWin} bg="#f0f0f0" color="#777" hoverBg="#ddd" title="Sieg entfernen">−</Btn>
+        <Btn onClick={onIncWin} bg="var(--color-btn-win-bg)" color="var(--color-success)" hoverBg="var(--color-btn-win-hover)" title="Sieg hinzufügen">+</Btn>
+        <Btn onClick={onDecWin} bg="var(--color-btn-neutral-bg)" color="var(--color-btn-neutral-text)" hoverBg="var(--color-btn-neutral-hover)" title="Sieg entfernen">−</Btn>
         <div className={styles.controlSpacer} />
-        <Btn onClick={onDecLoss} bg="#f0f0f0" color="#777" hoverBg="#ddd" title="Niederlage entfernen">−</Btn>
-        <Btn onClick={onIncLoss} bg="#fce4e4" color="#e74c3c" hoverBg="#f1a9a0" title="Niederlage hinzufügen">+</Btn>
+        <Btn onClick={onDecLoss} bg="var(--color-btn-neutral-bg)" color="var(--color-btn-neutral-text)" hoverBg="var(--color-btn-neutral-hover)" title="Niederlage entfernen">−</Btn>
+        <Btn onClick={onIncLoss} bg="var(--color-btn-loss-bg)" color="var(--color-error)" hoverBg="var(--color-btn-loss-hover)" title="Niederlage hinzufügen">+</Btn>
         <span className={styles.controlLabelLoss}>L</span>
       </div>
     </div>
