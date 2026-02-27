@@ -251,13 +251,13 @@ export function getWinRateTier(winRate) {
 
 Complete this entire phase before moving to Phase 3. Mixing CSS Modules with component splitting creates confusion.
 
-### 4. CSS Modules - Phase 1: Setup
+### 4. CSS Modules - Phase 1: Setup ✅
 **Files:** New files only  
 **Effort:** Small  
-**Prerequisite for:** All component CSS migrations
+**Status:** Done
 
 **Tasks:**
-1. **Create `src/styles/theme.css`** with CSS custom properties:
+1. ✅ **Create `src/styles/theme.css`** with CSS custom properties:
 ```css
 :root {
   --color-bg: #f4f6fb;
@@ -279,8 +279,8 @@ Complete this entire phase before moving to Phase 3. Mixing CSS Modules with com
 }
 ```
 
-2. **Import theme in `main.jsx`** (or `index.html`)
-3. **Verify Vite CSS Modules config** (usually works by default)
+2. ✅ **Import theme in `main.jsx`** (or `index.html`)
+3. ✅ **Verify Vite CSS Modules config** (usually works by default)
 
 ---
 
@@ -289,12 +289,12 @@ Complete this entire phase before moving to Phase 3. Mixing CSS Modules with com
 **Effort:** Medium  
 **Migration order:** Least dependent first
 
-| Order | Component | Notes |
-|-------|-----------|-------|
-| 1 | `StatCard` | Simple, also fixes the duplicate `StatCard` in `GlobalStatsView` |
-| 2 | `DarkModeToggle` | Icon button patterns |
-| 3 | `Logo` | Minimal styles, quick win |
-| 4 | `D20` + `RollingD20` | Keep animation styles inline (dynamic), static styles to CSS |
+| Order | Component | Status | Notes |
+|-------|-----------|--------|-------|
+| 1 | `StatCard` | ✅ Done | Also removed duplicate in `GlobalStatsView` |
+| 2 | `DarkModeToggle` | ✅ Done | Icon button patterns |
+| 3 | `Logo` | ✅ Done | Minimal styles, quick win |
+| 4 | `D20` + `RollingD20` | ✅ Done | Kept animation styles inline, static to CSS |
 
 **Pattern for each component:**
 ```jsx
@@ -305,7 +305,7 @@ import styles from './Component.module.css';
 // After:  className={styles.card} (CSS handles theme via vars)
 ```
 
-**Note on `StatCard`:** The inline `StatCard` in `GlobalStatsView` (lines 120-152) should be removed during this step, using the shared component from `src/components/` instead.
+**Note on `StatCard`:** ✅ The inline `StatCard` in `GlobalStatsView` has been removed, using the shared CSS Module component from `src/components/` instead.
 
 ---
 
@@ -491,8 +491,8 @@ export function TrackerView({ player, onBack, isDark }) { ... }
 | **1: Foundation** | 1 | ~~Fix `useDarkMode` hook~~ ✅ | Small | Done |
 | | 2 | ~~Consolidate win rate logic~~ ✅ | Small | Done |
 | | 3 | ~~Remove `SAMPLE_DECKS`~~ ✅ | Small | Done |
-| **2: CSS Migration** | 4 | CSS Modules Phase 1: Setup | Small |
-| | 5 | CSS Modules Phase 2: Components | Medium |
+| **2: CSS Migration** | 4 | ~~CSS Modules Phase 1: Setup~~ ✅ | Small | Done |
+| | 5 | ~~CSS Modules Phase 2: Components~~ ✅ | Medium | Done |
 | | 6 | CSS Modules Phase 3: Views | Large |
 | | 7 | CSS Modules Cleanup | Small |
 | **3: Architecture** | 8 | Extract `useDecks` hook | Medium |

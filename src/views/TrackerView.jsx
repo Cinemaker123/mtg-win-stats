@@ -285,7 +285,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-                  {stats.map((s, i) => <StatCard key={i} {...s} isDark={isDark} />)}
+                  {stats.map((s, i) => <StatCard key={i} {...s} />)}
                 </div>
               )}
 

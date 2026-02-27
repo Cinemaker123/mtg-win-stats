@@ -1,0 +1,4 @@
+.logo {
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}

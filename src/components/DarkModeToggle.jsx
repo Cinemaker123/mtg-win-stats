@@ -1,21 +1,11 @@
+import styles from './DarkModeToggle.module.css';
+
 export function DarkModeToggle({ isDark, onToggle }) {
   return (
     <button
       onClick={onToggle}
       title={isDark ? "Hellmodus" : "Dunkelmodus"}
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        border: "none",
-        background: isDark ? "#2d2d3a" : "#f0f0f5",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        transition: "all 0.2s",
-        boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(0,0,0,0.1)",
-      }}
+      className={styles.button}
     >
       {isDark ? (
         // Sun icon (B&W for dark mode - shows when in dark mode, click to go light)

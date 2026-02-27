@@ -1,0 +1,22 @@
+.button {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--color-surface-elevated);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.button:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.button:active {
+  transform: scale(0.95);
+}
