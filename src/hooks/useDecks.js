@@ -1,0 +1,87 @@
+import { useState, useEffect, useCallback } from "react";
+import { getDecks, saveDecks } from "../supabaseClient.js";
+
+/**
+ * Hook for managing deck data with Supabase persistence
+ * @param {string} player - Player identifier
+ * @returns {Object} Deck state and operations
+ */
+export function useDecks(player) {
+  const [decks, setDecks] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Load from Supabase on mount
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    
+    getDecks(player)
+      .then(data => {
+        if (data.length > 0) {
+          setDecks(data);
+        }
+        setLoaded(true);
+      })
+      .catch(e => {
+        console.error("Failed to load from Supabase:", e);
+        setError("Fehler beim Laden. Bitte Seite neu laden.");
+        setLoaded(true);
+      })
+      .finally(() => setLoading(false));
+  }, [player]);
+
+  // Save to Supabase whenever decks change (debounced)
+  useEffect(() => {
+    if (!loaded) return;
+    
+    const timeout = setTimeout(() => {
+      saveDecks(player, decks).catch(e => {
+        console.error("Failed to save to Supabase:", e);
+        setError("Speichern fehlgeschlagen. Änderungen gehen möglicherweise verloren.");
+      });
+    }, 300);
+    
+    return () => clearTimeout(timeout);
+  }, [decks, loaded, player]);
+
+  const updateDeck = useCallback((idx, fn) => {
+    setDecks(ds => ds.map((d, i) => i === idx ? fn(d) : d));
+  }, []);
+
+  const addDecks = useCallback((newDecks) => {
+    setDecks(ds => {
+      const updated = [...ds];
+      for (const nd of newDecks) {
+        const idx = updated.findIndex(d => d.name.toLowerCase() === nd.name.toLowerCase());
+        if (idx >= 0) {
+          updated[idx] = { ...updated[idx], wins: nd.wins, losses: nd.losses };
+        } else {
+          updated.push(nd);
+        }
+      }
+      return updated;
+    });
+  }, []);
+
+  const deleteDeck = useCallback((idx) => {
+    setDecks(ds => ds.filter((_, i) => i !== idx));
+  }, []);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  return {
+    decks,
+    setDecks,
+    loading,
+    loaded,
+    error,
+    clearError,
+    updateDeck,
+    addDecks,
+    deleteDeck,
+  };
+}

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useIsMobile } from "../hooks/useIsMobile.js";
+import { useDecks } from "../hooks/useDecks.js";
 import { Logo } from "../components/Logo.jsx";
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { StatCard } from "../components/StatCard.jsx";
-import { getDecks, saveDecks } from "../supabaseClient.js";
 import { PLAYER_COLORS, PLAYER_GRADIENTS, winRate, getDynamicStats, getWinRateTier } from "../utils/stats.js";
 import styles from "./TrackerView.module.css";
 
@@ -87,48 +87,19 @@ function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onDelete }
 }
 
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
-  const [decks, setDecks] = useState([]);
+  const { decks, loading, error, updateDeck, addDecks, deleteDeck } = useDecks(player);
   const [tab, setTab] = useState("dashboard");
   const [importText, setImportText] = useState("");
-  const [importMsg, setImportMsg] = useState("");
-  const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [importMsg, setImportMsg] = useState(error || "");
   const [importOpen, setImportOpen] = useState(false);
   const isMobile = useIsMobile();
   const px = isMobile ? 12 : 24;
   const accentColor = PLAYER_COLORS[player];
 
-  // Load from Supabase on mount
+  // Sync external error with importMsg
   useEffect(() => {
-    setLoading(true);
-    getDecks(player)
-      .then(data => {
-        if (data.length > 0) {
-          setDecks(data);
-        }
-        setLoaded(true);
-      })
-      .catch(e => {
-        console.error("Failed to load from Supabase:", e);
-        setImportMsg("Fehler beim Laden. Bitte Seite neu laden.");
-        setLoaded(true);
-      })
-      .finally(() => setLoading(false));
-  }, [player]);
-
-  // Save to Supabase whenever decks change (debounced)
-  useEffect(() => {
-    if (!loaded) return;
-    const timeout = setTimeout(() => {
-      saveDecks(player, decks).catch(e => {
-        console.error("Failed to save to Supabase:", e);
-        setImportMsg("Speichern fehlgeschlagen. Änderungen gehen möglicherweise verloren.");
-      });
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [decks, loaded, player]);
-
-  const updateDeck = (idx, fn) => setDecks(ds => ds.map((d, i) => i === idx ? fn(d) : d));
+    if (error) setImportMsg(error);
+  }, [error]);
 
   const parseImport = () => {
     const text = importText.trim();
@@ -153,15 +124,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
       newDecks.push({ name, wins, losses });
     }
     if (!newDecks.length) { setImportMsg("❌ Keine Decks gefunden. Prüfe das Format."); return; }
-    setDecks(ds => {
-      const updated = [...ds];
-      for (const nd of newDecks) {
-        const idx = updated.findIndex(d => d.name.toLowerCase() === nd.name.toLowerCase());
-        if (idx >= 0) updated[idx] = { ...updated[idx], wins: nd.wins, losses: nd.losses };
-        else updated.push(nd);
-      }
-      return updated;
-    });
+    addDecks(newDecks);
     setImportText(""); setImportOpen(false);
     setImportMsg(`✅ ${newDecks.length} Deck${newDecks.length > 1 ? "s" : ""} importiert`);
     setTimeout(() => setImportMsg(""), 3000);
@@ -294,7 +257,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                   onDecWin={() => updateDeck(i, d => ({ ...d, wins: Math.max(0,d.wins-1) }))}
                   onIncLoss={() => updateDeck(i, d => ({ ...d, losses: d.losses+1 }))}
                   onDecLoss={() => updateDeck(i, d => ({ ...d, losses: Math.max(0,d.losses-1) }))}
-                  onDelete={() => setDecks(ds => ds.filter((_,idx) => idx!==i))}
+                  onDelete={() => deleteDeck(i)}
                 />
               ))}
             </>
