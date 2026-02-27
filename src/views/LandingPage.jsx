@@ -2,78 +2,34 @@ import { useIsMobile } from "../hooks/useIsMobile.js";
 import { Logo } from "../components/Logo.jsx";
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import styles from "./LandingPage.module.css";
 
 export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggleDark }) {
   const isMobile = useIsMobile();
 
   return (
-    <div style={{
-      minHeight: "100dvh",
-      display: "flex",
-      flexDirection: "column",
-      background: isDark ? "#1a1a2e" : "#f4f6fb",
-      padding: isMobile ? "40px 20px" : "60px 40px",
-    }}>
+    <div className={isMobile ? styles.containerMobile : styles.container}>
       {/* Dark mode toggle */}
-      <div style={{
-        position: "absolute",
-        top: 16,
-        right: 16,
-        zIndex: 10,
-      }}>
+      <div className={styles.darkModeToggle}>
         <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
       </div>
 
       {/* Title */}
-      <div style={{ textAlign: "center", marginBottom: isMobile ? 40 : 60 }}>
-        <div style={{ marginBottom: 16, display: "flex", justifyContent: "center" }}>
+      <div className={isMobile ? styles.headerMobile : styles.header}>
+        <div className={styles.logoWrapper}>
           <Logo size={isMobile ? 80 : 100} />
         </div>
-        <h1 style={{
-          fontFamily: "'Outfit', sans-serif",
-          fontWeight: 800,
-          fontSize: isMobile ? 28 : 36,
-          color: isDark ? "#f0f0f0" : "#1a1a2e",
-          margin: 0,
-          marginBottom: 8,
-        }}>MTG Tracker</h1>
-        <p style={{
-          fontFamily: "'DM Sans', sans-serif",
-          fontSize: isMobile ? 14 : 16,
-          color: isDark ? "#888" : "#888",
-          margin: 0,
-        }}>Wähle dein Profil</p>
+        <h1 className={isMobile ? styles.titleMobile : styles.title}>MTG Tracker</h1>
+        <p className={isMobile ? styles.subtitleMobile : styles.subtitle}>Wähle dein Profil</p>
       </div>
 
       {/* Player Grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)",
-        gap: isMobile ? 16 : 24,
-        maxWidth: isMobile ? 400 : 1000,
-        margin: "0 auto",
-        width: "100%",
-      }}>
+      <div className={isMobile ? styles.playerGridMobile : styles.playerGrid}>
         {PLAYERS.map(player => (
           <button
             key={player}
             onClick={() => onSelectPlayer(player)}
-            style={{
-              background: isDark ? "#252536" : "#fff",
-              border: "2px solid transparent",
-              borderRadius: 20,
-              padding: isMobile ? "30px 20px" : "40px 30px",
-              cursor: "pointer",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 16,
-              transition: "all 0.2s ease",
-              WebkitTapHighlightColor: "transparent",
-              boxShadow: isDark 
-                ? "0 1px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)"
-                : "0 1px 12px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)",
-            }}
+            className={isMobile ? styles.playerCardMobile : styles.playerCard}
             onMouseEnter={e => {
               e.currentTarget.style.borderColor = PLAYER_COLORS[player];
               e.currentTarget.style.transform = "translateY(-4px)";
@@ -82,66 +38,30 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
             onMouseLeave={e => {
               e.currentTarget.style.borderColor = "transparent";
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = isDark 
-                ? "0 1px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)"
-                : "0 1px 12px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)";
+              e.currentTarget.style.boxShadow = "";
             }}
           >
-            <div style={{
-              width: isMobile ? 60 : 80,
-              height: isMobile ? 60 : 80,
-              borderRadius: "50%",
-              background: PLAYER_GRADIENTS[player],
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: isMobile ? 28 : 36,
-              fontWeight: 800,
-              color: "#fff",
-              fontFamily: "'Outfit', sans-serif",
-              textTransform: "uppercase",
-            }}>
+            <div 
+              className={isMobile ? styles.playerAvatarMobile : styles.playerAvatarDesktop}
+              style={{ background: PLAYER_GRADIENTS[player] }}
+            >
               {player[0]}
             </div>
-            <span style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontWeight: 700,
-              fontSize: isMobile ? 16 : 18,
-              color: isDark ? "#f0f0f0" : "#1a1a2e",
-              textTransform: "capitalize",
-            }}>{player}</span>
+            <span className={isMobile ? styles.playerNameMobile : styles.playerName}>
+              {player}
+            </span>
           </button>
         ))}
       </div>
 
       {/* Global Stats Button */}
-      <div style={{
-        maxWidth: isMobile ? 400 : 1000,
-        margin: "32px auto 0",
-        width: "100%",
-        padding: isMobile ? "0 20px" : 0,
-      }}>
+      <div className={isMobile ? styles.globalStatsWrapperMobile : styles.globalStatsWrapper}>
         <button
           onClick={onShowGlobalStats}
-          style={{
-            width: "100%",
-            background: isDark 
-              ? "linear-gradient(135deg, #3d3d5a, #2a2a40)" 
-              : "linear-gradient(135deg, #667eea, #764ba2)",
-            border: "none",
-            borderRadius: 20,
-            padding: isMobile ? "24px 20px" : "32px 40px",
-            cursor: "pointer",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 12,
-            transition: "all 0.2s ease",
-            WebkitTapHighlightColor: "transparent",
-            boxShadow: isDark 
-              ? "0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)"
-              : "0 4px 20px rgba(102,126,234,0.3), 0 0 0 1px rgba(255,255,255,0.2)",
-          }}
+          className={`
+            ${isMobile ? styles.globalStatsButtonMobile : styles.globalStatsButton}
+            ${isDark ? styles.globalStatsButtonDark : ""}
+          `}
           onMouseEnter={e => {
             e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
             e.currentTarget.style.boxShadow = isDark 
@@ -149,24 +69,15 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
               : "0 8px 32px rgba(102,126,234,0.5), 0 0 0 1px rgba(255,255,255,0.3)";
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.transform = "translateY(0) scale(1)";
-            e.currentTarget.style.boxShadow = isDark 
-              ? "0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)"
-              : "0 4px 20px rgba(102,126,234,0.3), 0 0 0 1px rgba(255,255,255,0.2)";
+            e.currentTarget.style.transform = "";
+            e.currentTarget.style.boxShadow = "";
           }}
         >
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}>
-            <span style={{ fontSize: isMobile ? 28 : 36 }}>📊</span>
-            <span style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontWeight: 800,
-              fontSize: isMobile ? 18 : 22,
-              color: "#fff",
-            }}>Gesamtübersicht</span>
+          <div className={styles.globalStatsContent}>
+            <span className={isMobile ? styles.globalStatsIconMobile : styles.globalStatsIcon}>📊</span>
+            <span className={isMobile ? styles.globalStatsTextMobile : styles.globalStatsText}>
+              Gesamtübersicht
+            </span>
           </div>
         </button>
       </div>

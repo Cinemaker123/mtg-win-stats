@@ -1,0 +1,199 @@
+.container {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  padding: 60px 40px;
+}
+
+.containerMobile {
+  composes: container;
+  padding: 40px 20px;
+}
+
+.darkModeToggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.headerMobile {
+  composes: header;
+  margin-bottom: 40px;
+}
+
+.logoWrapper {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 36px;
+  color: var(--color-text);
+  margin: 0 0 8px 0;
+}
+
+.titleMobile {
+  composes: title;
+  font-size: 28px;
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.subtitleMobile {
+  composes: subtitle;
+  font-size: 14px;
+}
+
+.playerGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.playerGridMobile {
+  composes: playerGrid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.playerCard {
+  background: var(--color-surface);
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 40px 30px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  transition: all var(--transition-base);
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow-md);
+}
+
+.playerCardMobile {
+  composes: playerCard;
+  padding: 30px 20px;
+}
+
+.playerAvatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+
+.playerAvatarDesktop {
+  composes: playerAvatar;
+  width: 80px;
+  height: 80px;
+  font-size: 36px;
+}
+
+.playerAvatarMobile {
+  composes: playerAvatar;
+  width: 60px;
+  height: 60px;
+  font-size: 28px;
+}
+
+.playerName {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--color-text);
+  text-transform: capitalize;
+}
+
+.playerNameMobile {
+  composes: playerName;
+  font-size: 16px;
+}
+
+.globalStatsWrapper {
+  max-width: 1000px;
+  margin: 32px auto 0;
+  width: 100%;
+}
+
+.globalStatsWrapperMobile {
+  composes: globalStatsWrapper;
+  max-width: 400px;
+  padding: 0 20px;
+}
+
+.globalStatsButton {
+  width: 100%;
+  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+  border: none;
+  border-radius: 20px;
+  padding: 32px 40px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: all var(--transition-base);
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.globalStatsButtonMobile {
+  composes: globalStatsButton;
+  padding: 24px 20px;
+}
+
+.globalStatsButtonDark {
+  background: linear-gradient(135deg, #3d3d5a, #2a2a40);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.globalStatsContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.globalStatsIcon {
+  font-size: 36px;
+}
+
+.globalStatsIconMobile {
+  composes: globalStatsIcon;
+  font-size: 28px;
+}
+
+.globalStatsText {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  color: #fff;
+}
+
+.globalStatsTextMobile {
+  composes: globalStatsText;
+  font-size: 18px;
+}

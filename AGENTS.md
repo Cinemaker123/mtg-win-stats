@@ -314,11 +314,11 @@ import styles from './Component.module.css';
 **Effort:** Large  
 **Migration order:** Simplest to most complex
 
-| Order | View | Complexity |
-|-------|------|------------|
-| 1 | `LandingPage` | Player grid, hover states |
-| 2 | `GlobalStatsView` | Tables, stat cards, already has StatCard migrated |
-| 3 | `TrackerView` | Tabs, import panel, WinLossBar — most complex |
+| Order | View | Status | Notes |
+|-------|------|--------|-------|
+| 1 | `LandingPage` | ✅ Done | Player grid, hover states |
+| 2 | `GlobalStatsView` | ✅ Done | Tables, stat cards |
+| 3 | `TrackerView` | ✅ Done | Tabs, import panel, WinLossBar |
 
 **Key patterns:**
 - Use CSS `:hover` instead of `onMouseEnter/Leave`
@@ -493,8 +493,8 @@ export function TrackerView({ player, onBack, isDark }) { ... }
 | | 3 | ~~Remove `SAMPLE_DECKS`~~ ✅ | Small | Done |
 | **2: CSS Migration** | 4 | ~~CSS Modules Phase 1: Setup~~ ✅ | Small | Done |
 | | 5 | ~~CSS Modules Phase 2: Components~~ ✅ | Medium | Done |
-| | 6 | CSS Modules Phase 3: Views | Large |
-| | 7 | CSS Modules Cleanup | Small |
+
+| | 7 | ~~CSS Modules Cleanup~~ ✅ | Small | Done (handled during migration) |
 | **3: Architecture** | 8 | Extract `useDecks` hook | Medium |
 | | 9 | Split `TrackerView` | Large |
 | | 10 | Create UI primitives | Medium |

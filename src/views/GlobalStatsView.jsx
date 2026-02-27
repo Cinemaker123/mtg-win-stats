@@ -4,6 +4,7 @@ import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { StatCard } from "../components/StatCard.jsx";
 import { getDecks } from "../supabaseClient.js";
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, getWinRateTier } from "../utils/stats.js";
+import styles from "./GlobalStatsView.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   const isMobile = useIsMobile();
@@ -114,65 +115,37 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       overallWinRate,
       bestDeck,
       mostPlayed,
-      allDecks: allDecks.slice(0, 5), // Top 5 decks
+      allDecks: allDecks.slice(0, 5),
     };
   }, [allData]);
 
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: isDark ? "#1a1a2e" : "#f4f6fb" }}>
+    <div className={styles.container}>
       {/* Header */}
-      <div style={{
-        background: isDark ? "#252536" : "#fff", 
-        boxShadow: isDark ? "0 1px 0 rgba(255,255,255,0.05)" : "0 1px 0 rgba(0,0,0,0.08)",
-        padding: `0 ${px}px`, display: "flex", alignItems: "center", gap: 12,
-        height: 52, flexShrink: 0,
-      }}>
+      <div className={styles.header} style={{ padding: `0 ${px}px` }}>
         <button
           onClick={onBack}
-          style={{
-            width: 36, height: 36, borderRadius: 10, border: "none",
-            background: isDark ? "#353545" : "#f0f0f0", color: isDark ? "#ccc" : "#666",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18, transition: "background 0.15s",
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = isDark ? "#454555" : "#e0e0e0"}
-          onMouseLeave={e => e.currentTarget.style.background = isDark ? "#353545" : "#f0f0f0"}
+          className={styles.backButton}
           title="Zurück"
         >←</button>
         <span style={{ fontSize: 20 }}>📊</span>
-        <span style={{
-          fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 16, color: isDark ? "#f0f0f0" : "#1a1a2e",
-          flex: 1,
-        }}>Gesamtübersicht</span>
+        <span className={styles.title}>Gesamtübersicht</span>
         <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
       </div>
 
       {/* Content */}
-      <div style={{
-        flex: 1, overflowY: "auto",
-        padding: `16px ${px}px`,
-        paddingBottom: 24,
-      }}>
+      <div className={isMobile ? styles.contentMobile : styles.content}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: isDark ? "#888" : "#888" }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: "50%",
-              border: `3px solid ${isDark ? "#353545" : "#e0e0e0"}`,
-              borderTopColor: "#667eea",
-              animation: "spin 1s linear infinite",
-              margin: "0 auto 16px",
-            }} />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700 }}>Lade Daten...</div>
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner} />
+            <div className={styles.loadingText}>Lade Daten...</div>
           </div>
         ) : (
           <>
             {/* Overall Stats */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 18, color: isDark ? "#f0f0f0" : "#1a1a2e", marginBottom: 12 }}>
-                Gesamtübersicht
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10 }}>
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>Gesamtübersicht</div>
+              <div className={isMobile ? styles.statsGridMobile : styles.statsGrid}>
                 <StatCard 
                   label="Spiele insgesamt" 
                   value={stats.totalGamesAll} 
@@ -205,59 +178,43 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             </div>
 
             {/* Player Comparison */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 18, color: isDark ? "#f0f0f0" : "#1a1a2e", marginBottom: 12 }}>
-                Spieler-Vergleich
-              </div>
-              <div style={{ 
-                background: isDark ? "#252536" : "#fff",
-                borderRadius: 16,
-                padding: 16,
-                boxShadow: isDark 
-                  ? "0 1px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)"
-                  : "0 1px 12px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)",
-              }}>
-                {stats.playerStats.sort((a, b) => b.winRate - a.winRate).map((p, i) => (
-                  <div key={p.player} style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: 12, 
-                    padding: "10px 0",
-                    borderBottom: i < stats.playerStats.length - 1 ? `1px solid ${isDark ? "#353545" : "#f0f0f0"}` : "none",
-                  }}>
-                    <div style={{ 
-                      width: 32, height: 32, borderRadius: "50%",
-                      background: p.gradient,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 14, fontWeight: 800, color: "#fff",
-                      fontFamily: "'Outfit', sans-serif",
-                      textTransform: "uppercase",
-                    }}>{p.player[0].toUpperCase()}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: isDark ? "#f0f0f0" : "#1a1a2e", textTransform: "capitalize" }}>
-                        {p.player}
-                      </div>
-                      <div style={{ fontSize: 11, color: isDark ? "#888" : "#888" }}>
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>Spieler-Vergleich</div>
+              <div className={styles.playerList}>
+                {stats.playerStats.sort((a, b) => b.winRate - a.winRate).map((p) => (
+                  <div key={p.player} className={styles.playerRow}>
+                    <div 
+                      className={styles.playerAvatar}
+                      style={{ background: p.gradient }}
+                    >
+                      {p.player[0].toUpperCase()}
+                    </div>
+                    <div className={styles.playerInfo}>
+                      <div className={styles.playerName}>{p.player}</div>
+                      <div className={styles.playerMeta}>
                         {p.deckCount} Decks • {p.totalGames} Spiele
                       </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 16,
-                        color: getWinRateTier(parseFloat(p.winRate)).color }}>
+                    <div className={styles.playerStats}>
+                      <div 
+                        className={styles.winRate}
+                        style={{ color: getWinRateTier(parseFloat(p.winRate)).color }}
+                      >
                         {p.winRate}%
                       </div>
-                      <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>
+                      <div className={styles.record}>
                         {p.totalWins}W / {p.totalLosses}L
                       </div>
                     </div>
                     {/* Win rate bar */}
-                    <div style={{ width: 60, height: 6, background: isDark ? "#353545" : "#e0e0e0", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ 
-                        width: `${Math.max(0, Math.min(100, p.winRate))}%`, 
-                        height: "100%", 
-                        background: p.gradient,
-                        borderRadius: 3,
-                      }} />
+                    <div className={styles.winRateBar}>
+                      <div 
+                        className={styles.winRateBarFill}
+                        style={{ 
+                          width: `${Math.max(0, Math.min(100, p.winRate))}%`, 
+                          background: p.gradient,
+                        }} 
+                      />
                     </div>
                   </div>
                 ))}
@@ -266,46 +223,31 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
 
             {/* Top Decks */}
             {stats.allDecks.length > 0 && (
-              <div>
-                <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 18, color: isDark ? "#f0f0f0" : "#1a1a2e", marginBottom: 12 }}>
-                  Top 5 Decks
-                </div>
-                <div style={{ 
-                  background: isDark ? "#252536" : "#fff",
-                  borderRadius: 16,
-                  padding: 16,
-                  boxShadow: isDark 
-                    ? "0 1px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)"
-                    : "0 1px 12px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)",
-                }}>
-                  {stats.allDecks.map((deck, i) => (
-                    <div key={`${deck.player}-${deck.name}`} style={{ 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: 12, 
-                      padding: "10px 0",
-                      borderBottom: i < stats.allDecks.length - 1 ? `1px solid ${isDark ? "#353545" : "#f0f0f0"}` : "none",
-                    }}>
-                      <div style={{ 
-                        width: 24, height: 24, borderRadius: "50%",
-                        background: PLAYER_COLORS[deck.player],
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 10, fontWeight: 700, color: "#fff",
-                      }}>{deck.player[0].toUpperCase()}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: isDark ? "#f0f0f0" : "#1a1a2e", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Top 5 Decks</div>
+                <div className={styles.deckList}>
+                  {stats.allDecks.map((deck) => (
+                    <div key={`${deck.player}-${deck.name}`} className={styles.deckRow}>
+                      <div 
+                        className={styles.deckAvatar}
+                        style={{ background: PLAYER_COLORS[deck.player] }}
+                      >
+                        {deck.player[0].toUpperCase()}
+                      </div>
+                      <div className={styles.deckInfo}>
+                        <div className={styles.deckName}>
                           {deck.name.charAt(0).toUpperCase() + deck.name.slice(1)}
                         </div>
-                        <div style={{ fontSize: 10, color: isDark ? "#888" : "#888", textTransform: "capitalize" }}>
-                          {deck.player}
-                        </div>
+                        <div className={styles.deckPlayer}>{deck.player}</div>
                       </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 14,
-                          color: getWinRateTier(parseFloat(deck.winRate)).color }}>
+                      <div className={styles.deckStats}>
+                        <div 
+                          className={styles.deckWinRate}
+                          style={{ color: getWinRateTier(parseFloat(deck.winRate)).color }}
+                        >
                           {deck.winRate}%
                         </div>
-                        <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>
+                        <div className={styles.deckRecord}>
                           {deck.wins}W / {deck.losses}L
                         </div>
                       </div>
