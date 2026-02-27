@@ -1,5 +1,6 @@
 // React
 import { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 
 // Hooks
 import { useDecks } from "../hooks/useDecks.js";
@@ -19,6 +20,14 @@ import { ImportPanel } from "./tracker/ImportPanel.jsx";
 // Styles
 import styles from "./TrackerView.module.css";
 
+/**
+ * Main tracker view for a specific player
+ * @param {Object} props
+ * @param {string} props.player - Player identifier (baum, mary, pascal, wewy)
+ * @param {Function} props.onBack - Callback when back button is clicked
+ * @param {boolean} props.isDark - Current dark mode state
+ * @param {Function} props.onToggleDark - Callback to toggle dark mode
+ */
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   const { decks, loading, error, updateDeck, addDecks, deleteDeck } = useDecks(player);
   const [tab, setTab] = useState("dashboard");
@@ -131,3 +140,10 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
     </>
   );
 }
+
+TrackerView.propTypes = {
+  player: PropTypes.oneOf(["baum", "mary", "pascal", "wewy"]).isRequired,
+  onBack: PropTypes.func.isRequired,
+  isDark: PropTypes.bool.isRequired,
+  onToggleDark: PropTypes.func.isRequired,
+};

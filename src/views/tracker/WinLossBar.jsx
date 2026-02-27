@@ -1,6 +1,18 @@
+import PropTypes from "prop-types";
+import { DeckPropType } from "../../hooks/useDecks.js";
 import styles from "../TrackerView.module.css";
 import { Btn } from "./Btn.jsx";
 
+/**
+ * Individual deck bar with win/loss display and controls
+ * @param {Object} props
+ * @param {Deck} props.deck - Deck data
+ * @param {Function} props.onIncWin - Increment wins
+ * @param {Function} props.onDecWin - Decrement wins
+ * @param {Function} props.onIncLoss - Increment losses
+ * @param {Function} props.onDecLoss - Decrement losses
+ * @param {Function} props.onDelete - Delete deck
+ */
 export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onDelete }) {
   const total = deck.wins + deck.losses;
   const winPct = total === 0 ? 50 : (deck.wins / total) * 100;
@@ -19,6 +31,7 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
           onClick={onDelete}
           className={styles.deleteButton}
           title="Deck entfernen"
+          aria-label={`${deck.name} entfernen`}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -64,3 +77,12 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
     </div>
   );
 }
+
+WinLossBar.propTypes = {
+  deck: DeckPropType.isRequired,
+  onIncWin: PropTypes.func.isRequired,
+  onDecWin: PropTypes.func.isRequired,
+  onIncLoss: PropTypes.func.isRequired,
+  onDecLoss: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};

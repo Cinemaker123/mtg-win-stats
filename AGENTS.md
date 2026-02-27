@@ -499,7 +499,7 @@ export function TrackerView({ player, onBack, isDark }) { ... }
 | | 9 | ~~Split `TrackerView`~~ ✅ | Large | Done |
 | | 10 | ~~Create UI primitives~~ ✅ | Medium | Done |
 | **4: Polish** | 11 | ~~Standardize import order~~ ✅ | Small | Done |
-| | 12 | Add PropTypes/JSDoc | Medium |
+| | 12 | ~~Add PropTypes/JSDoc~~ ✅ | Medium | Done |
 | | 13 | Accessibility improvements | Medium |
 | | 14 | Optimize Supabase | Small |
 

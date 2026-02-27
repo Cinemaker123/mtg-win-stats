@@ -1,7 +1,16 @@
+import PropTypes from "prop-types";
 import { Logo } from "../../components/Logo.jsx";
+import { DeckPropType } from "../../hooks/useDecks.js";
 import styles from "../TrackerView.module.css";
 import { WinLossBar } from "./WinLossBar.jsx";
 
+/**
+ * Decks tab showing win/loss controls for each deck
+ * @param {Object} props
+ * @param {Deck[]} props.decks - List of decks
+ * @param {Function} props.updateDeck - Update a deck by index
+ * @param {Function} props.deleteDeck - Delete a deck by index
+ */
 export function DecksTab({ decks, updateDeck, deleteDeck }) {
   return (
     <>
@@ -33,3 +42,9 @@ export function DecksTab({ decks, updateDeck, deleteDeck }) {
     </>
   );
 }
+
+DecksTab.propTypes = {
+  decks: PropTypes.arrayOf(DeckPropType).isRequired,
+  updateDeck: PropTypes.func.isRequired,
+  deleteDeck: PropTypes.func.isRequired,
+};

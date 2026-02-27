@@ -1,8 +1,15 @@
+import PropTypes from "prop-types";
 import { Logo } from "../../components/Logo.jsx";
 import { StatCard } from "../../components/StatCard.jsx";
 import { winRate, getDynamicStats, getWinRateTier } from "../../utils/stats.js";
+import { DeckPropType } from "../../hooks/useDecks.js";
 import styles from "../TrackerView.module.css";
 
+/**
+ * Dashboard tab showing statistics and deck overview
+ * @param {Object} props
+ * @param {Deck[]} props.decks - List of decks
+ */
 export function DashboardTab({ decks }) {
   const stats = getDynamicStats(decks);
 
@@ -67,3 +74,7 @@ export function DashboardTab({ decks }) {
     </>
   );
 }
+
+DashboardTab.propTypes = {
+  decks: PropTypes.arrayOf(DeckPropType).isRequired,
+};

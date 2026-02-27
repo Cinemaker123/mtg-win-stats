@@ -1,10 +1,30 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import { getDecks, saveDecks } from "../supabaseClient.js";
+
+/**
+ * @typedef {Object} Deck
+ * @property {string} name - Deck name
+ * @property {number} wins - Number of wins
+ * @property {number} losses - Number of losses
+ */
+
+/**
+ * @typedef {Object} UseDecksReturn
+ * @property {Deck[]} decks - Current deck list
+ * @property {boolean} loading - Whether data is being loaded
+ * @property {boolean} loaded - Whether initial load completed
+ * @property {string|null} error - Error message if any
+ * @property {Function} clearError - Clear error state
+ * @property {Function} updateDeck - Update a specific deck by index
+ * @property {Function} addDecks - Add or merge new decks
+ * @property {Function} deleteDeck - Delete a deck by index
+ */
 
 /**
  * Hook for managing deck data with Supabase persistence
  * @param {string} player - Player identifier
- * @returns {Object} Deck state and operations
+ * @returns {UseDecksReturn} Deck state and operations
  */
 export function useDecks(player) {
   const [decks, setDecks] = useState([]);
@@ -85,3 +105,10 @@ export function useDecks(player) {
     deleteDeck,
   };
 }
+
+// PropTypes for Deck object
+export const DeckPropType = PropTypes.shape({
+  name: PropTypes.string.isRequired,
+  wins: PropTypes.number.isRequired,
+  losses: PropTypes.number.isRequired,
+});
