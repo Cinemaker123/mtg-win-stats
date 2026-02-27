@@ -497,7 +497,7 @@ export function TrackerView({ player, onBack, isDark }) { ... }
 | | 7 | ~~CSS Modules Cleanup~~ ✅ | Small | Done (handled during migration) |
 | **3: Architecture** | 8 | ~~Extract `useDecks` hook~~ ✅ | Medium | Done |
 | | 9 | ~~Split `TrackerView`~~ ✅ | Large | Done |
-| | 10 | Create UI primitives | Medium |
+| | 10 | ~~Create UI primitives~~ ✅ | Medium | Done |
 | **4: Polish** | 11 | Standardize import order | Small |
 | | 12 | Add PropTypes/JSDoc | Medium |
 | | 13 | Accessibility improvements | Medium |
