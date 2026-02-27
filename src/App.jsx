@@ -1,10 +1,20 @@
+// React
 import { useState, useEffect, useRef } from "react";
+
+// Hooks
 import { useIsMobile } from "./hooks/useIsMobile.js";
 import { useDarkMode } from "./hooks/useDarkMode.js";
+
+// Components
 import { RollingD20 } from "./components/RollingD20.jsx";
+
+// Views
 import { LandingPage } from "./views/LandingPage.jsx";
 import { TrackerView } from "./views/TrackerView.jsx";
 import { GlobalStatsView } from "./views/GlobalStatsView.jsx";
+
+// Styles
+import styles from "./App.module.css";
 
 export default function App() {
   const [view, setView] = useState('landing'); // 'landing', 'tracker', 'global'
@@ -58,7 +68,7 @@ export default function App() {
   }
 
   return (
-    <div onClick={handleClick} style={{ height: "100dvh" }}>
+    <div onClick={handleClick} className={styles.root}>
       {view === 'landing' && (
         <LandingPage 
           onSelectPlayer={handleSelectPlayer}

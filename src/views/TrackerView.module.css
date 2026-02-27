@@ -161,6 +161,20 @@
   color: var(--color-text-muted);
 }
 
+.emptyLogoWrapper {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.deckListTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-text);
+  margin-bottom: 10px;
+}
+
 .statsList {
   display: flex;
   flex-direction: column;

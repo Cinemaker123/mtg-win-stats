@@ -1,7 +1,18 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import { PLAYER_GRADIENTS, PLAYER_COLORS } from "../../utils/stats.js";
 import styles from "../TrackerView.module.css";
 
+/**
+ * Import panel for bulk importing deck data
+ * Supports German format: "Gewonnen IIII" / "Verloren 3"
+ * @param {Object} props
+ * @param {string} props.player - Player identifier
+ * @param {Function} props.addDecks - Callback to add imported decks
+ * @param {Function} props.onImport - Callback with import result message
+ * @param {boolean} props.isOpen - Whether the panel is expanded
+ * @param {Function} props.setIsOpen - Callback to toggle panel state
+ */
 export function ImportPanel({ player, addDecks, onImport, isOpen, setIsOpen }) {
   const [importText, setImportText] = useState("");
   const accentColor = PLAYER_COLORS[player];
@@ -91,3 +102,11 @@ export function ImportPanel({ player, addDecks, onImport, isOpen, setIsOpen }) {
     </div>
   );
 }
+
+ImportPanel.propTypes = {
+  player: PropTypes.oneOf(["baum", "mary", "pascal", "wewy"]).isRequired,
+  addDecks: PropTypes.func.isRequired,
+  onImport: PropTypes.func.isRequired,
+  isOpen: PropTypes.bool.isRequired,
+  setIsOpen: PropTypes.func.isRequired,
+};

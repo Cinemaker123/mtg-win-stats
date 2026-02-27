@@ -1,6 +1,13 @@
+import PropTypes from "prop-types";
 import d20Image from "../D20_icon.png";
 import styles from './D20.module.css';
 
+/**
+ * D20 die display component with number overlay
+ * @param {Object} props
+ * @param {number} props.number - The number to display (1-20)
+ * @param {boolean} props.showResult - Whether to show the number or "?"
+ */
 export function D20({ number, showResult }) {
   return (
     <div className={styles.container}>
@@ -35,3 +42,8 @@ export function D20({ number, showResult }) {
     </div>
   );
 }
+
+D20.propTypes = {
+  number: PropTypes.number.isRequired,
+  showResult: PropTypes.bool.isRequired,
+};

@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import styles from './IconButton.module.css';
 
 /**
@@ -33,3 +34,13 @@ export function IconButton({
     </button>
   );
 }
+
+IconButton.propTypes = {
+  children: PropTypes.node.isRequired,
+  onClick: PropTypes.func,
+  variant: PropTypes.oneOf(['default', 'danger', 'primary']),
+  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  disabled: PropTypes.bool,
+  title: PropTypes.string,
+  ariaLabel: PropTypes.string,
+};

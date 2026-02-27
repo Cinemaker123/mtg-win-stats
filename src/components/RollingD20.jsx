@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
 import { D20 } from "./D20.jsx";
 
+/**
+ * Rolling D20 animation component
+ * Animates a D20 die rolling across the screen
+ * @param {Object} props
+ * @param {Function} props.onLanded - Callback when animation completes
+ * @param {number} props.screenWidth - Screen width for animation calculation
+ */
 export function RollingD20({ onLanded, screenWidth }) {
   const [position, setPosition] = useState({ x: -156, y: 150, rotation: 0 });
   const [finalNumber, setFinalNumber] = useState(() => Math.floor(Math.random() * 20) + 1);
@@ -78,3 +86,8 @@ export function RollingD20({ onLanded, screenWidth }) {
     </div>
   );
 }
+
+RollingD20.propTypes = {
+  onLanded: PropTypes.func.isRequired,
+  screenWidth: PropTypes.number.isRequired,
+};

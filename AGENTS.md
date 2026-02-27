@@ -18,13 +18,14 @@ A **React + Vite application** for tracking Magic: The Gathering deck performanc
 ```
 mtg win stats vercel/
 ├── src/
-│   ├── App.jsx                    # Main router
+│   ├── App.jsx                    # Main router ✅
+│   ├── App.module.css             # App root styles ✅
 │   ├── components/
-│   │   ├── D20.jsx               # D20 die display component
-│   │   ├── DarkModeToggle.jsx    # Dark mode toggle button
-│   │   ├── Logo.jsx              # MTG logo component
-│   │   ├── RollingD20.jsx        # D20 rolling animation
-│   │   ├── StatCard.jsx          # Reusable statistics card
+│   │   ├── D20.jsx               # D20 die display component ✅
+│   │   ├── DarkModeToggle.jsx    # Dark mode toggle button ✅
+│   │   ├── Logo.jsx              # MTG logo component ✅
+│   │   ├── RollingD20.jsx        # D20 rolling animation ✅
+│   │   ├── StatCard.jsx          # Reusable statistics card ✅
 │   │   └── primitives/           # UI primitives ✅
 │   │       ├── Button.jsx
 │   │       ├── IconButton.jsx
@@ -176,6 +177,7 @@ Completed in 2026-02:
 | **CSS Modules** | Migrated all inline styles to CSS Modules with CSS custom properties |
 | **Architecture** | Extracted useDecks hook, split TrackerView into sub-components, created UI primitives |
 | **Polish** | Standardized imports, added PropTypes/JSDoc, optimized Supabase bulk operations |
+| **Cleanup** | Removed duplicate `supabase.js` file, added PropTypes to all components, created `App.module.css` |
 
 See git history for detailed commits:
 ```bash

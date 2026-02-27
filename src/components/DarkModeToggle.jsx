@@ -1,5 +1,12 @@
+import PropTypes from "prop-types";
 import styles from './DarkModeToggle.module.css';
 
+/**
+ * Dark mode toggle button with sun/moon icons
+ * @param {Object} props
+ * @param {boolean} props.isDark - Current dark mode state
+ * @param {Function} props.onToggle - Callback to toggle dark mode
+ */
 export function DarkModeToggle({ isDark, onToggle }) {
   return (
     <button
@@ -29,3 +36,8 @@ export function DarkModeToggle({ isDark, onToggle }) {
     </button>
   );
 }
+
+DarkModeToggle.propTypes = {
+  isDark: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
+};

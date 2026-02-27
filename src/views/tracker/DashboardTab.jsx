@@ -22,7 +22,7 @@ export function DashboardTab({ decks }) {
 
       {stats.length === 0 ? (
         <div className={styles.emptyState}>
-          <div style={{ marginBottom: 16, display: "flex", justifyContent: "center" }}>
+          <div className={styles.emptyLogoWrapper}>
             <Logo size={80} />
           </div>
           <div className={styles.emptyTitle}>Noch keine Daten</div>
@@ -36,7 +36,7 @@ export function DashboardTab({ decks }) {
 
       {decks.length > 0 && (
         <>
-          <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "var(--color-text)", marginBottom: 10 }}>
+          <div className={styles.deckListTitle}>
             Alle Decks
           </div>
           <div className={styles.card}>
