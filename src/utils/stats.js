@@ -16,13 +16,6 @@ export const PLAYER_GRADIENTS = {
   wewy: "linear-gradient(135deg, #f39c12, #f1c40f)",
 };
 
-export const SAMPLE_DECKS = [
-  { name: "Azorius Control", wins: 12, losses: 5 },
-  { name: "Mono Red Burn", wins: 8, losses: 9 },
-  { name: "Golgari Midrange", wins: 15, losses: 7 },
-  { name: "Simic Ramp", wins: 6, losses: 11 },
-];
-
 export function getStorageKey(player) {
   return `mtg-decks-${player}`;
 }
@@ -30,6 +23,48 @@ export function getStorageKey(player) {
 export function winRate(d) {
   const total = d.wins + d.losses;
   return total === 0 ? 0 : d.wins / total;
+}
+
+/**
+ * 4-player Commander pod win rate tiers
+ * >50% = Legendary (2x+ the 25% random average)
+ * 25-50% = Good (above the 1-in-4 baseline)
+ * <25% = Struggling (below statistical average)
+ */
+export const WIN_RATE_TIERS = {
+  LEGENDARY: { min: 0.5, color: "#1e8449", icon: "🏆", label: "Legendär" },
+  GOOD: { min: 0.25, color: "#2ecc71", icon: "📈", label: "Gut" },
+  STRUGGLING: { min: 0, color: "#e74c3c", icon: "📉", label: "Ausbaufähig" },
+};
+
+/**
+ * Get tier info for a win rate (0-1 or 0-100)
+ * @param {number} wr - Win rate as decimal (0.5) or percentage (50)
+ * @returns {{tier: string, color: string, icon: string, label: string, gradient: string}}
+ */
+export function getWinRateTier(wr) {
+  // Normalize to 0-1 range
+  const normalized = wr > 1 ? wr / 100 : wr;
+
+  if (normalized > WIN_RATE_TIERS.LEGENDARY.min) {
+    return {
+      tier: "legendary",
+      ...WIN_RATE_TIERS.LEGENDARY,
+      gradient: "linear-gradient(90deg, #1e8449, #27ae60)",
+    };
+  }
+  if (normalized >= WIN_RATE_TIERS.GOOD.min) {
+    return {
+      tier: "good",
+      ...WIN_RATE_TIERS.GOOD,
+      gradient: "linear-gradient(90deg, #27ae60, #2ecc71)",
+    };
+  }
+  return {
+    tier: "struggling",
+    ...WIN_RATE_TIERS.STRUGGLING,
+    gradient: "linear-gradient(90deg, #e74c3c, #f39c12)",
+  };
 }
 
 export function getDynamicStats(decks) {
@@ -52,45 +87,35 @@ export function getDynamicStats(decks) {
 
   const stats = [];
 
-  // 4-player pod context: 25% = average (1 in 4 wins)
-  // <25% = struggling (red), 25-50% = good (green), >50% = legendary (dark green)
-  const wrPercent = overallWR * 100;
-  let wrAccent, wrIcon;
-  if (wrPercent > 50) {
-    wrAccent = "#1e8449"; // Dark green - legendary (2x+ average)
-    wrIcon = "🏆";
-  } else if (wrPercent >= 25) {
-    wrAccent = "#2ecc71"; // Green - good (above 1-in-4 baseline)
-    wrIcon = "📈";
-  } else {
-    wrAccent = "#e74c3c"; // Red - struggling (below average)
-    wrIcon = "📉";
-  }
-  
+  // Use consolidated win rate tier logic
+  const tier = getWinRateTier(overallWR);
+
   stats.push({
     label: "Gesamt-Winrate",
-    value: `${Math.round(wrPercent)}%`,
+    value: `${Math.round(overallWR * 100)}%`,
     sub: `${totalWins}W – ${totalGames - totalWins}L · ${decks.length} Deck${decks.length !== 1 ? "s" : ""}`,
-    accent: wrAccent,
-    icon: wrIcon,
+    accent: tier.color,
+    icon: tier.icon,
   });
 
   if (best && (best.wins + best.losses) >= 2) {
+    const bestTier = getWinRateTier(winRate(best));
     stats.push({
       label: "Bestes Deck",
       value: best.name,
       sub: `${Math.round(winRate(best) * 100)}% Winrate · ${best.wins}W ${best.losses}L`,
-      accent: "#2ecc71",
+      accent: bestTier.color,
       icon: "🚀",
     });
   }
 
   if (worst && (worst.wins + worst.losses) >= 2 && worst !== best) {
+    const worstTier = getWinRateTier(winRate(worst));
     stats.push({
       label: "Ausbaufähig",
       value: worst.name,
       sub: `${Math.round(winRate(worst) * 100)}% Winrate · ${worst.wins}W ${worst.losses}L`,
-      accent: "#e74c3c",
+      accent: worstTier.color,
       icon: "🔧",
     });
   }

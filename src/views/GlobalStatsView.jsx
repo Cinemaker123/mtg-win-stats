@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useIsMobile } from "../hooks/useIsMobile.js";
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { getDecks } from "../supabaseClient.js";
-import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, getWinRateTier } from "../utils/stats.js";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   const isMobile = useIsMobile();
@@ -275,9 +275,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 16, 
-                        // 4-player pod: <25% red, 25-50% green, >50% dark green
-                        color: parseFloat(p.winRate) > 50 ? "#1e8449" : parseFloat(p.winRate) >= 25 ? "#27ae60" : "#e74c3c" }}>
+                      <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 16,
+                        color: getWinRateTier(parseFloat(p.winRate)).color }}>
                         {p.winRate}%
                       </div>
                       <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>
@@ -335,9 +334,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                         </div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 14, 
-                          // 4-player pod: <25% red, 25-50% green, >50% dark green
-                          color: parseFloat(deck.winRate) > 50 ? "#1e8449" : parseFloat(deck.winRate) >= 25 ? "#27ae60" : "#e74c3c" }}>
+                        <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: 14,
+                          color: getWinRateTier(parseFloat(deck.winRate)).color }}>
                           {deck.winRate}%
                         </div>
                         <div style={{ fontSize: 10, color: isDark ? "#888" : "#888" }}>

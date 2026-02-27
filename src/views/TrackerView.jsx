@@ -4,7 +4,7 @@ import { Logo } from "../components/Logo.jsx";
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { StatCard } from "../components/StatCard.jsx";
 import { getDecks, saveDecks } from "../supabaseClient.js";
-import { SAMPLE_DECKS, PLAYER_COLORS, PLAYER_GRADIENTS, winRate, getDynamicStats } from "../utils/stats.js";
+import { PLAYER_COLORS, PLAYER_GRADIENTS, winRate, getDynamicStats, getWinRateTier } from "../utils/stats.js";
 
 function Btn({ onClick, bg, color, hoverBg, children, title }) {
   return (
@@ -104,7 +104,7 @@ function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onDelete, 
 }
 
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
-  const [decks, setDecks] = useState(SAMPLE_DECKS);
+  const [decks, setDecks] = useState([]);
   const [tab, setTab] = useState("dashboard");
   const [importText, setImportText] = useState("");
   const [importMsg, setImportMsg] = useState("");
@@ -319,12 +319,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                           <div style={{ height: 8, background: isDark ? "#353545" : "#f0f0f0", borderRadius: 99, overflow: "hidden" }}>
                             <div style={{
                               height: "100%", width: `${wr*100}%`,
-                              // 4-player pod: <25% red (struggling), 25-50% green (good), >50% dark green (legendary)
-                              background: wr > 0.5 
-                                ? "linear-gradient(90deg,#1e8449,#27ae60)" 
-                                : wr >= 0.25 
-                                  ? "linear-gradient(90deg,#27ae60,#2ecc71)"
-                                  : "linear-gradient(90deg,#e74c3c,#e67e22)",
+                              background: getWinRateTier(wr).gradient,
                               borderRadius: 99, transition: "width 0.5s cubic-bezier(.4,0,.2,1)",
                             }}/>
                           </div>
