@@ -17,16 +17,12 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
   const total = deck.wins + deck.losses;
   const winPct = total === 0 ? 50 : (deck.wins / total) * 100;
   const lossPct = 100 - winPct;
-  const wrColor = total === 0 ? "var(--color-text-muted)" : (winPct >= 50 ? "var(--color-success)" : "var(--color-error)");
 
   return (
     <div className={styles.deckCard}>
-      {/* Row 1: Name + WR% + delete */}
+      {/* Row 1: Name + delete */}
       <div className={styles.deckHeader}>
         <div className={styles.deckName}>{deck.name}</div>
-        <div className={styles.deckWinRate} style={{ color: wrColor }}>
-          {total === 0 ? "—" : `${Math.round(winPct)}%`}
-        </div>
         <button
           onClick={onDelete}
           className={styles.deleteButton}

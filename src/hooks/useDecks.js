@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { getDecks, saveDecks } from "../supabaseClient.js";
+import { getDecks, saveDecks, deleteDeck as deleteDeckFromDB } from "../supabaseClient.js";
 
 /**
  * @typedef {Object} Deck
@@ -85,9 +85,19 @@ export function useDecks(player) {
     });
   }, []);
 
-  const deleteDeck = useCallback((idx) => {
+  const deleteDeck = useCallback(async (idx) => {
+    const deckToDelete = decks[idx];
+    if (deckToDelete) {
+      try {
+        await deleteDeckFromDB(player, deckToDelete.name);
+      } catch (e) {
+        console.error("Failed to delete from Supabase:", e);
+        setError("Löschen fehlgeschlagen. Bitte erneut versuchen.");
+        return;
+      }
+    }
     setDecks(ds => ds.filter((_, i) => i !== idx));
-  }, []);
+  }, [decks, player]);
 
   const clearError = useCallback(() => {
     setError(null);
