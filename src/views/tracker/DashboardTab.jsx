@@ -15,11 +15,6 @@ export function DashboardTab({ decks }) {
 
   return (
     <>
-      <div className={styles.sectionTitle}>
-        <div className={styles.sectionTitleRow}>Dashboard</div>
-        <div className={styles.sectionSubtitle}>Deine MTG-Performance auf einen Blick</div>
-      </div>
-
       {stats.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyLogoWrapper}>

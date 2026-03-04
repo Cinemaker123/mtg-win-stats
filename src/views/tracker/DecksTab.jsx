@@ -14,17 +14,12 @@ import { WinLossBar } from "./WinLossBar.jsx";
 export function DecksTab({ decks, updateDeck, deleteDeck }) {
   return (
     <>
-      <div className={styles.sectionTitle}>
-        <div className={styles.sectionTitleRow}>Decks</div>
-        <div className={styles.sectionSubtitle}>Tippe auf +, um einen Sieg oder eine Niederlage zu erfassen</div>
-      </div>
-      
       {decks.length === 0 && (
         <div className={styles.emptyState} style={{ padding: "40px 20px" }}>
           <div style={{ marginBottom: 16, display: "flex", justifyContent: "center" }}>
             <Logo size={60} />
           </div>
-          <div className={styles.emptyTitle}>Noch keine Decks — benutze den Import unten!</div>
+          <div className={styles.emptyTitle}>Noch keine Decks</div>
         </div>
       )}
       

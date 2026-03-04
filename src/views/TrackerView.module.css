@@ -363,37 +363,15 @@
 
 /* Import panel */
 .importPanel {
-  position: fixed;
-  left: 0;
-  right: 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-  z-index: 90;
+  margin-top: 16px;
+  border-radius: var(--radius-lg);
 }
 
 .importPanelDark {
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
-}
-
-.importToggle {
-  width: 100%;
-  border: none;
-  background: transparent;
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.importToggleIcon {
-  font-size: 18px;
-  display: inline-block;
-  transition: transform var(--transition-base);
 }
 
 .importContent {

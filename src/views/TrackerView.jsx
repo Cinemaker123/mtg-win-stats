@@ -32,12 +32,10 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   const { decks, loading, error, updateDeck, addDecks, deleteDeck } = useDecks(player);
   const [tab, setTab] = useState("dashboard");
   const [importMsg, setImportMsg] = useState(error || "");
-  const [importOpen, setImportOpen] = useState(false);
   const isMobile = useIsMobile();
   const px = isMobile ? 12 : 24;
   const accentColor = PLAYER_COLORS[player];
   const TAB_H = 58;
-  const IMPORT_H = importOpen ? (isMobile ? 220 : 200) : 44;
 
   // Sync external error with importMsg
   useEffect(() => {
@@ -86,34 +84,27 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
         {/* Scrollable main content */}
         <div 
           className={isMobile ? styles.contentMobile : styles.content}
-          style={{ paddingBottom: tab === "data" ? IMPORT_H + TAB_H + 16 : TAB_H + 16 }}
+          style={{ paddingBottom: TAB_H + 16 }}
         >
           {tab === "dashboard" && <DashboardTab decks={decks} />}
           
           {tab === "data" && (
-            <DecksTab 
-              decks={decks} 
-              updateDeck={updateDeck} 
-              deleteDeck={deleteDeck} 
-            />
+            <>
+              <DecksTab 
+                decks={decks} 
+                updateDeck={updateDeck} 
+                deleteDeck={deleteDeck} 
+              />
+              <div className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}>
+                <ImportPanel 
+                  player={player} 
+                  addDecks={addDecks} 
+                  onImport={handleImport}
+                />
+              </div>
+            </>
           )}
         </div>
-
-        {/* Import Panel */}
-        {tab === "data" && (
-          <div 
-            className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}
-            style={{ bottom: TAB_H }}
-          >
-            <ImportPanel 
-              player={player} 
-              addDecks={addDecks} 
-              onImport={handleImport}
-              isOpen={importOpen}
-              setIsOpen={setImportOpen}
-            />
-          </div>
-        )}
 
         {/* Tab Bar */}
         <div className={styles.tabBar}>
