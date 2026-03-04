@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { PLAYER_GRADIENTS, PLAYER_COLORS } from "../../utils/stats.js";
 import styles from "../TrackerView.module.css";
@@ -10,11 +10,19 @@ import styles from "../TrackerView.module.css";
  * @param {string} props.player - Player identifier
  * @param {Function} props.addDecks - Callback to add imported decks
  * @param {Function} props.onImport - Callback with import result message
+ * @param {boolean} props.autoFocus - Whether to auto-focus input when no decks exist
  */
-export function ImportPanel({ player, addDecks, onImport }) {
+export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
   const [importText, setImportText] = useState("");
   const [singleDeckName, setSingleDeckName] = useState("");
+  const inputRef = useRef(null);
   const accentColor = PLAYER_COLORS[player];
+
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [autoFocus]);
 
   const parseImport = () => {
     const text = importText.trim();
@@ -80,6 +88,7 @@ export function ImportPanel({ player, addDecks, onImport }) {
           onFocus={e => e.target.style.borderColor = accentColor}
           onBlur={e => e.target.style.borderColor = ""}
           onKeyDown={e => e.key === "Enter" && addSingleDeck()}
+          ref={inputRef}
         />
         <button
           onClick={addSingleDeck}
@@ -92,7 +101,7 @@ export function ImportPanel({ player, addDecks, onImport }) {
             boxShadow: `0 4px 14px ${accentColor}50`,
           }}
         >
-          +
+          Deck hinzufügen
         </button>
       </div>
 
@@ -130,4 +139,5 @@ ImportPanel.propTypes = {
   player: PropTypes.oneOf(["baum", "mary", "pascal", "wewy"]).isRequired,
   addDecks: PropTypes.func.isRequired,
   onImport: PropTypes.func.isRequired,
+  autoFocus: PropTypes.bool,
 };

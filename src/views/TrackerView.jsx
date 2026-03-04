@@ -42,6 +42,13 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
     if (error) setImportMsg(error);
   }, [error]);
 
+  // Auto-switch to Decks tab when there are no decks
+  useEffect(() => {
+    if (!loading && decks.length === 0) {
+      setTab("data");
+    }
+  }, [loading, decks.length]);
+
   const handleImport = (msg) => {
     setImportMsg(msg);
     setTimeout(() => setImportMsg(""), 3000);
@@ -100,6 +107,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                   player={player} 
                   addDecks={addDecks} 
                   onImport={handleImport}
+                  autoFocus={decks.length === 0}
                 />
               </div>
             </>

@@ -23,13 +23,11 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
         <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
       </div>
 
-      {/* Title */}
+      {/* Logo */}
       <div className={isMobile ? styles.headerMobile : styles.header}>
         <div className={styles.logoWrapper}>
           <Logo size={isMobile ? 80 : 100} />
         </div>
-        <h1 className={isMobile ? styles.titleMobile : styles.title}>MTG Tracker</h1>
-        <p className={isMobile ? styles.subtitleMobile : styles.subtitle}>Wähle dein Profil</p>
       </div>
 
       {/* Player Grid */}
