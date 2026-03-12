@@ -156,13 +156,6 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               <div className={styles.sectionTitle}>Gesamtübersicht</div>
               <div className={isMobile ? styles.statsGridMobile : styles.statsGrid}>
                 <StatCard 
-                  label="Spiele insgesamt" 
-                  value={stats.totalGamesAll} 
-                  sub={`${stats.totalWinsAll} Siege / ${stats.totalLossesAll} Niederlagen`}
-                  accent="#667eea" 
-                  icon="🎮"
-                />
-                <StatCard 
                   label="Gesamt-Winrate" 
                   value={`${stats.overallWinRate}%`}
                   sub={stats.totalGamesAll > 0 ? `${(stats.totalWinsAll / stats.totalGamesAll * 100) > 50 ? "🔥 Über 50%" : "📈 Unter 50%"}` : "Noch keine Spiele"}
