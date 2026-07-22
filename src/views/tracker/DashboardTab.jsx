@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import { Logo } from "../../components/Logo.jsx";
 import { StatCard } from "../../components/StatCard.jsx";
-import { winRate, getDynamicStats, getWinRateTier } from "../../utils/stats.js";
+import { winRate, adjustedWinRate, getDynamicStats, getWinRateTier } from "../../utils/stats.js";
 import { DeckPropType } from "../../hooks/useDecks.js";
 import styles from "../TrackerView.module.css";
 
@@ -43,7 +43,7 @@ export function DashboardTab({ decks }) {
                 </div>
               ))}
             </div>
-            {[...decks].sort((a,b) => winRate(b)-winRate(a)).map((d,i,arr) => {
+            {[...decks].sort((a,b) => adjustedWinRate(b)-adjustedWinRate(a)).map((d,i,arr) => {
               const wr = winRate(d);
               return (
                 <div key={i} className={styles.deckBar} style={{ marginBottom: i < arr.length-1 ? 12 : 0 }}>

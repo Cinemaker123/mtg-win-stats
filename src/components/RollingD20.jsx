@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { D20 } from "./D20.jsx";
+import { MOBILE_BREAKPOINT } from "../utils/stats.js";
 
 /**
  * Rolling D20 animation component
@@ -13,7 +14,7 @@ export function RollingD20({ onLanded, screenWidth }) {
   const [position, setPosition] = useState({ x: -156, y: 150, rotation: 0 });
   const [finalNumber] = useState(() => Math.floor(Math.random() * 20) + 1);
   const [showResult, setShowResult] = useState(false);
-  const isMobile = screenWidth < 640;
+  const isMobile = screenWidth < MOBILE_BREAKPOINT;
   const duration = isMobile ? 1400 : 2200;
   const animRef = useRef(null);
 

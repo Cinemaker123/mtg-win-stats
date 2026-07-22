@@ -16,13 +16,36 @@ export const PLAYER_GRADIENTS = {
   wewy: "linear-gradient(135deg, #f39c12, #f1c40f)",
 };
 
-export function getStorageKey(player) {
-  return `mtg-decks-${player}`;
-}
+// Viewport width below which the mobile layout is used
+export const MOBILE_BREAKPOINT = 640;
 
+/**
+ * Raw win rate of a deck (0-1)
+ * @param {{wins: number, losses: number}} d - Deck object
+ * @returns {number} Win rate between 0 and 1
+ */
 export function winRate(d) {
   const total = d.wins + d.losses;
   return total === 0 ? 0 : d.wins / total;
+}
+
+// Bayesian adjustment prior: every deck is treated as if it had already
+// played PRIOR_GAMES imaginary games at the 4-player pod baseline (25%).
+// Unproven decks therefore regress toward the random average instead of
+// topping the rankings on tiny samples (e.g. a lucky 2-0).
+export const PRIOR_GAMES = 5;
+export const PRIOR_WIN_RATE = 0.25;
+
+/**
+ * Bayesian-adjusted win rate for ranking decks (0-1)
+ * @param {{wins: number, losses: number}} d - Deck object
+ * @param {number} [priorGames] - Number of imaginary prior games
+ * @param {number} [priorWR] - Win rate of the imaginary prior games
+ * @returns {number} Adjusted win rate between 0 and 1
+ */
+export function adjustedWinRate(d, priorGames = PRIOR_GAMES, priorWR = PRIOR_WIN_RATE) {
+  const total = d.wins + d.losses;
+  return (d.wins + priorGames * priorWR) / (total + priorGames);
 }
 
 /**
@@ -38,22 +61,19 @@ export const WIN_RATE_TIERS = {
 };
 
 /**
- * Get tier info for a win rate (0-1 or 0-100)
- * @param {number} wr - Win rate as decimal (0.5) or percentage (50)
+ * Get tier info for a win rate
+ * @param {number} wr - Win rate as decimal in the 0-1 range (e.g. 0.5 = 50%)
  * @returns {{tier: string, color: string, icon: string, label: string, gradient: string}}
  */
 export function getWinRateTier(wr) {
-  // Normalize to 0-1 range
-  const normalized = wr > 1 ? wr / 100 : wr;
-
-  if (normalized > WIN_RATE_TIERS.LEGENDARY.min) {
+  if (wr > WIN_RATE_TIERS.LEGENDARY.min) {
     return {
       tier: "legendary",
       ...WIN_RATE_TIERS.LEGENDARY,
       gradient: "linear-gradient(90deg, #1e8449, #27ae60)",
     };
   }
-  if (normalized >= WIN_RATE_TIERS.GOOD.min) {
+  if (wr >= WIN_RATE_TIERS.GOOD.min) {
     return {
       tier: "good",
       ...WIN_RATE_TIERS.GOOD,
@@ -74,7 +94,8 @@ export function getDynamicStats(decks) {
   const overallWR = totalGames === 0 ? 0 : totalWins / totalGames;
 
   const playedDecks = decks.filter(d => d.wins + d.losses > 0);
-  const sortedByWR = [...playedDecks].sort((a, b) => winRate(b) - winRate(a));
+  // Rank by bayesian-adjusted win rate so small samples don't dominate
+  const sortedByWR = [...playedDecks].sort((a, b) => adjustedWinRate(b) - adjustedWinRate(a));
   const best = sortedByWR[0];
   const worst = sortedByWR[sortedByWR.length - 1];
 

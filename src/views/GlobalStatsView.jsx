@@ -11,7 +11,7 @@ import { StatCard } from "../components/StatCard.jsx";
 
 // Utils / API
 import { supabase, getDecks } from "../supabaseClient.js";
-import { getWinRateTier, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+import { getWinRateTier, adjustedWinRate, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
@@ -71,15 +71,16 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   }, [loadAll]);
 
   // Calculate statistics
+  // Win rates are kept as 0-1 numbers throughout; formatted only at render time
   const stats = useMemo(() => {
     const playerStats = PLAYERS.map(player => {
       const decks = allData[player] || [];
       const totalGames = decks.reduce((s, d) => s + d.wins + d.losses, 0);
       const totalWins = decks.reduce((s, d) => s + d.wins, 0);
       const totalLosses = decks.reduce((s, d) => s + d.losses, 0);
-      const winRate = totalGames === 0 ? 0 : (totalWins / totalGames * 100).toFixed(1);
+      const winRate = totalGames === 0 ? 0 : totalWins / totalGames;
       const deckCount = decks.length;
-      
+
       return {
         player,
         totalGames,
@@ -91,28 +92,36 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         gradient: PLAYER_GRADIENTS[player],
       };
     });
+    // Sorted once here, not during render
+    playerStats.sort((a, b) => b.winRate - a.winRate);
 
     const totalGamesAll = playerStats.reduce((s, p) => s + p.totalGames, 0);
     const totalWinsAll = playerStats.reduce((s, p) => s + p.totalWins, 0);
     const totalLossesAll = playerStats.reduce((s, p) => s + p.totalLosses, 0);
-    const overallWinRate = totalGamesAll === 0 ? 0 : (totalWinsAll / totalGamesAll * 100).toFixed(1);
+    const overallWinRate = totalGamesAll === 0 ? 0 : totalWinsAll / totalGamesAll;
 
-    // Best deck across all players
-    let bestDeck = null;
-    let bestWinRate = -1;
+    // All played decks, ranked by bayesian-adjusted win rate so small
+    // samples regress toward the 25% pod baseline
+    const allDecks = [];
     PLAYERS.forEach(player => {
       const decks = allData[player] || [];
       decks.forEach(deck => {
         const total = deck.wins + deck.losses;
         if (total > 0) {
-          const wr = deck.wins / total;
-          if (wr > bestWinRate) {
-            bestWinRate = wr;
-            bestDeck = { ...deck, player, winRate: (wr * 100).toFixed(1) };
-          }
+          allDecks.push({
+            ...deck,
+            player,
+            totalGames: total,
+            winRate: deck.wins / total,
+            adjusted: adjustedWinRate(deck),
+          });
         }
       });
     });
+    allDecks.sort((a, b) => b.adjusted - a.adjusted);
+
+    // Best deck across all players (adjusted ranking)
+    const bestDeck = allDecks[0] || null;
 
     // Most played deck
     let mostPlayed = null;
@@ -127,24 +136,6 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         }
       });
     });
-
-    // All decks for ranking
-    const allDecks = [];
-    PLAYERS.forEach(player => {
-      const decks = allData[player] || [];
-      decks.forEach(deck => {
-        const total = deck.wins + deck.losses;
-        if (total > 0) {
-          allDecks.push({
-            ...deck,
-            player,
-            totalGames: total,
-            winRate: (deck.wins / total * 100).toFixed(1),
-          });
-        }
-      });
-    });
-    allDecks.sort((a, b) => b.wins / b.totalGames - a.wins / a.totalGames);
 
     return {
       playerStats,
@@ -191,15 +182,15 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               <div className={isMobile ? styles.statsGridMobile : styles.statsGrid}>
                 <StatCard 
                   label="Gesamt-Winrate" 
-                  value={`${stats.overallWinRate}%`}
-                  sub={stats.totalGamesAll > 0 ? `${(stats.totalWinsAll / stats.totalGamesAll * 100) > 50 ? "🔥 Über 50%" : "📈 Unter 50%"}` : "Noch keine Spiele"}
-                  accent={stats.overallWinRate >= 50 ? "#27ae60" : "#e74c3c"} 
+                  value={`${(stats.overallWinRate * 100).toFixed(1)}%`}
+                  sub={stats.totalGamesAll > 0 ? `${stats.overallWinRate > 0.5 ? "🔥 Über 50%" : "📈 Unter 50%"}` : "Noch keine Spiele"}
+                  accent={stats.overallWinRate >= 0.5 ? "#27ae60" : "#e74c3c"} 
                   icon="📈"
                 />
                 <StatCard 
                   label="Bestes Deck" 
                   value={stats.bestDeck ? stats.bestDeck.name.charAt(0).toUpperCase() + stats.bestDeck.name.slice(1) : "-"}
-                  sub={stats.bestDeck ? `${stats.bestDeck.winRate}% von ${stats.bestDeck.player}` : "Noch keine Daten"}
+                  sub={stats.bestDeck ? `${(stats.bestDeck.winRate * 100).toFixed(1)}% von ${stats.bestDeck.player}` : "Noch keine Daten"}
                   accent="#f39c12" 
                   icon="🏆"
                 />
@@ -217,7 +208,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Spieler-Vergleich</div>
               <div className={styles.playerList}>
-                {stats.playerStats.sort((a, b) => b.winRate - a.winRate).map((p) => (
+                {stats.playerStats.map((p) => (
                   <div key={p.player} className={styles.playerRow}>
                     <div 
                       className={styles.playerAvatar}
@@ -234,9 +225,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                     <div className={styles.playerStats}>
                       <div 
                         className={styles.winRate}
-                        style={{ color: getWinRateTier(parseFloat(p.winRate)).color }}
+                        style={{ color: getWinRateTier(p.winRate).color }}
                       >
-                        {p.winRate}%
+                        {(p.winRate * 100).toFixed(1)}%
                       </div>
                       <div className={styles.record}>
                         {p.totalWins}W / {p.totalLosses}L
@@ -247,7 +238,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       <div 
                         className={styles.winRateBarFill}
                         style={{ 
-                          width: `${Math.max(0, Math.min(100, p.winRate))}%`, 
+                          width: `${Math.max(0, Math.min(100, p.winRate * 100))}%`, 
                           background: p.gradient,
                         }} 
                       />
@@ -279,9 +270,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       <div className={styles.deckStats}>
                         <div 
                           className={styles.deckWinRate}
-                          style={{ color: getWinRateTier(parseFloat(deck.winRate)).color }}
+                          style={{ color: getWinRateTier(deck.winRate).color }}
                         >
-                          {deck.winRate}%
+                          {(deck.winRate * 100).toFixed(1)}%
                         </div>
                         <div className={styles.deckRecord}>
                           {deck.wins}W / {deck.losses}L
