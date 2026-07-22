@@ -3,12 +3,21 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-// Replace these with your actual Supabase project credentials
 // Get these from: https://supabase.com/dashboard → Project Settings → API
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://her-project.supabase.co'
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error(
+    '[MTG Win Stats] Supabase credentials missing. ' +
+    'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file (see .env.example).'
+  )
+}
+
+export const supabase = createClient(
+  SUPABASE_URL || 'https://missing-supabase-url.invalid',
+  SUPABASE_KEY || 'missing-anon-key'
+)
 
 // Table name for decks
 const TABLE_NAME = 'decks'
@@ -24,12 +33,12 @@ export async function getDecks(player) {
     .select('*')
     .eq('player', player)
     .order('created_at', { ascending: true })
-  
+
   if (error) {
     console.error('Error fetching decks:', error)
     throw error
   }
-  
+
   // Transform to app format
   return (data || []).map(row => ({
     name: row.name,
@@ -39,81 +48,58 @@ export async function getDecks(player) {
 }
 
 /**
- * Save all decks for a player (replaces existing)
- * Uses bulk upsert for efficiency (single API call vs N+1)
+ * Quote a value for use inside a PostgREST `in` filter list
+ * @param {string} value - raw filter value
+ * @returns {string} - quoted and escaped value
+ */
+function quoteFilterValue(value) {
+  return `"${String(value).replace(/"/g, '\\"')}"`
+}
+
+/**
+ * Sync all decks for a player (local state is authoritative).
+ * Upserts the given decks in one call and deletes rows for this player
+ * whose name is no longer present in the list.
  * @param {string} player - player name
  * @param {Array} decks - array of deck objects
  */
 export async function saveDecks(player, decks) {
-  if (decks.length === 0) {
-    // If no decks, delete all for this player
+  if (decks.length > 0) {
+    // Bulk upsert all decks in a single API call
     const { error } = await supabase
       .from(TABLE_NAME)
-      .delete()
-      .eq('player', player)
-    if (error) throw error
-    return
-  }
-  
-  // Bulk upsert all decks in a single API call
-  // Much more efficient than individual upserts (N+1 → 1)
-  const { error } = await supabase
-    .from(TABLE_NAME)
-    .upsert(
-      decks.map(deck => ({
-        player,
-        name: deck.name,
-        wins: deck.wins,
-        losses: deck.losses,
-        updated_at: new Date().toISOString(),
-      })),
-      { onConflict: 'player,name' }
-    )
-  
-  if (error) {
-    console.error('Error upserting decks:', error)
-    throw error
-  }
-}
+      .upsert(
+        decks.map(deck => ({
+          player,
+          name: deck.name,
+          wins: deck.wins,
+          losses: deck.losses,
+          updated_at: new Date().toISOString(),
+        })),
+        { onConflict: 'player,name' }
+      )
 
-/**
- * Add or update a single deck
- * @param {string} player - player name
- * @param {Object} deck - deck object
- */
-export async function saveDeck(player, deck) {
-  const { error } = await supabase
-    .from(TABLE_NAME)
-    .upsert({
-      player,
-      name: deck.name,
-      wins: deck.wins,
-      losses: deck.losses,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'player,name'
-    })
-  
-  if (error) {
-    console.error('Error saving deck:', error)
-    throw error
+    if (error) {
+      console.error('Error upserting decks:', error)
+      throw error
+    }
   }
-}
 
-/**
- * Delete a deck
- * @param {string} player - player name
- * @param {string} deckName - deck name to delete
- */
-export async function deleteDeck(player, deckName) {
-  const { error } = await supabase
+  // Delete rows that are no longer in local state (full sync)
+  let query = supabase
     .from(TABLE_NAME)
     .delete()
     .eq('player', player)
-    .eq('name', deckName)
-  
+
+  if (decks.length > 0) {
+    const names = decks.map(d => quoteFilterValue(d.name)).join(',')
+    query = query.not('name', 'in', `(${names})`)
+  }
+
+  const { error } = await query
+
   if (error) {
-    console.error('Error deleting deck:', error)
+    console.error('Error deleting removed decks:', error)
     throw error
   }
 }

@@ -1,5 +1,5 @@
 // React
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
@@ -10,7 +10,7 @@ import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { StatCard } from "../components/StatCard.jsx";
 
 // Utils / API
-import { getDecks } from "../supabaseClient.js";
+import { supabase, getDecks } from "../supabaseClient.js";
 import { getWinRateTier, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
@@ -20,13 +20,14 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   const isMobile = useIsMobile();
   const [allData, setAllData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const px = isMobile ? 12 : 24;
+  const refreshTimeoutRef = useRef(null);
 
-  // Load data for all players
-  useEffect(() => {
-    setLoading(true);
-    Promise.all(
-      PLAYERS.map(player => 
+  const loadAll = useCallback(() => {
+    setError(null);
+    return Promise.all(
+      PLAYERS.map(player =>
         getDecks(player).then(decks => ({ player, decks }))
       )
     )
@@ -36,10 +37,38 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         data[player] = decks;
       });
       setAllData(data);
-      setLoading(false);
     })
-    .catch(() => setLoading(false));
+    .catch(e => {
+      console.error("Failed to load global stats:", e);
+      setError("Fehler beim Laden. Bitte erneut versuchen.");
+    })
+    .finally(() => setLoading(false));
   }, []);
+
+  // Load data for all players on mount
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  // Realtime: refresh when any player's decks change (debounced)
+  useEffect(() => {
+    const channel = supabase
+      .channel("decks-global")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "decks" },
+        () => {
+          if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+          refreshTimeoutRef.current = setTimeout(loadAll, 500);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+      supabase.removeChannel(channel);
+    };
+  }, [loadAll]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -149,6 +178,10 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />
             <div className={styles.loadingText}>Lade Daten...</div>
+          </div>
+        ) : error ? (
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingText}>{error}</div>
           </div>
         ) : (
           <>

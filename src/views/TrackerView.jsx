@@ -29,7 +29,7 @@ import styles from "./TrackerView.module.css";
  * @param {Function} props.onToggleDark - Callback to toggle dark mode
  */
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
-  const { decks, loading, error, updateDeck, addDecks, deleteDeck } = useDecks(player);
+  const { decks, loading, loaded, error, retry, updateDeck, addDecks, deleteDeck } = useDecks(player);
   const [tab, setTab] = useState("dashboard");
   const [importMsg, setImportMsg] = useState(error || "");
   const isMobile = useIsMobile();
@@ -93,28 +93,45 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
           className={isMobile ? styles.contentMobile : styles.content}
           style={{ paddingBottom: TAB_H + 16 }}
         >
-          {tab === "dashboard" && <DashboardTab decks={decks} />}
-          
-          {tab === "data" && (
+          {!loading && !loaded ? (
+            /* Load failed: saves stay disabled, offer manual retry */
+            <div className={styles.emptyState}>
+              <div className={styles.emptyTitle}>{error || "Fehler beim Laden"}</div>
+              <button
+                onClick={retry}
+                className={styles.importButton}
+                style={{ background: PLAYER_GRADIENTS[player], marginTop: 12 }}
+              >
+                Erneut versuchen
+              </button>
+            </div>
+          ) : (
             <>
-              <DecksTab 
-                decks={decks} 
-                updateDeck={updateDeck} 
-                deleteDeck={deleteDeck} 
-              />
-              <div className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}>
-                <ImportPanel 
-                  player={player} 
-                  addDecks={addDecks} 
-                  onImport={handleImport}
-                  autoFocus={decks.length === 0}
-                />
-              </div>
+              {tab === "dashboard" && <DashboardTab decks={decks} />}
+              
+              {tab === "data" && (
+                <>
+                  <DecksTab 
+                    decks={decks} 
+                    updateDeck={updateDeck} 
+                    deleteDeck={deleteDeck} 
+                  />
+                  <div className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}>
+                    <ImportPanel 
+                      player={player} 
+                      addDecks={addDecks} 
+                      onImport={handleImport}
+                      autoFocus={decks.length === 0}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
 
         {/* Tab Bar */}
+        {loaded && (
         <div className={styles.tabBar}>
           {[
             { id: "dashboard", label: "Dashboard", icon: "📊" },
@@ -135,6 +152,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
             </button>
           ))}
         </div>
+        )}
       </div>
     </>
   );
