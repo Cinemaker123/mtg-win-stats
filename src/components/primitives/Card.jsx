@@ -1,5 +1,4 @@
 import PropTypes from "prop-types";
-import PropTypes from "prop-types";
 import styles from './Card.module.css';
 
 /**

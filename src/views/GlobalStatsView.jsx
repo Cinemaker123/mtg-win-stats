@@ -1,5 +1,6 @@
 // React
 import { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
 
 // Hooks
 import { useIsMobile } from "../hooks/useIsMobile.js";
@@ -264,3 +265,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     </div>
   );
 }
+
+GlobalStatsView.propTypes = {
+  onBack: PropTypes.func.isRequired,
+  isDark: PropTypes.bool.isRequired,
+  onToggleDark: PropTypes.func.isRequired,
+};

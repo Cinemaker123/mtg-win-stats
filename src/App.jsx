@@ -1,5 +1,5 @@
 // React
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 // Hooks
 import { useIsMobile } from "./hooks/useIsMobile.js";

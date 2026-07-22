@@ -1,4 +1,5 @@
 // React
+import PropTypes from "prop-types";
 
 // Hooks
 import { useIsMobile } from "../hooks/useIsMobile.js";
@@ -91,3 +92,10 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
     </div>
   );
 }
+
+LandingPage.propTypes = {
+  onSelectPlayer: PropTypes.func.isRequired,
+  onShowGlobalStats: PropTypes.func.isRequired,
+  isDark: PropTypes.bool.isRequired,
+  onToggleDark: PropTypes.func.isRequired,
+};

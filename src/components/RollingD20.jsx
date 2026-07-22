@@ -11,7 +11,7 @@ import { D20 } from "./D20.jsx";
  */
 export function RollingD20({ onLanded, screenWidth }) {
   const [position, setPosition] = useState({ x: -156, y: 150, rotation: 0 });
-  const [finalNumber, setFinalNumber] = useState(() => Math.floor(Math.random() * 20) + 1);
+  const [finalNumber] = useState(() => Math.floor(Math.random() * 20) + 1);
   const [showResult, setShowResult] = useState(false);
   const isMobile = screenWidth < 640;
   const duration = isMobile ? 1400 : 2200;
