@@ -1,5 +1,5 @@
 // React
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
@@ -29,38 +29,80 @@ import styles from "./TrackerView.module.css";
  * @param {Function} props.onToggleDark - Callback to toggle dark mode
  */
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
-  const { decks, loading, loaded, error, retry, updateDeck, addDecks, deleteDeck } = useDecks(player);
+  const { decks, loading, loaded, error, retry, updateDeck, addDecks, deleteDeck, restoreDeck } = useDecks(player);
   const [tab, setTab] = useState("dashboard");
-  const [importMsg, setImportMsg] = useState(error || "");
+  const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
   const isMobile = useIsMobile();
   const px = isMobile ? 12 : 24;
   const accentColor = PLAYER_COLORS[player];
   const TAB_H = 58;
 
-  // Sync external error with importMsg
+  // Show a toast, replacing any current one (clears the previous timeout)
+  const showToast = useCallback((toastData, duration = 3000) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast(toastData);
+    toastTimeoutRef.current = setTimeout(() => setToast(null), duration);
+  }, []);
+
+  // Clean up pending toast timeout on unmount
   useEffect(() => {
-    if (error) setImportMsg(error);
-  }, [error]);
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
+  }, []);
+
+  // Surface hook errors (load/save failures) as toasts
+  useEffect(() => {
+    if (error && loaded) showToast({ type: "error", message: error });
+  }, [error, loaded, showToast]);
 
   // Auto-switch to Decks tab when there are no decks
   useEffect(() => {
-    if (!loading && decks.length === 0) {
+    if (!loading && loaded && decks.length === 0) {
       setTab("data");
     }
-  }, [loading, decks.length]);
+  }, [loading, loaded, decks.length]);
 
   const handleImport = (msg) => {
-    setImportMsg(msg);
-    setTimeout(() => setImportMsg(""), 3000);
+    showToast({ type: msg.startsWith("✅") ? "success" : "error", message: msg });
+  };
+
+  // Delete with 5s undo window (undo reinserts locally, the debounced
+  // full sync restores the row in Supabase if it was already deleted)
+  const handleDeleteDeck = (idx) => {
+    const removed = deleteDeck(idx);
+    if (!removed) return;
+    showToast({
+      type: "undo",
+      message: `„${removed.deck.name}" gelöscht`,
+      actionLabel: "Rückgängig",
+      onAction: () => restoreDeck(removed.deck, removed.index),
+    }, 5000);
+  };
+
+  const handleToastAction = () => {
+    if (toast?.onAction) toast.onAction();
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast(null);
   };
 
   return (
     <>
       <div className={styles.container}>
-        {/* Import message toast */}
-        {importMsg && (
-          <div className={importMsg.startsWith("✅") ? styles.toastSuccess : styles.toastError}>
-            {importMsg}
+        {/* Toast notification */}
+        {toast && (
+          <div className={
+            toast.type === "success" ? styles.toastSuccess
+            : toast.type === "error" ? styles.toastError
+            : styles.toastUndo
+          }>
+            <span>{toast.message}</span>
+            {toast.actionLabel && (
+              <button className={styles.toastAction} onClick={handleToastAction}>
+                {toast.actionLabel}
+              </button>
+            )}
           </div>
         )}
 
@@ -114,7 +156,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                   <DecksTab 
                     decks={decks} 
                     updateDeck={updateDeck} 
-                    deleteDeck={deleteDeck} 
+                    deleteDeck={handleDeleteDeck} 
                   />
                   <div className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}>
                     <ImportPanel 

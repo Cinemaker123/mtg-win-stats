@@ -58,9 +58,9 @@ export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
       return;
     }
     
-    addDecks(newDecks);
+    const { added, updated } = addDecks(newDecks);
     setImportText("");
-    onImport(`✅ ${newDecks.length} Deck${newDecks.length > 1 ? "s" : ""} importiert`);
+    onImport(`✅ ${newDecks.length} Deck${newDecks.length > 1 ? "s" : ""} importiert (${added} neu, ${updated} aktualisiert)`);
   };
 
   const addSingleDeck = () => {

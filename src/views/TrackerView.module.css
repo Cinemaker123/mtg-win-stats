@@ -18,6 +18,9 @@
   font-weight: 700;
   z-index: 200;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .toastSuccess {
@@ -28,6 +31,24 @@
 .toastError {
   composes: toast;
   background: var(--color-error);
+}
+
+.toastUndo {
+  composes: toast;
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+}
+
+.toastAction {
+  border: none;
+  background: transparent;
+  color: var(--color-accent-primary);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
 }
 
 /* Loading spinner */
