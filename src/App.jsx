@@ -13,17 +13,51 @@ import { LandingPage } from "./views/LandingPage.jsx";
 import { TrackerView } from "./views/TrackerView.jsx";
 import { GlobalStatsView } from "./views/GlobalStatsView.jsx";
 
+// Utils
+import { PLAYERS } from "./utils/stats.js";
+
 // Styles
 import styles from "./App.module.css";
 
+/**
+ * Parse the current location hash into a route.
+ * Routes: `#/` (landing), `#/tracker/<player>`, `#/global`
+ * @returns {{view: 'landing'|'tracker'|'global', player: string|null}}
+ */
+function parseHash() {
+  const hash = window.location.hash.replace(/^#/, "");
+  const trackerMatch = hash.match(/^\/tracker\/(\w+)$/);
+  if (trackerMatch && PLAYERS.includes(trackerMatch[1])) {
+    return { view: "tracker", player: trackerMatch[1] };
+  }
+  if (hash === "/global") {
+    return { view: "global", player: null };
+  }
+  return { view: "landing", player: null };
+}
+
 export default function App() {
-  const [view, setView] = useState('landing'); // 'landing', 'tracker', 'global'
-  const [currentPlayer, setCurrentPlayer] = useState(null);
+  const [route, setRoute] = useState(parseHash);
   const [isDark, setIsDark, darkLoaded] = useDarkMode();
   const [showDie, setShowDie] = useState(false);
   const [dieLanded, setDieLanded] = useState(false);
   const isMobile = useIsMobile();
   const screenWidth = isMobile ? window.innerWidth : 1024;
+
+  // Sync route with location hash (refresh persistence, back/forward)
+  useEffect(() => {
+    const onHashChange = () => setRoute(parseHash());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  // Normalize invalid hashes to the landing route
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (route.view === "landing" && hash !== "" && hash !== "#" && hash !== "#/") {
+      window.history.replaceState(null, "", "#/");
+    }
+  }, [route]);
 
   // D20 triple-click easter egg
   useEffect(() => {
@@ -44,23 +78,21 @@ export default function App() {
       setDieLanded(false);
     }
   };
-  
+
   const handleDieLanded = () => {
     setDieLanded(true);
   };
-  
+
   const handleSelectPlayer = (player) => {
-    setCurrentPlayer(player);
-    setView('tracker');
+    window.location.hash = `/tracker/${player}`;
   };
 
   const handleShowGlobalStats = () => {
-    setView('global');
+    window.location.hash = "/global";
   };
 
   const handleBack = () => {
-    setView('landing');
-    setCurrentPlayer(null);
+    window.location.hash = "/";
   };
 
   if (!darkLoaded) {
@@ -69,7 +101,7 @@ export default function App() {
 
   return (
     <div onClick={handleClick} className={styles.root}>
-      {view === 'landing' && (
+      {route.view === 'landing' && (
         <LandingPage 
           onSelectPlayer={handleSelectPlayer}
           onShowGlobalStats={handleShowGlobalStats}
@@ -77,15 +109,15 @@ export default function App() {
           onToggleDark={() => setIsDark(!isDark)} 
         />
       )}
-      {view === 'tracker' && currentPlayer && (
+      {route.view === 'tracker' && route.player && (
         <TrackerView 
-          player={currentPlayer} 
+          player={route.player} 
           onBack={handleBack}
           isDark={isDark}
           onToggleDark={() => setIsDark(!isDark)}
         />
       )}
-      {view === 'global' && (
+      {route.view === 'global' && (
         <GlobalStatsView 
           onBack={handleBack}
           isDark={isDark}
