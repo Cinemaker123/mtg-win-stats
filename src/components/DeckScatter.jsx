@@ -1,3 +1,4 @@
+import { useState } from "react";
 import PropTypes from "prop-types";
 import { PLAYER_COLORS } from "../utils/stats.js";
 import styles from "./DeckScatter.module.css";
@@ -12,10 +13,15 @@ const BASELINE_WR = 0.25;
  * Activity vs. performance scatter: one dot per played deck,
  * x = games played, y = win rate. Dashed references at the 25%
  * pod baseline and the average games played. Hand-rolled SVG.
+ *
+ * Desktop: hover tooltips. Mobile/keyboard: tap or focus a dot to
+ * pin its details below the chart (hover tooltips don't exist on touch).
  * @param {Object} props
  * @param {Array} props.decks - Played decks ({ name, player, wins, losses, totalGames, winRate })
  */
 export function DeckScatter({ decks }) {
+  const [selectedKey, setSelectedKey] = useState(null);
+
   if (decks.length === 0) return null;
 
   const plotW = W - PAD.l - PAD.r;
@@ -26,56 +32,103 @@ export function DeckScatter({ decks }) {
   const x = g => PAD.l + (g / maxGames) * plotW;
   const y = wr => PAD.t + (1 - wr) * plotH;
 
+  const keyOf = d => `${d.player}-${d.name}`;
+  const selected = decks.find(d => keyOf(d) === selectedKey) || null;
+
+  const toggleSelect = (d) => {
+    const key = keyOf(d);
+    setSelectedKey(prev => (prev === key ? null : key));
+  };
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className={styles.scatter} role="img" aria-label="Aktivität vs. Winrate">
-      {/* Axes */}
-      <line x1={PAD.l} y1={y(0)} x2={W - PAD.r} y2={y(0)} className={styles.axis} />
-      <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={y(0)} className={styles.axis} />
+    <div className={styles.wrapper}>
+      <svg viewBox={`0 0 ${W} ${H}`} className={styles.scatter} role="img" aria-label="Aktivität vs. Winrate">
+        {/* Axes */}
+        <line x1={PAD.l} y1={y(0)} x2={W - PAD.r} y2={y(0)} className={styles.axis} />
+        <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={y(0)} className={styles.axis} />
 
-      {/* Y ticks (win rate %) */}
-      {[0, 25, 50, 75, 100].map(v => (
-        <text key={v} x={PAD.l - 4} y={y(v / 100) + 2.5} textAnchor="end" className={styles.axisText}>
-          {v}
+        {/* Y ticks (win rate %) */}
+        {[0, 25, 50, 75, 100].map(v => (
+          <text key={v} x={PAD.l - 4} y={y(v / 100) + 2.5} textAnchor="end" className={styles.axisText}>
+            {v}
+          </text>
+        ))}
+
+        {/* Reference: 25% pod baseline */}
+        <line x1={PAD.l} y1={y(BASELINE_WR)} x2={W - PAD.r} y2={y(BASELINE_WR)} className={styles.refLine} />
+        <text x={W - PAD.r} y={y(BASELINE_WR) - 3} textAnchor="end" className={styles.refLabel}>
+          25% Baseline
         </text>
-      ))}
 
-      {/* Reference: 25% pod baseline */}
-      <line x1={PAD.l} y1={y(BASELINE_WR)} x2={W - PAD.r} y2={y(BASELINE_WR)} className={styles.refLine} />
-      <text x={W - PAD.r} y={y(BASELINE_WR) - 3} textAnchor="end" className={styles.refLabel}>
-        25% Baseline
-      </text>
+        {/* Reference: average games played */}
+        <line x1={x(avgGames)} y1={PAD.t} x2={x(avgGames)} y2={y(0)} className={styles.refLine} />
+        <text x={x(avgGames)} y={H - PAD.b + 11} textAnchor="middle" className={styles.refLabel}>
+          Ø {Math.round(avgGames)}
+        </text>
 
-      {/* Reference: average games played */}
-      <line x1={x(avgGames)} y1={PAD.t} x2={x(avgGames)} y2={y(0)} className={styles.refLine} />
-      <text x={x(avgGames)} y={H - PAD.b + 11} textAnchor="middle" className={styles.refLabel}>
-        Ø {Math.round(avgGames)}
-      </text>
+        {/* Quadrant labels */}
+        <text x={PAD.l + 5} y={PAD.t + 9} className={styles.quadrantLabel}>💎 Geheimtipp</text>
+        <text x={W - PAD.r - 5} y={PAD.t + 9} textAnchor="end" className={styles.quadrantLabel}>🏆 Top-Decks</text>
+        <text x={PAD.l + 5} y={y(0) - 5} className={styles.quadrantLabel}>Unbewährt</text>
+        <text x={W - PAD.r - 5} y={y(0) - 5} textAnchor="end" className={styles.quadrantLabel}>Sorgenkind</text>
 
-      {/* Quadrant labels */}
-      <text x={PAD.l + 5} y={PAD.t + 9} className={styles.quadrantLabel}>💎 Geheimtipp</text>
-      <text x={W - PAD.r - 5} y={PAD.t + 9} textAnchor="end" className={styles.quadrantLabel}>🏆 Top-Decks</text>
-      <text x={PAD.l + 5} y={y(0) - 5} className={styles.quadrantLabel}>Unbewährt</text>
-      <text x={W - PAD.r - 5} y={y(0) - 5} textAnchor="end" className={styles.quadrantLabel}>Sorgenkind</text>
+        {/* X axis label */}
+        <text x={(PAD.l + W - PAD.r) / 2} y={H - 6} textAnchor="middle" className={styles.axisLabel}>
+          Gespielte Spiele →
+        </text>
 
-      {/* X axis label */}
-      <text x={(PAD.l + W - PAD.r) / 2} y={H - 6} textAnchor="middle" className={styles.axisLabel}>
-        Gespielte Spiele →
-      </text>
+        {/* Deck dots */}
+        {decks.map(d => {
+          const key = keyOf(d);
+          const isSelected = key === selectedKey;
+          const label = `${d.name} (${d.player}) — ${(d.winRate * 100).toFixed(1)}% · ${d.wins}W ${d.losses}L`;
+          return (
+            <g key={key}>
+              <circle
+                cx={x(d.totalGames)}
+                cy={y(d.winRate)}
+                r={isSelected ? 6.5 : 5}
+                fill={PLAYER_COLORS[d.player]}
+                className={isSelected ? styles.dotSelected : styles.dot}
+              />
+              {/* Enlarged invisible hit area for touch and keyboard */}
+              <circle
+                cx={x(d.totalGames)}
+                cy={y(d.winRate)}
+                r={14}
+                fill="transparent"
+                className={styles.hitArea}
+                role="button"
+                tabIndex={0}
+                aria-label={label}
+                onClick={() => toggleSelect(d)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleSelect(d);
+                  }
+                }}
+              >
+                <title>{label}</title>
+              </circle>
+            </g>
+          );
+        })}
+      </svg>
 
-      {/* Deck dots */}
-      {decks.map(d => (
-        <circle
-          key={`${d.player}-${d.name}`}
-          cx={x(d.totalGames)}
-          cy={y(d.winRate)}
-          r={5}
-          fill={PLAYER_COLORS[d.player]}
-          className={styles.dot}
-        >
-          <title>{`${d.name} (${d.player}) — ${(d.winRate * 100).toFixed(1)}% · ${d.wins}W ${d.losses}L`}</title>
-        </circle>
-      ))}
-    </svg>
+      {/* Pinned details (mobile tap / keyboard) or usage hint */}
+      {selected ? (
+        <div className={styles.detail}>
+          <span className={styles.detailDot} style={{ background: PLAYER_COLORS[selected.player] }} />
+          <span className={styles.detailName}>{selected.name}</span>
+          <span className={styles.detailMeta}>
+            {selected.player} · {(selected.winRate * 100).toFixed(1)}% · {selected.wins}W {selected.losses}L
+          </span>
+        </div>
+      ) : (
+        <div className={styles.hint}>Punkt antippen für Details</div>
+      )}
+    </div>
   );
 }
 

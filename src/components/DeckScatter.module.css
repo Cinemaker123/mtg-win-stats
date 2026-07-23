@@ -4,6 +4,53 @@
   display: block;
 }
 
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hitArea {
+  cursor: pointer;
+}
+
+.hitArea:focus {
+  outline: none;
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  min-height: 18px;
+}
+
+.detailDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.detailName {
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--color-text);
+}
+
+.detailMeta {
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: center;
+  min-height: 18px;
+}
+
 .axis {
   stroke: var(--color-border-strong);
   stroke-width: 1;
@@ -41,4 +88,9 @@
 .dot {
   stroke: var(--color-surface);
   stroke-width: 1.5;
+}
+
+.dotSelected {
+  stroke: var(--color-text);
+  stroke-width: 2.5;
 }

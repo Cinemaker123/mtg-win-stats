@@ -47,7 +47,7 @@ export function PodShareDonut({ playerStats }) {
       </svg>
 
       <div className={styles.legend}>
-        <div className={styles.legendTitle}>Sieg-Anteil (vs. 25%-Baseline)</div>
+        <div className={styles.legendTitle}>Sieg-Anteil</div>
         {segments.map(s => {
           const delta = s.share - BASELINE;
           return (

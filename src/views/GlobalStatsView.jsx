@@ -122,8 +122,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     });
     allDecks.sort((a, b) => b.adjusted - a.adjusted);
 
-    // Best deck across all players (adjusted ranking)
-    const bestDeck = allDecks[0] || null;
+    // Best deck across all players (adjusted ranking, min. 3 games
+    // so a fresh 2-0 deck can't take the crown)
+    const bestDeck = allDecks.find(d => d.totalGames >= 3) || null;
 
     // Most played deck
     let mostPlayed = null;
@@ -148,7 +149,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       bestDeck,
       mostPlayed,
       allDecks,
-      topDecks: allDecks.slice(0, 5),
+      // Top 5 excludes one-game wonders (min. 2 games)
+      topDecks: allDecks.filter(d => d.totalGames >= 2).slice(0, 5),
     };
   }, [allData]);
 
@@ -186,7 +188,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                 <StatCard 
                   label="Gesamt-Winrate" 
                   value={`${(stats.overallWinRate * 100).toFixed(1)}%`}
-                  sub={stats.totalGamesAll > 0 ? `${getWinRateTier(stats.overallWinRate).icon} ${getWinRateTier(stats.overallWinRate).label} · Baseline: 25%` : "Noch keine Spiele"}
+                  sub={stats.totalGamesAll === 0 ? "Noch keine Spiele" : undefined}
                   accent={getWinRateTier(stats.overallWinRate).color} 
                   icon="📈"
                 />
