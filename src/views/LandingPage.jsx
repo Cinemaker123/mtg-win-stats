@@ -137,6 +137,14 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
           onSaved={handleGameSaved}
         />
       )}
+
+      {/* Archive link */}
+      <button
+        className={styles.archiveLink}
+        onClick={() => { window.location.hash = "/games"; }}
+      >
+        📜 Spielarchiv
+      </button>
     </div>
   );
 }

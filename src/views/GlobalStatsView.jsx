@@ -167,6 +167,11 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         >←</button>
         <span style={{ fontSize: 20 }}>📊</span>
         <span className={styles.title}>Gesamtübersicht</span>
+        <button
+          onClick={() => { window.location.hash = "/games"; }}
+          className={styles.backButton}
+          title="Spielarchiv"
+        >📜</button>
         <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
       </div>
 

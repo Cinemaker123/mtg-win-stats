@@ -12,6 +12,7 @@ import { RollingD20 } from "./components/RollingD20.jsx";
 import { LandingPage } from "./views/LandingPage.jsx";
 import { TrackerView } from "./views/TrackerView.jsx";
 import { GlobalStatsView } from "./views/GlobalStatsView.jsx";
+import { GamesArchiveView } from "./views/GamesArchiveView.jsx";
 
 // Utils
 import { PLAYERS } from "./utils/stats.js";
@@ -21,8 +22,8 @@ import styles from "./App.module.css";
 
 /**
  * Parse the current location hash into a route.
- * Routes: `#/` (landing), `#/tracker/<player>`, `#/global`
- * @returns {{view: 'landing'|'tracker'|'global', player: string|null}}
+ * Routes: `#/` (landing), `#/tracker/<player>`, `#/global`, `#/games`
+ * @returns {{view: 'landing'|'tracker'|'global'|'games', player: string|null}}
  */
 function parseHash() {
   const hash = window.location.hash.replace(/^#/, "");
@@ -32,6 +33,9 @@ function parseHash() {
   }
   if (hash === "/global") {
     return { view: "global", player: null };
+  }
+  if (hash === "/games") {
+    return { view: "games", player: null };
   }
   return { view: "landing", player: null };
 }
@@ -120,6 +124,13 @@ export default function App() {
       )}
       {route.view === 'global' && (
         <GlobalStatsView 
+          onBack={handleBack}
+          isDark={isDark}
+          onToggleDark={() => setIsDark(!isDark)}
+        />
+      )}
+      {route.view === 'games' && (
+        <GamesArchiveView
           onBack={handleBack}
           isDark={isDark}
           onToggleDark={() => setIsDark(!isDark)}

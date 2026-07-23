@@ -233,3 +233,20 @@
   composes: toast;
   background: var(--color-error);
 }
+
+.archiveLink {
+  display: block;
+  margin: 20px auto 0;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: color var(--transition-fast);
+}
+
+.archiveLink:hover {
+  color: var(--color-text);
+}
