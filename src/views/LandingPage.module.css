@@ -183,3 +183,53 @@
   composes: globalStatsText;
   font-size: 18px;
 }
+
+.buttonRow {
+  display: flex;
+  gap: 16px;
+}
+
+.buttonRowMobile {
+  composes: buttonRow;
+  gap: 10px;
+}
+
+.newGameButton {
+  composes: globalStatsButton;
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  box-shadow: 0 4px 20px rgba(39, 174, 96, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.newGameButtonMobile {
+  composes: newGameButton;
+  padding: 24px 20px;
+}
+
+.newGameButtonDark {
+  background: linear-gradient(135deg, #2a4a3a, #1f3a2c);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toastSuccess {
+  composes: toast;
+  background: var(--color-success);
+}
+
+.toastError {
+  composes: toast;
+  background: var(--color-error);
+}

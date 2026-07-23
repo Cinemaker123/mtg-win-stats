@@ -1,0 +1,248 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: 18px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.error {
+  color: var(--color-error);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.loading {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 40px 0;
+  font-size: 13px;
+}
+
+.dateInput {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border-strong);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 12px;
+  font-family: var(--font-body);
+  margin-bottom: 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.cell {
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  cursor: pointer;
+  position: relative;
+  background: var(--color-bg);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cellWinner {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.crown {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 14px;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.removeBtn:hover {
+  background: var(--color-btn-loss-bg);
+  color: var(--color-error);
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-left: 14px;
+}
+
+.avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.playerName {
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: capitalize;
+  color: var(--color-text);
+  font-family: var(--font-display);
+}
+
+.deckSelect {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 12px;
+  font-family: var(--font-body);
+}
+
+.quickAdd {
+  background: none;
+  border: none;
+  color: var(--color-accent-primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0 0;
+}
+
+.quickAddRow {
+  display: flex;
+  gap: 6px;
+}
+
+.quickAddInput {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 12px;
+  font-family: var(--font-body);
+}
+
+.quickAddOk {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-btn-win-bg);
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.emptyCell {
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.saveButton {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--gradient-win);
+  color: #fff;
+  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.saveButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-btn-neutral-bg);
+  color: var(--color-btn-neutral-text);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.deleteGameBtn {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-btn-loss-bg);
+  color: var(--color-error);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
