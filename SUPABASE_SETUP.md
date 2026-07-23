@@ -86,3 +86,49 @@ Dann starte wie gewohnt:
 ```bash
 npm run dev
 ```
+
+---
+
+## Data Model v2: Spiele-Tabellen (games + game_participants)
+
+Seit v2 werden Ergebnisse als **Spiele** (mit Datum, Teilnehmern, Gewinner)
+gespeichert statt als manuelle Zähler pro Deck. Die `decks`-Tabelle bleibt
+als reines Deck-Register bestehen; ihre `wins`/`losses`-Spalten sind die
+**eingefrorene Legacy-Baseline** (Zählerstand vor der Umstellung). Angezeigte
+Statistiken = Legacy-Baseline + aus `game_participants` abgeleitete Zähler.
+
+Im **SQL Editor** ausführen:
+
+```sql
+-- 1) Spiele
+create table public.games (
+  id         uuid primary key default gen_random_uuid(),
+  played_at  timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+-- 2) Teilnehmer: eine Zeile pro Spieler pro Spiel (2-4 pro Spiel)
+create table public.game_participants (
+  id         uuid primary key default gen_random_uuid(),
+  game_id    uuid not null references public.games(id) on delete cascade,
+  player     text not null,
+  deck       text not null,
+  is_winner  boolean not null default false
+);
+
+create index game_participants_game_id_idx on public.game_participants (game_id);
+create index game_participants_player_idx  on public.game_participants (player);
+
+-- 3) RLS: wie bei der decks-Tabelle (kein Auth → alles erlauben)
+alter table public.games disable row level security;
+alter table public.game_participants disable row level security;
+
+-- 4) Realtime für Live-Updates
+alter publication supabase_realtime add table public.games;
+alter publication supabase_realtime add table public.game_participants;
+
+-- 5) decks.wins/losses einfrieren (nur Dokumentation)
+comment on column public.decks.wins   is 'Legacy baseline (pre-games era), frozen';
+comment on column public.decks.losses is 'Legacy baseline (pre-games era), frozen';
+```
+

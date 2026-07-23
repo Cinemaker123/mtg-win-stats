@@ -19,7 +19,7 @@ A **React + Vite application** for tracking Magic: The Gathering deck performanc
 ```
 mtg-win-stats/
 ├── src/
-│   ├── App.jsx                    # Hash router (#/, #/tracker/<player>, #/global)
+│   ├── App.jsx                    # Hash router (#/, #/tracker/<player>, #/global, #/games)
 │   ├── App.module.css             # App root styles
 │   ├── assets/
 │   │   ├── D20_icon.png           # D20 die image
@@ -29,29 +29,31 @@ mtg-win-stats/
 │   │   ├── DarkModeToggle.jsx    # Dark mode toggle button
 │   │   ├── DeckScatter.jsx       # Activity vs. win rate scatter (SVG)
 │   │   ├── Logo.jsx              # MTG logo component
+│   │   ├── NewGameModal.jsx      # Game entry modal (2x2 grid, winner tap, quick-add deck)
 │   │   ├── PodShareDonut.jsx     # Win-share donut per player (SVG)
 │   │   ├── RollingD20.jsx        # D20 rolling animation
 │   │   └── StatCard.jsx          # Reusable statistics card
 │   ├── hooks/
 │   │   ├── useDarkMode.js        # Dark mode state management
-│   │   ├── useDecks.js           # Deck data: dirty-flag saves, full sync, realtime
+│   │   ├── useDecks.js           # Deck registry: dirty-flag saves, full sync, realtime
+│   │   ├── useGames.js           # Games archive: fetch + realtime (games, game_participants)
 │   │   └── useIsMobile.js        # Mobile detection hook (MOBILE_BREAKPOINT)
 │   ├── utils/
-│   │   ├── stats.js              # Constants, winRate, adjustedWinRate, tiers
+│   │   ├── stats.js              # Constants, winRate, adjustedWinRate, tiers, combineDeckStats
 │   │   └── stats.test.js         # Vitest unit tests
 │   ├── views/
+│   │   ├── GamesArchiveView.jsx  # Games archive grouped by day (edit/delete + undo)
 │   │   ├── GlobalStatsView.jsx   # Cross-player statistics page
-│   │   ├── LandingPage.jsx       # Player selection screen
+│   │   ├── LandingPage.jsx       # Player selection + "Neues Spiel" button
 │   │   ├── TrackerView.jsx       # Main tracker (Dashboard/Decks) + toasts
 │   │   └── tracker/              # Sub-components
-│   │       ├── Btn.jsx
 │   │       ├── DashboardTab.jsx
-│   │       ├── DecksTab.jsx
-│   │       ├── ImportPanel.jsx
-│   │       └── WinLossBar.jsx
+│   │       ├── DecksTab.jsx      # Read-only deck bars (combined stats)
+│   │       ├── ImportPanel.jsx   # Single-deck add
+│   │       └── WinLossBar.jsx    # Read-only win/loss bar
 │   ├── styles/
 │   │   └── theme.css             # CSS custom properties (light/dark)
-│   ├── supabaseClient.js         # Supabase API client (getDecks, saveDecks)
+│   ├── supabaseClient.js         # Supabase API client (decks + games CRUD)
 │   └── main.jsx                  # Vite entry point
 ├── public/
 │   ├── manifest.webmanifest      # PWA manifest
@@ -78,21 +80,35 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
 - `#/` → `LandingPage`
 - `#/tracker/<player>` → `TrackerView` (individual player)
 - `#/global` → `GlobalStatsView` (cross-player stats)
+- `#/games` → `GamesArchiveView` (games archive)
 - Invalid hashes normalize to `#/`
 
-### Data Layer (`useDecks` + `supabaseClient`)
+### Data Layer (`useDecks` + `useGames` + `supabaseClient`)
+- **Data Model v2**: results are recorded as *games* (`games` +
+  `game_participants` tables), not as manual per-deck counters. The
+  `decks` table is a pure deck registry; its `wins`/`losses` columns are
+  the **frozen legacy baseline** (pre-v2 counts, no longer incremented).
+- **Combined stats**: everywhere stats are shown,
+  `combineDeckStats(registryDecks, games, player)` merges legacy baseline
+  with game-derived counts. Decks that exist only in games still appear.
 - **Dirty-flag saves**: Supabase writes only fire after local mutations,
   never on load. A failed fetch keeps `loaded = false`, so saves stay
   disabled and remote data can never be wiped by a failed load.
 - **Full sync**: `saveDecks(player, decks)` upserts the given decks and
   deletes rows missing from the list — local state is authoritative.
+  Used only for registry changes (add/delete deck).
+- **Game CRUD**: `addGame` / `updateGame` / `deleteGame` write directly
+  (no dirty flag); `updateGame` replaces participants wholesale.
 - **Realtime**: `useDecks` subscribes to `postgres_changes` filtered by
   player and refetches on remote writes (echoes of own saves suppressed
-  for 1s). Requires `alter publication supabase_realtime add table public.decks;`
-  (see SUPABASE_SETUP.md). `GlobalStatsView` subscribes unfiltered with a
-  500ms debounced refresh.
-- **Undo on delete**: deletion is local + toast with 5s "Rückgängig";
+  for 1s). `useGames` subscribes to `games` + `game_participants` with a
+  500ms debounced refetch. Requires the tables in the `supabase_realtime`
+  publication (see SUPABASE_SETUP.md). `GlobalStatsView` subscribes to
+  `decks` unfiltered with a 500ms debounced refresh.
+- **Undo on delete**: deck deletion is local + toast with 5s "Rückgängig";
   undo reinserts locally and the debounced sync restores the DB row.
+  Game deletion offers the same 5s undo; undo re-inserts the game with a
+  new id.
 
 ### Win Rate Ranking
 - Raw win rate (`winRate`) for display, always as 0-1 number
@@ -103,12 +119,25 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
 
 ### Data Model
 ```javascript
-// Deck object structure
+// Deck object structure (registry; wins/losses = frozen legacy baseline)
 {
   player: string,    // "baum" | "mary" | "pascal" | "wewy"
   name: string,      // Deck name (e.g., "Azorius Control")
-  wins: number,      // Number of wins
-  losses: number     // Number of losses
+  wins: number,      // Legacy wins (frozen, pre-v2)
+  losses: number     // Legacy losses (frozen, pre-v2)
+}
+
+// Game object structure (v2)
+{
+  id: string,        // uuid
+  playedAt: string,  // ISO timestamp
+  participants: [
+    {
+      player: string,     // player identifier
+      deck: string,       // deck name (plain text, history-safe)
+      isWinner: boolean   // exactly one winner per game
+    }
+  ]                  // 2-4 participants
 }
 ```
 
@@ -127,20 +156,35 @@ Color coding via `getWinRateTier()` utility:
 
 1. **Landing Page**
    - 4 player selection buttons with unique colors
+   - "Neues Spiel" button opens the game entry modal
    - Global statistics button (Gesamtübersicht)
+   - "Spielarchiv" link to the games archive
    - Dark mode toggle
    - D20 triple-click easter egg (ignored on interactive elements)
 
-2. **Tracker View (per player)**
-   - Dashboard tab with win rate stats (Bayesian-ranked) and deck bars
-     with 25% baseline tick
-   - Decks tab with win/loss controls; unplayed decks show a neutral bar
-   - Delete with 5s undo toast
-   - Bulk import panel (German format: `Gewonnen IIII` / `Verloren 3`),
-     reports "X neu, Y aktualisiert" on merge
+2. **New Game Modal**
+   - 2x2 grid of players; tap a cell to crown the winner (border + 👑)
+   - Deck select per player (sorted by games played)
+   - "＋ Neues Deck" quick-add writes to the deck registry
+   - Participants removable (✕, min. 2) and re-addable via empty slots
+   - Edit mode (from archive): change date, decks, winner; delete game
+
+3. **Games Archive (`#/games`)**
+   - All games grouped by day (Heute/Gestern/date), newest first
+   - Winner shown first with 👑, tap a card to edit
+   - Delete with 5s undo toast (re-insert)
    - Live updates via Supabase Realtime
 
-3. **Global Stats View**
+4. **Tracker View (per player)**
+   - Dashboard tab with win rate stats (Bayesian-ranked) and deck bars
+     with 25% baseline tick
+   - Decks tab with read-only win/loss bars (legacy + game-derived);
+     unplayed decks show a neutral bar; games-only decks have no delete
+   - Delete registry decks with 5s undo toast
+   - Single-deck add panel
+   - Live updates via Supabase Realtime
+
+5. **Global Stats View**
    - Cross-player game totals
    - Player comparison with win rate bars (25% baseline tick, tier icons)
    - Pod-share donut (win shares vs. 25% baseline)
@@ -148,9 +192,10 @@ Color coding via `getWinRateTier()` utility:
      for details on touch devices, keyboard accessible)
    - Top 5 decks by Bayesian-adjusted win rate (min. 2 games per deck)
    - Best deck (min. 3 games) / Most played deck highlights
+   - 📜 shortcut to the games archive
    - Live updates via Supabase Realtime
 
-4. **PWA**
+6. **PWA**
    - Web app manifest + launcher icons (192/512) and apple-touch-icon
 
 ## Code Style Guidelines
@@ -209,16 +254,19 @@ npm run build   # Production build must succeed
 ```
 
 Manual testing checklist:
-1. Add/remove wins and losses
-2. Import decks via bulk import (check "X neu, Y aktualisiert" toast)
-3. Delete a deck and undo it via the 5s toast
-4. Switch between players (data isolation)
-5. Refresh on `#/tracker/<player>` and `#/global` (view is restored)
-6. Open two tabs on the same player; edit in one, watch the other update (Realtime)
-7. Test Global Stats page loads all players
-8. Test responsive layout on mobile width (<640px)
-9. Test D20 easter egg (triple-click on background, NOT on buttons)
-10. Toggle dark mode and reload (no light flash)
+1. Enter a game via "Neues Spiel": pick decks, tap a winner, save
+   (check toast + archive entry)
+2. Quick-add a new deck inside the modal ("＋ Neues Deck")
+3. Edit a game in the archive (change winner/date), delete it and undo
+   via the 5s toast
+4. Delete a registry deck and undo it via the 5s toast
+5. Switch between players (data isolation)
+6. Refresh on `#/tracker/<player>`, `#/global` and `#/games` (view restored)
+7. Open two tabs; enter a game in one, watch the other update (Realtime)
+8. Test Global Stats page loads all players
+9. Test responsive layout on mobile width (<640px)
+10. Test D20 easter egg (triple-click on background, NOT on buttons)
+11. Toggle dark mode and reload (no light flash)
 
 ## Refactoring History
 
@@ -244,6 +292,16 @@ Completed in 2026-07 (see `plan.md`):
 | **Visual** | Anti-FOUC dark mode, CSS `:hover` via custom properties (no JS handlers), 25% baseline ticks, tier icons, `lang="de"` |
 | **Cleanup** | Removed unused primitives library, images, CSS classes, `100MB` file; assets moved to `src/assets/` |
 | **Features** | Pod-share donut, activity/winrate scatter (hand-rolled SVG), PWA manifest + icons |
+
+Completed in 2026-07 (Data Model v2, see `plan2.md`):
+
+| Phase | Changes |
+|-------|---------|
+| **Schema** | `games` + `game_participants` tables (SQL in SUPABASE_SETUP.md); `decks.wins/losses` frozen as legacy baseline |
+| **Data layer** | Game CRUD in `supabaseClient.js`, `useGames` hook with realtime, `combineDeckStats` merge util, `addDeckToRegistry` quick-add |
+| **Game entry** | `NewGameModal`: 2x2 player grid, tap-to-crown winner, deck selects, participant remove/re-add, quick-add deck, edit mode with date |
+| **Archive** | `GamesArchiveView` at `#/games`: day grouping, edit, delete with 5s undo (re-insert) |
+| **Deprecation** | Read-only deck bars (no +/- controls), single-deck add replaces bulk import, `updateDeck` removed, name-based `deleteDeckByName`, `Btn.jsx` deleted |
 
 See git history for detailed commits:
 ```bash
@@ -282,8 +340,8 @@ When making commits on behalf of the user:
 
 ## Future Enhancements (Potential)
 
-- Match history with timestamps
 - Deck archetype categorization
 - Win/loss streak tracking
-- Head-to-head matchup records
+- Head-to-head matchup records (possible with v2 game data)
 - Seasonal statistics reset
+- Auth + row level security (see `auth.md`)
