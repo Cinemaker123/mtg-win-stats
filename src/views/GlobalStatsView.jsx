@@ -8,6 +8,8 @@ import { useIsMobile } from "../hooks/useIsMobile.js";
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { StatCard } from "../components/StatCard.jsx";
+import { PodShareDonut } from "../components/PodShareDonut.jsx";
+import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils / API
 import { supabase, getDecks } from "../supabaseClient.js";
@@ -145,7 +147,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       overallWinRate,
       bestDeck,
       mostPlayed,
-      allDecks: allDecks.slice(0, 5),
+      allDecks,
+      topDecks: allDecks.slice(0, 5),
     };
   }, [allData]);
 
@@ -255,12 +258,32 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               </div>
             </div>
 
-            {/* Top Decks */}
+            {/* Pod share donut */}
+            {stats.totalWinsAll > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Sieg-Anteile</div>
+                <div className={styles.card}>
+                  <PodShareDonut playerStats={stats.playerStats} />
+                </div>
+              </div>
+            )}
+
+            {/* Activity vs. performance scatter */}
             {stats.allDecks.length > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Aktivität vs. Winrate</div>
+                <div className={styles.card}>
+                  <DeckScatter decks={stats.allDecks} />
+                </div>
+              </div>
+            )}
+
+            {/* Top Decks */}
+            {stats.topDecks.length > 0 && (
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Top 5 Decks</div>
                 <div className={styles.deckList}>
-                  {stats.allDecks.map((deck) => (
+                  {stats.topDecks.map((deck) => (
                     <div key={`${deck.player}-${deck.name}`} className={styles.deckRow}>
                       <div 
                         className={styles.deckAvatar}
