@@ -143,12 +143,6 @@
 }
 
 /* Dashboard */
-.sectionTitle,
-.sectionTitleRow,
-.sectionSubtitle {
-  /* These title helpers were part of earlier layouts and are no longer used. */
-}
-
 .emptyState {
   text-align: center;
   padding: 60px 20px;
@@ -302,10 +296,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.deckWinRate {
-  /* This deck-win-rate helper was part of an earlier layout and is no longer used. */
 }
 
 .deleteButton {

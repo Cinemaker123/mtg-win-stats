@@ -128,10 +128,3 @@ body {
   transition: background-color var(--transition-base),
               color var(--transition-base);
 }
-
-/* Utility classes for common patterns */
-.surface,
-.text-gradient {
-  /* Unused global utility classes — kept here as placeholders for future use
-     but not currently applied anywhere. */
-}

@@ -34,13 +34,6 @@
   justify-content: center;
 }
 
-.title,
-.titleMobile,
-.subtitle,
-.subtitleMobile {
-  /* These were part of an earlier design and are no longer rendered. */
-}
-
 .playerGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
