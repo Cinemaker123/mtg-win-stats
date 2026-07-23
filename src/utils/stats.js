@@ -154,3 +154,34 @@ export function getDynamicStats(decks) {
 
   return stats;
 }
+
+/**
+ * Combine frozen legacy deck counters with game-derived counts (Data Model v2).
+ * Stats everywhere operate on these combined counts:
+ *   combined = legacy baseline (decks.wins/losses, frozen) + games since migration
+ * Decks that only exist in games (deleted from the registry) still appear.
+ * @param {Array} legacyDecks - registry decks ({ name, wins, losses })
+ * @param {Array} games - games ({ participants: [{ player, deck, isWinner }] })
+ * @param {string} player - player to compute counts for
+ * @returns {Array} - deck list ({ name, wins, losses })
+ */
+export function combineDeckStats(legacyDecks, games, player) {
+  const combined = new Map();
+  for (const d of legacyDecks) {
+    combined.set(d.name.toLowerCase(), { name: d.name, wins: d.wins, losses: d.losses });
+  }
+  for (const g of games) {
+    for (const p of g.participants) {
+      if (p.player !== player) continue;
+      const key = p.deck.toLowerCase();
+      const entry = combined.get(key) || { name: p.deck, wins: 0, losses: 0 };
+      if (p.isWinner) {
+        entry.wins += 1;
+      } else {
+        entry.losses += 1;
+      }
+      combined.set(key, entry);
+    }
+  }
+  return [...combined.values()];
+}

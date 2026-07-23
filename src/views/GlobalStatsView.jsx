@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 
 // Hooks
 import { useIsMobile } from "../hooks/useIsMobile.js";
+import { useGames } from "../hooks/useGames.js";
 
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
@@ -13,13 +14,14 @@ import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils / API
 import { supabase, getDecks } from "../supabaseClient.js";
-import { getWinRateTier, adjustedWinRate, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+import { getWinRateTier, adjustedWinRate, combineDeckStats, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   const isMobile = useIsMobile();
+  const { games } = useGames();
   const [allData, setAllData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,7 +78,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   // Win rates are kept as 0-1 numbers throughout; formatted only at render time
   const stats = useMemo(() => {
     const playerStats = PLAYERS.map(player => {
-      const decks = allData[player] || [];
+      const decks = combineDeckStats(allData[player] || [], games, player);
       const totalGames = decks.reduce((s, d) => s + d.wins + d.losses, 0);
       const totalWins = decks.reduce((s, d) => s + d.wins, 0);
       const totalLosses = decks.reduce((s, d) => s + d.losses, 0);
@@ -106,7 +108,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     // samples regress toward the 25% pod baseline
     const allDecks = [];
     PLAYERS.forEach(player => {
-      const decks = allData[player] || [];
+      const decks = combineDeckStats(allData[player] || [], games, player);
       decks.forEach(deck => {
         const total = deck.wins + deck.losses;
         if (total > 0) {
@@ -130,7 +132,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     let mostPlayed = null;
     let maxGames = 0;
     PLAYERS.forEach(player => {
-      const decks = allData[player] || [];
+      const decks = combineDeckStats(allData[player] || [], games, player);
       decks.forEach(deck => {
         const total = deck.wins + deck.losses;
         if (total > maxGames) {
@@ -152,7 +154,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       // Top 5 excludes one-game wonders (min. 2 games)
       topDecks: allDecks.filter(d => d.totalGames >= 2).slice(0, 5),
     };
-  }, [allData]);
+  }, [allData, games]);
 
   return (
     <div className={styles.container}>

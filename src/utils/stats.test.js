@@ -4,6 +4,7 @@ import {
   adjustedWinRate,
   getWinRateTier,
   getDynamicStats,
+  combineDeckStats,
   PRIOR_GAMES,
   PRIOR_WIN_RATE,
 } from "./stats.js";
@@ -84,5 +85,68 @@ describe("getDynamicStats", () => {
       { name: "Proven", wins: 18, losses: 2 },
     ]);
     expect(stats.find(s => s.label === "Bestes Deck").value).toBe("Proven");
+  });
+});
+
+describe("combineDeckStats", () => {
+  const legacy = [
+    { name: "Fallout", wins: 1, losses: 10 },
+    { name: "Daleks", wins: 1, losses: 0 },
+  ];
+  const games = [
+    {
+      id: "g1",
+      playedAt: "2026-07-23T18:00:00Z",
+      participants: [
+        { player: "pascal", deck: "Fallout", isWinner: true },
+        { player: "baum", deck: "Elves", isWinner: false },
+      ],
+    },
+    {
+      id: "g2",
+      playedAt: "2026-07-23T20:00:00Z",
+      participants: [
+        { player: "pascal", deck: "Fallout", isWinner: false },
+        { player: "baum", deck: "Elves", isWinner: true },
+      ],
+    },
+  ];
+
+  it("returns legacy counts unchanged when there are no games", () => {
+    expect(combineDeckStats(legacy, [], "pascal")).toEqual(legacy);
+  });
+
+  it("adds game-derived wins and losses on top of the legacy baseline", () => {
+    const result = combineDeckStats(legacy, games, "pascal");
+    const fallout = result.find(d => d.name === "Fallout");
+    expect(fallout.wins).toBe(2);   // 1 legacy + 1 game win
+    expect(fallout.losses).toBe(11); // 10 legacy + 1 game loss
+  });
+
+  it("includes decks that only exist in games (deleted from registry)", () => {
+    const gamesOnly = [{
+      id: "g3",
+      playedAt: "2026-07-23T21:00:00Z",
+      participants: [{ player: "pascal", deck: "Ghosts", isWinner: true }],
+    }];
+    const result = combineDeckStats(legacy, gamesOnly, "pascal");
+    expect(result.find(d => d.name === "Ghosts")).toEqual({ name: "Ghosts", wins: 1, losses: 0 });
+  });
+
+  it("ignores other players' participants", () => {
+    const result = combineDeckStats(legacy, games, "baum");
+    const elves = result.find(d => d.name === "Elves");
+    expect(elves).toEqual({ name: "Elves", wins: 1, losses: 1 });
+    expect(result.find(d => d.name === "Fallout").wins).toBe(1); // legacy only
+  });
+
+  it("matches deck names case-insensitively", () => {
+    const g = [{
+      id: "g4",
+      playedAt: "2026-07-23T22:00:00Z",
+      participants: [{ player: "pascal", deck: "fallout", isWinner: true }],
+    }];
+    const result = combineDeckStats(legacy, g, "pascal");
+    expect(result.find(d => d.name === "Fallout").wins).toBe(2);
   });
 });

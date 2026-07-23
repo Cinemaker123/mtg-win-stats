@@ -103,3 +103,149 @@ export async function saveDecks(player, decks) {
     throw error
   }
 }
+
+// ============================================================
+// Data Model v2: match-based game entry (see plan2.md)
+// ============================================================
+
+const GAMES_TABLE = 'games'
+const PARTICIPANTS_TABLE = 'game_participants'
+
+/**
+ * Fetch all games with their participants, newest first
+ * @returns {Promise<Array>} - [{ id, playedAt, participants: [{ player, deck, isWinner }] }]
+ */
+export async function getGames() {
+  const { data, error } = await supabase
+    .from(GAMES_TABLE)
+    .select('id, played_at, game_participants(player, deck, is_winner)')
+    .order('played_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching games:', error)
+    throw error
+  }
+
+  return (data || []).map(g => ({
+    id: g.id,
+    playedAt: g.played_at,
+    participants: (g.game_participants || []).map(p => ({
+      player: p.player,
+      deck: p.deck,
+      isWinner: p.is_winner,
+    })),
+  }))
+}
+
+/**
+ * Insert a game with its participants
+ * @param {Object} game
+ * @param {string} [game.playedAt] - ISO timestamp (defaults to now)
+ * @param {Array} game.participants - [{ player, deck, isWinner }]
+ * @returns {Promise<string>} - the new game's id
+ */
+export async function addGame({ playedAt, participants }) {
+  const { data: game, error } = await supabase
+    .from(GAMES_TABLE)
+    .insert({ played_at: playedAt || new Date().toISOString() })
+    .select('id')
+    .single()
+
+  if (error) {
+    console.error('Error inserting game:', error)
+    throw error
+  }
+
+  const { error: pError } = await supabase
+    .from(PARTICIPANTS_TABLE)
+    .insert(participants.map(p => ({
+      game_id: game.id,
+      player: p.player,
+      deck: p.deck,
+      is_winner: p.isWinner,
+    })))
+
+  if (pError) {
+    console.error('Error inserting participants:', pError)
+    throw pError
+  }
+
+  return game.id
+}
+
+/**
+ * Update a game: new played_at, participants replaced wholesale
+ * @param {string} id - game id
+ * @param {Object} game - { playedAt, participants }
+ */
+export async function updateGame(id, { playedAt, participants }) {
+  const { error } = await supabase
+    .from(GAMES_TABLE)
+    .update({ played_at: playedAt })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating game:', error)
+    throw error
+  }
+
+  const { error: delError } = await supabase
+    .from(PARTICIPANTS_TABLE)
+    .delete()
+    .eq('game_id', id)
+
+  if (delError) {
+    console.error('Error replacing participants:', delError)
+    throw delError
+  }
+
+  const { error: insError } = await supabase
+    .from(PARTICIPANTS_TABLE)
+    .insert(participants.map(p => ({
+      game_id: id,
+      player: p.player,
+      deck: p.deck,
+      is_winner: p.isWinner,
+    })))
+
+  if (insError) {
+    console.error('Error inserting participants:', insError)
+    throw insError
+  }
+}
+
+/**
+ * Delete a game (participants cascade)
+ * @param {string} id - game id
+ */
+export async function deleteGame(id) {
+  const { error } = await supabase
+    .from(GAMES_TABLE)
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting game:', error)
+    throw error
+  }
+}
+
+/**
+ * Add a deck to the registry with zeroed legacy counters.
+ * Existing decks are left untouched (ignoreDuplicates).
+ * @param {string} player - player name
+ * @param {string} name - deck name
+ */
+export async function addDeckToRegistry(player, name) {
+  const { error } = await supabase
+    .from(TABLE_NAME)
+    .upsert(
+      { player, name, wins: 0, losses: 0, updated_at: new Date().toISOString() },
+      { onConflict: 'player,name', ignoreDuplicates: true }
+    )
+
+  if (error) {
+    console.error('Error adding deck to registry:', error)
+    throw error
+  }
+}

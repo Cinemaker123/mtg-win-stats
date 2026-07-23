@@ -1,16 +1,17 @@
 // React
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
 import { useDecks } from "../hooks/useDecks.js";
+import { useGames } from "../hooks/useGames.js";
 import { useIsMobile } from "../hooks/useIsMobile.js";
 
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 
 // Utils
-import { PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import { PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
 
 // Sub-components
 import { DashboardTab } from "./tracker/DashboardTab.jsx";
@@ -30,6 +31,12 @@ import styles from "./TrackerView.module.css";
  */
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   const { decks, loading, loaded, error, retry, updateDeck, addDecks, deleteDeck, restoreDeck } = useDecks(player);
+  const { games } = useGames();
+  // Stats display combines frozen legacy counters with game-derived counts
+  const combinedDecks = useMemo(
+    () => combineDeckStats(decks, games, player),
+    [decks, games, player]
+  );
   const [tab, setTab] = useState("dashboard");
   const [toast, setToast] = useState(null);
   const toastTimeoutRef = useRef(null);
@@ -149,7 +156,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
             </div>
           ) : (
             <>
-              {tab === "dashboard" && <DashboardTab decks={decks} />}
+              {tab === "dashboard" && <DashboardTab decks={combinedDecks} />}
               
               {tab === "data" && (
                 <>
