@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import d20Image from "../D20_icon.png";
+import d20Image from "../assets/D20_icon.png";
 import styles from './D20.module.css';
 
 /**

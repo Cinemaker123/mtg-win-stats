@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import logoImage from "../6214ff04ba3c68672b23d6cf.png";
+import logoImage from "../assets/logo.png";
 import styles from './Logo.module.css';
 
 /**

@@ -143,25 +143,10 @@
 }
 
 /* Dashboard */
-.sectionTitle {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 20px;
-  color: var(--color-text);
-  margin-bottom: 14px;
-}
-
-.sectionTitleRow {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 20px;
-  color: var(--color-text);
-}
-
+.sectionTitle,
+.sectionTitleRow,
 .sectionSubtitle {
-  color: var(--color-text-muted);
-  font-size: 12px;
-  margin-top: 2px;
+  /* These title helpers were part of earlier layouts and are no longer used. */
 }
 
 .emptyState {
@@ -320,10 +305,7 @@
 }
 
 .deckWinRate {
-  font-size: 13px;
-  font-weight: 800;
-  font-family: var(--font-display);
-  flex-shrink: 0;
+  /* This deck-win-rate helper was part of an earlier layout and is no longer used. */
 }
 
 .deleteButton {

@@ -34,29 +34,11 @@
   justify-content: center;
 }
 
-.title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 36px;
-  color: var(--color-text);
-  margin: 0 0 8px 0;
-}
-
-.titleMobile {
-  composes: title;
-  font-size: 28px;
-}
-
-.subtitle {
-  font-family: var(--font-body);
-  font-size: 16px;
-  color: var(--color-text-muted);
-  margin: 0;
-}
-
+.title,
+.titleMobile,
+.subtitle,
 .subtitleMobile {
-  composes: subtitle;
-  font-size: 14px;
+  /* These were part of an earlier design and are no longer rendered. */
 }
 
 .playerGrid {

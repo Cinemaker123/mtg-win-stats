@@ -130,15 +130,8 @@ body {
 }
 
 /* Utility classes for common patterns */
-.surface {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-}
-
+.surface,
 .text-gradient {
-  background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  /* Unused global utility classes — kept here as placeholders for future use
+     but not currently applied anywhere. */
 }
