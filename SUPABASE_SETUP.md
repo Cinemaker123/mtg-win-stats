@@ -43,7 +43,17 @@ Alternative: Erstelle eine Policy:
 CREATE POLICY "Allow all" ON decks FOR ALL USING (true) WITH CHECK (true);
 ```
 
-## Schritt 4: API-Keys in Vercel eintragen
+## Schritt 4: Realtime aktivieren
+
+Damit Änderungen anderer Spieler live erscheinen (ohne Neuladen), muss die `decks`-Tabelle zur Realtime-Publication hinzugefügt werden. Im **SQL Editor** ausführen:
+
+```sql
+alter publication supabase_realtime add table public.decks;
+```
+
+Ohne diesen Schritt funktioniert die App normal, aber ohne Live-Updates.
+
+## Schritt 5: API-Keys in Vercel eintragen
 
 1. Gehe in Supabase zu **Project Settings** → **API**
 2. Kopiere:
