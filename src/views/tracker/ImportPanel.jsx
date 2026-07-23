@@ -84,9 +84,7 @@ export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
           onChange={e => setSingleDeckName(e.target.value)}
           placeholder="Neues Deck hinzufügen..."
           className={styles.importTextarea}
-          style={{ flex: 1, height: "36px" }}
-          onFocus={e => e.target.style.borderColor = accentColor}
-          onBlur={e => e.target.style.borderColor = ""}
+          style={{ flex: 1, height: "36px", "--accent": accentColor }}
           onKeyDown={e => e.key === "Enter" && addSingleDeck()}
           ref={inputRef}
         />
@@ -117,8 +115,7 @@ export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
         onChange={e => setImportText(e.target.value)}
         placeholder={"Deckname\nGewonnen: 10\nVerloren: 5"}
         className={styles.importTextarea}
-        onFocus={e => e.target.style.borderColor = accentColor}
-        onBlur={e => e.target.style.borderColor = ""}
+        style={{ "--accent": accentColor }}
       />
       <button
         onClick={parseImport}

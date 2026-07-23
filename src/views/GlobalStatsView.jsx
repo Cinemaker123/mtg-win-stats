@@ -189,14 +189,14 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                 />
                 <StatCard 
                   label="Bestes Deck" 
-                  value={stats.bestDeck ? stats.bestDeck.name.charAt(0).toUpperCase() + stats.bestDeck.name.slice(1) : "-"}
+                  value={stats.bestDeck ? stats.bestDeck.name : "-"}
                   sub={stats.bestDeck ? `${(stats.bestDeck.winRate * 100).toFixed(1)}% von ${stats.bestDeck.player}` : "Noch keine Daten"}
                   accent="#f39c12" 
                   icon="🏆"
                 />
                 <StatCard 
                   label="Meistgespielt" 
-                  value={stats.mostPlayed ? stats.mostPlayed.name.charAt(0).toUpperCase() + stats.mostPlayed.name.slice(1) : "-"}
+                  value={stats.mostPlayed ? stats.mostPlayed.name : "-"}
                   sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${stats.mostPlayed.player}` : "Noch keine Daten"}
                   accent="#9b59b6" 
                   icon="🎯"
@@ -227,6 +227,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                         className={styles.winRate}
                         style={{ color: getWinRateTier(p.winRate).color }}
                       >
+                        <span title={getWinRateTier(p.winRate).label}>
+                          {getWinRateTier(p.winRate).icon}
+                        </span>{" "}
                         {(p.winRate * 100).toFixed(1)}%
                       </div>
                       <div className={styles.record}>
@@ -235,6 +238,10 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                     </div>
                     {/* Win rate bar */}
                     <div className={styles.winRateBar}>
+                      <div
+                        className={styles.winRateBaseline}
+                        title="Zufalls-Baseline (25%)"
+                      />
                       <div 
                         className={styles.winRateBarFill}
                         style={{ 
@@ -262,9 +269,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                         {deck.player[0].toUpperCase()}
                       </div>
                       <div className={styles.deckInfo}>
-                        <div className={styles.deckName}>
-                          {deck.name.charAt(0).toUpperCase() + deck.name.slice(1)}
-                        </div>
+                        <div className={styles.deckName}>{deck.name}</div>
                         <div className={styles.deckPlayer}>{deck.player}</div>
                       </div>
                       <div className={styles.deckStats}>
@@ -272,6 +277,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                           className={styles.deckWinRate}
                           style={{ color: getWinRateTier(deck.winRate).color }}
                         >
+                          <span title={getWinRateTier(deck.winRate).label}>
+                            {getWinRateTier(deck.winRate).icon}
+                          </span>{" "}
                           {(deck.winRate * 100).toFixed(1)}%
                         </div>
                         <div className={styles.deckRecord}>

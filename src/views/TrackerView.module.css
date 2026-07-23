@@ -266,12 +266,26 @@
   background: var(--color-border-strong);
   border-radius: 99px;
   overflow: hidden;
+  position: relative;
+}
+
+.deckBarBaseline {
+  position: absolute;
+  left: 25%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .deckBarFill {
   height: 100%;
   border-radius: 99px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 0;
 }
 
 /* WinLossBar */
@@ -392,6 +406,10 @@
   flex: 1;
 }
 
+.btn:hover {
+  background: var(--hover) !important;
+}
+
 /* Import panel */
 .importPanel {
   background: var(--color-surface);
@@ -433,7 +451,7 @@
 }
 
 .importTextarea:focus {
-  border-color: var(--color-accent-primary);
+  border-color: var(--accent, var(--color-accent-primary));
 }
 
 .importButton {

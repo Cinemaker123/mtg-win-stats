@@ -59,6 +59,10 @@ export function DashboardTab({ decks }) {
                         background: getWinRateTier(wr).gradient,
                       }}
                     />
+                    <div
+                      className={styles.deckBarBaseline}
+                      title="Zufalls-Baseline (25%)"
+                    />
                   </div>
                 </div>
               );

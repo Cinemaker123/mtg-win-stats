@@ -38,15 +38,9 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
             key={player}
             onClick={() => onSelectPlayer(player)}
             className={isMobile ? styles.playerCardMobile : styles.playerCard}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = PLAYER_COLORS[player];
-              e.currentTarget.style.transform = "translateY(-4px)";
-              e.currentTarget.style.boxShadow = `0 8px 24px ${PLAYER_COLORS[player]}40`;
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = "transparent";
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "";
+            style={{
+              "--accent": PLAYER_COLORS[player],
+              "--accent-soft": `${PLAYER_COLORS[player]}40`,
             }}
           >
             <div 
@@ -70,15 +64,10 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
             ${isMobile ? styles.globalStatsButtonMobile : styles.globalStatsButton}
             ${isDark ? styles.globalStatsButtonDark : ""}
           `}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
-            e.currentTarget.style.boxShadow = isDark 
-              ? "0 8px 32px rgba(118,75,162,0.4), 0 0 0 1px rgba(255,255,255,0.15)"
-              : "0 8px 32px rgba(102,126,234,0.5), 0 0 0 1px rgba(255,255,255,0.3)";
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = "";
-            e.currentTarget.style.boxShadow = "";
+          style={isDark ? {
+            "--glow": "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+          } : {
+            "--glow": "0 8px 32px rgba(102, 126, 234, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
           }}
         >
           <div className={styles.globalStatsContent}>

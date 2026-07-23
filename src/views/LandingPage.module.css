@@ -90,6 +90,12 @@
   box-shadow: var(--shadow-md);
 }
 
+.playerCard:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px var(--accent-soft);
+}
+
 .playerCardMobile {
   composes: playerCard;
   padding: 30px 20px;
@@ -159,6 +165,11 @@
   transition: all var(--transition-base);
   -webkit-tap-highlight-color: transparent;
   box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.globalStatsButton:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--glow);
 }
 
 .globalStatsButtonMobile {

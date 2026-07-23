@@ -176,11 +176,25 @@
   background: var(--color-border-strong);
   border-radius: 3px;
   overflow: hidden;
+  position: relative;
+}
+
+.winRateBaseline {
+  position: absolute;
+  left: 25%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .winRateBarFill {
   height: 100%;
   border-radius: 3px;
+  position: relative;
+  z-index: 0;
 }
 
 .deckList {
