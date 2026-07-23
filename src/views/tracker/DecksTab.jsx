@@ -10,10 +10,11 @@ import { WinLossBar } from "./WinLossBar.jsx";
  * without a delete button — they disappear when their games are removed.
  * @param {Object} props
  * @param {Deck[]} props.decks - Combined deck stats to display
- * @param {Deck[]} props.registryDecks - Decks in the registry (deletable)
+ * @param {Deck[]} props.registryDecks - Decks in the registry (deletable/renamable)
  * @param {Function} props.deleteDeck - Delete a registry deck by name
+ * @param {Function} props.renameDeck - Rename a registry deck (oldName, newName)
  */
-export function DecksTab({ decks, registryDecks, deleteDeck }) {
+export function DecksTab({ decks, registryDecks, deleteDeck, renameDeck }) {
   const registryNames = new Set(registryDecks.map(d => d.name.toLowerCase()));
 
   return (
@@ -27,17 +28,17 @@ export function DecksTab({ decks, registryDecks, deleteDeck }) {
         </div>
       )}
 
-      {decks.map(deck => (
-        <WinLossBar
-          key={deck.name}
-          deck={deck}
-          onDelete={
-            registryNames.has(deck.name.toLowerCase())
-              ? () => deleteDeck(deck.name)
-              : null
-          }
-        />
-      ))}
+      {decks.map(deck => {
+        const inRegistry = registryNames.has(deck.name.toLowerCase());
+        return (
+          <WinLossBar
+            key={deck.name}
+            deck={deck}
+            onDelete={inRegistry ? () => deleteDeck(deck.name) : null}
+            onRename={inRegistry ? renameDeck : null}
+          />
+        );
+      })}
     </>
   );
 }
@@ -46,4 +47,5 @@ DecksTab.propTypes = {
   decks: PropTypes.arrayOf(DeckPropType).isRequired,
   registryDecks: PropTypes.arrayOf(DeckPropType).isRequired,
   deleteDeck: PropTypes.func.isRequired,
+  renameDeck: PropTypes.func.isRequired,
 };

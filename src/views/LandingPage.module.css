@@ -160,11 +160,20 @@
 .globalStatsContent {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
+  min-width: 0;
+}
+
+.globalStatsContentMobile {
+  composes: globalStatsContent;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .globalStatsIcon {
   font-size: 36px;
+  flex-shrink: 0;
 }
 
 .globalStatsIconMobile {
@@ -177,16 +186,25 @@
   font-weight: 800;
   font-size: 22px;
   color: #fff;
+  text-align: center;
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 
 .globalStatsTextMobile {
   composes: globalStatsText;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .buttonRow {
   display: flex;
   gap: 16px;
+}
+
+/* Equal-width buttons regardless of label length */
+.buttonRow > button {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .buttonRowMobile {

@@ -18,6 +18,7 @@ import { supabase, getDecks, saveDecks } from "../supabaseClient.js";
  * @property {Function} clearError - Clear error state
  * @property {Function} retry - Retry the initial load after a failure
  * @property {Function} addDecks - Add or merge new decks, returns { added, updated }
+ * @property {Function} renameDeck - Rename a deck, returns { ok, reason?, renamed? }
  * @property {Function} deleteDeckByName - Delete a deck by name, returns { deck, index } for undo
  * @property {Function} restoreDeck - Reinsert a previously deleted deck (undo)
  */
@@ -128,6 +129,20 @@ export function useDecks(player) {
     return { added, updated };
   }, [decks]);
 
+  const renameDeck = useCallback((oldName, newName) => {
+    const name = newName.trim();
+    if (!name) return { ok: false, reason: "empty" };
+    const idx = decks.findIndex(d => d.name.toLowerCase() === oldName.toLowerCase());
+    if (idx < 0) return { ok: false, reason: "missing" };
+    if (decks.some((d, i) => i !== idx && d.name.toLowerCase() === name.toLowerCase())) {
+      return { ok: false, reason: "duplicate" };
+    }
+    if (decks[idx].name === name) return { ok: true, renamed: false };
+    dirtyRef.current = true;
+    setDecks(ds => ds.map((d, i) => (i === idx ? { ...d, name } : d)));
+    return { ok: true, renamed: true };
+  }, [decks]);
+
   const deleteDeckByName = useCallback((name) => {
     const idx = decks.findIndex(d => d.name.toLowerCase() === name.toLowerCase());
     if (idx < 0) return null;
@@ -158,6 +173,7 @@ export function useDecks(player) {
     clearError,
     retry: load,
     addDecks,
+    renameDeck,
     deleteDeckByName,
     restoreDeck,
   };

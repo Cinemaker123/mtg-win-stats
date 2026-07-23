@@ -249,3 +249,24 @@ export async function addDeckToRegistry(player, name) {
     throw error
   }
 }
+
+/**
+ * Rename a deck in all recorded games of a player.
+ * The registry rename happens via saveDecks (full sync); this keeps the
+ * game history pointing at the same deck so combined stats don't split.
+ * @param {string} player - player name
+ * @param {string} oldName - current deck name
+ * @param {string} newName - new deck name
+ */
+export async function renameDeckInGames(player, oldName, newName) {
+  const { error } = await supabase
+    .from(PARTICIPANTS_TABLE)
+    .update({ deck: newName })
+    .eq('player', player)
+    .eq('deck', oldName)
+
+  if (error) {
+    console.error('Error renaming deck in games:', error)
+    throw error
+  }
+}

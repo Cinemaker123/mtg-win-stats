@@ -101,7 +101,7 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
               "--glow": "0 8px 32px rgba(39, 174, 96, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
             }}
           >
-            <div className={styles.globalStatsContent}>
+            <div className={isMobile ? styles.globalStatsContentMobile : styles.globalStatsContent}>
               <span className={isMobile ? styles.globalStatsIconMobile : styles.globalStatsIcon}>⚔️</span>
               <span className={isMobile ? styles.globalStatsTextMobile : styles.globalStatsText}>
                 Neues Spiel
@@ -120,7 +120,7 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
               "--glow": "0 8px 32px rgba(102, 126, 234, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
             }}
           >
-            <div className={styles.globalStatsContent}>
+            <div className={isMobile ? styles.globalStatsContentMobile : styles.globalStatsContent}>
               <span className={isMobile ? styles.globalStatsIconMobile : styles.globalStatsIcon}>📊</span>
               <span className={isMobile ? styles.globalStatsTextMobile : styles.globalStatsText}>
                 Gesamtübersicht

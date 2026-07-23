@@ -1,3 +1,4 @@
+import { useState } from "react";
 import PropTypes from "prop-types";
 import { DeckPropType } from "../../hooks/useDecks.js";
 import styles from "../TrackerView.module.css";
@@ -5,22 +6,64 @@ import styles from "../TrackerView.module.css";
 /**
  * Individual deck bar with win/loss display (read-only).
  * Results come from recorded games, so there are no manual +/- controls.
- * The delete button is only shown for decks in the registry (onDelete set).
+ * Rename/delete buttons are only shown for decks in the registry.
  * @param {Object} props
  * @param {Deck} props.deck - Deck data
  * @param {Function|null} props.onDelete - Delete deck from the registry
+ * @param {Function|null} props.onRename - Rename deck (oldName, newName)
  */
-export function WinLossBar({ deck, onDelete = null }) {
+export function WinLossBar({ deck, onDelete = null, onRename = null }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(deck.name);
   const total = deck.wins + deck.losses;
   const winPct = total === 0 ? 50 : (deck.wins / total) * 100;
   const lossPct = 100 - winPct;
 
+  const commitRename = () => {
+    setEditing(false);
+    if (draft.trim() && draft.trim() !== deck.name) {
+      onRename(deck.name, draft);
+    }
+  };
+
   return (
     <div className={styles.deckCard}>
-      {/* Row 1: Name + delete */}
+      {/* Row 1: Name (inline-editable) + actions */}
       <div className={styles.deckHeader}>
-        <div className={styles.deckName}>{deck.name}</div>
-        {onDelete && (
+        {editing ? (
+          <input
+            className={styles.deckNameInput}
+            value={draft}
+            autoFocus
+            onChange={e => setDraft(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") commitRename();
+              if (e.key === "Escape") {
+                setDraft(deck.name);
+                setEditing(false);
+              }
+            }}
+            onBlur={commitRename}
+          />
+        ) : (
+          <div className={styles.deckName}>{deck.name}</div>
+        )}
+        {onRename && !editing && (
+          <button
+            onClick={() => {
+              setDraft(deck.name);
+              setEditing(true);
+            }}
+            className={styles.editButton}
+            title="Deck umbenennen"
+            aria-label={`${deck.name} umbenennen`}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>
+            </svg>
+          </button>
+        )}
+        {onDelete && !editing && (
           <button
             onClick={onDelete}
             className={styles.deleteButton}
@@ -71,4 +114,5 @@ export function WinLossBar({ deck, onDelete = null }) {
 WinLossBar.propTypes = {
   deck: DeckPropType.isRequired,
   onDelete: PropTypes.func,
+  onRename: PropTypes.func,
 };

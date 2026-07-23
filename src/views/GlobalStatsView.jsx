@@ -150,9 +150,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       overallWinRate,
       bestDeck,
       mostPlayed,
+      // All played decks, sorted by Bayesian-adjusted win rate
       allDecks,
-      // Top 5 excludes one-game wonders (min. 2 games)
-      topDecks: allDecks.filter(d => d.totalGames >= 2).slice(0, 5),
     };
   }, [allData, games]);
 
@@ -287,12 +286,12 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               </div>
             )}
 
-            {/* Top Decks */}
-            {stats.topDecks.length > 0 && (
+            {/* All decks, ranked by Bayesian-adjusted win rate */}
+            {stats.allDecks.length > 0 && (
               <div className={styles.section}>
-                <div className={styles.sectionTitle}>Top 5 Decks</div>
+                <div className={styles.sectionTitle}>Alle Decks</div>
                 <div className={styles.deckList}>
-                  {stats.topDecks.map((deck) => (
+                  {stats.allDecks.map((deck) => (
                     <div key={`${deck.player}-${deck.name}`} className={styles.deckRow}>
                       <div 
                         className={styles.deckAvatar}

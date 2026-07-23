@@ -13,6 +13,9 @@ import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 // Utils
 import { PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
 
+// Utils / API
+import { renameDeckInGames } from "../supabaseClient.js";
+
 // Sub-components
 import { DashboardTab } from "./tracker/DashboardTab.jsx";
 import { DecksTab } from "./tracker/DecksTab.jsx";
@@ -30,7 +33,7 @@ import styles from "./TrackerView.module.css";
  * @param {Function} props.onToggleDark - Callback to toggle dark mode
  */
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
-  const { decks, loading, loaded, error, retry, addDecks, deleteDeckByName, restoreDeck } = useDecks(player);
+  const { decks, loading, loaded, error, retry, addDecks, renameDeck, deleteDeckByName, restoreDeck } = useDecks(player);
   const { games } = useGames();
   // Stats display combines frozen legacy counters with game-derived counts
   const combinedDecks = useMemo(
@@ -92,6 +95,31 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
     if (toast?.onAction) toast.onAction();
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     setToast(null);
+  };
+
+  // Rename a registry deck locally (synced via dirty flag) and in the
+  // game history, so combined stats don't split into old/new names
+  const handleRenameDeck = async (oldName, newName) => {
+    const result = renameDeck(oldName, newName);
+    if (!result.ok) {
+      showToast({
+        type: "error",
+        message: result.reason === "duplicate"
+          ? `❌ „${newName.trim()}" existiert bereits`
+          : "❌ Ungültiger Deckname",
+      });
+      return;
+    }
+    if (!result.renamed) return;
+    try {
+      await renameDeckInGames(player, oldName, newName.trim());
+      showToast({ type: "success", message: `✅ „${oldName}" umbenannt in „${newName.trim()}"` });
+    } catch {
+      showToast({
+        type: "error",
+        message: "⚠️ Name im Spielarchiv konnte nicht aktualisiert werden",
+      });
+    }
   };
 
   return (
@@ -164,6 +192,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                     decks={combinedDecks}
                     registryDecks={decks}
                     deleteDeck={handleDeleteDeck}
+                    renameDeck={handleRenameDeck}
                   />
                   <div className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}>
                     <ImportPanel 

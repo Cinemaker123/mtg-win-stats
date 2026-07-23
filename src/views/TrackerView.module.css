@@ -318,6 +318,29 @@
   color: var(--color-error);
 }
 
+.editButton {
+  composes: deleteButton;
+}
+
+.editButton:hover {
+  background: var(--color-btn-neutral-bg);
+  color: var(--color-text);
+}
+
+.deckNameInput {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-accent-primary);
+  border-radius: 8px;
+  padding: 4px 8px;
+  outline: none;
+}
+
 .winLossBar {
   height: 30px;
   border-radius: 9px;

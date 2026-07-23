@@ -180,6 +180,8 @@ Color coding via `getWinRateTier()` utility:
      with 25% baseline tick
    - Decks tab with read-only win/loss bars (legacy + game-derived);
      unplayed decks show a neutral bar; games-only decks have no delete
+   - Rename registry decks inline (pencil); renames propagate to the
+     game history via `renameDeckInGames` so stats don't split
    - Delete registry decks with 5s undo toast
    - Single-deck add panel
    - Live updates via Supabase Realtime
@@ -190,7 +192,7 @@ Color coding via `getWinRateTier()` utility:
    - Pod-share donut (win shares vs. 25% baseline)
    - Activity vs. win rate scatter with quadrant labels (dots tappable
      for details on touch devices, keyboard accessible)
-   - Top 5 decks by Bayesian-adjusted win rate (min. 2 games per deck)
+   - Full list of all played decks, ranked by Bayesian-adjusted win rate
    - Best deck (min. 3 games) / Most played deck highlights
    - 📜 shortcut to the games archive
    - Live updates via Supabase Realtime
