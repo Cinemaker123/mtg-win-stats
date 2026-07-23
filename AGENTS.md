@@ -144,9 +144,10 @@ Color coding via `getWinRateTier()` utility:
    - Cross-player game totals
    - Player comparison with win rate bars (25% baseline tick, tier icons)
    - Pod-share donut (win shares vs. 25% baseline)
-   - Activity vs. win rate scatter with quadrant labels
-   - Top 5 decks by Bayesian-adjusted win rate
-   - Best deck / Most played deck highlights
+   - Activity vs. win rate scatter with quadrant labels (dots tappable
+     for details on touch devices, keyboard accessible)
+   - Top 5 decks by Bayesian-adjusted win rate (min. 2 games per deck)
+   - Best deck (min. 3 games) / Most played deck highlights
    - Live updates via Supabase Realtime
 
 4. **PWA**
