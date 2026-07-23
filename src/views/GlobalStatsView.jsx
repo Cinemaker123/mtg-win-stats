@@ -183,8 +183,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                 <StatCard 
                   label="Gesamt-Winrate" 
                   value={`${(stats.overallWinRate * 100).toFixed(1)}%`}
-                  sub={stats.totalGamesAll > 0 ? `${stats.overallWinRate > 0.5 ? "🔥 Über 50%" : "📈 Unter 50%"}` : "Noch keine Spiele"}
-                  accent={stats.overallWinRate >= 0.5 ? "#27ae60" : "#e74c3c"} 
+                  sub={stats.totalGamesAll > 0 ? `${getWinRateTier(stats.overallWinRate).icon} ${getWinRateTier(stats.overallWinRate).label} · Baseline: 25%` : "Noch keine Spiele"}
+                  accent={getWinRateTier(stats.overallWinRate).color} 
                   icon="📈"
                 />
                 <StatCard 

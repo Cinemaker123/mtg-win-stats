@@ -59,13 +59,14 @@ export default function App() {
     }
   }, [route]);
 
-  // D20 triple-click easter egg
+  // D20 triple-click easter egg (ignored on interactive elements,
+  // so rapid clicking of +1/-1 buttons doesn't trigger it)
   useEffect(() => {
     const handleClick = (e) => {
-      if (e.detail === 3) {
-        setShowDie(true);
-        setDieLanded(false);
-      }
+      if (e.detail !== 3) return;
+      if (e.target.closest('button, a, input, textarea, select, [role="button"]')) return;
+      setShowDie(true);
+      setDieLanded(false);
     };
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);

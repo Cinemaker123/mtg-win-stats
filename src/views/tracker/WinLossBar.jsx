@@ -38,26 +38,32 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
 
       {/* Row 2: Bar */}
       <div className={styles.winLossBar}>
-        <div 
-          className={styles.winLossSection}
-          style={{
-            width: `${winPct}%`,
-            background: "var(--gradient-win)",
-            minWidth: deck.wins > 0 ? 30 : 0,
-          }}
-        >
-          {deck.wins > 0 && <span className={styles.winLossCount}>{deck.wins}</span>}
-        </div>
-        <div 
-          className={styles.winLossSection}
-          style={{
-            width: `${lossPct}%`,
-            background: "var(--gradient-loss)",
-            minWidth: deck.losses > 0 ? 30 : 0,
-          }}
-        >
-          {deck.losses > 0 && <span className={styles.winLossCount}>{deck.losses}</span>}
-        </div>
+        {total === 0 ? (
+          <div className={styles.winLossEmpty}>Noch keine Spiele</div>
+        ) : (
+          <>
+            <div 
+              className={styles.winLossSection}
+              style={{
+                width: `${winPct}%`,
+                background: "var(--gradient-win)",
+                minWidth: deck.wins > 0 ? 30 : 0,
+              }}
+            >
+              {deck.wins > 0 && <span className={styles.winLossCount}>{deck.wins}</span>}
+            </div>
+            <div 
+              className={styles.winLossSection}
+              style={{
+                width: `${lossPct}%`,
+                background: "var(--gradient-loss)",
+                minWidth: deck.losses > 0 ? 30 : 0,
+              }}
+            >
+              {deck.losses > 0 && <span className={styles.winLossCount}>{deck.losses}</span>}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Row 3: Controls */}

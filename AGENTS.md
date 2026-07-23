@@ -195,13 +195,15 @@ When making commits on behalf of the user:
    git config user.email "kimi@kimi.co"
    ```
 
-2. **Make and push the commit** as usual
+2. **Make the commit locally** as usual. Do not push to the remote unless the user explicitly asks for it.
 
 3. **After committing**, restore the original user:
    ```bash
    git config user.name "pascal müller"
    git config user.email "54896623+Cinemaker123@users.noreply.github.com"
    ```
+
+> Note: Kimi should not push commits to the remote by default. Keep commits local and let the user push when they are ready.
 
 ## Deployment
 
