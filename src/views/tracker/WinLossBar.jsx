@@ -1,19 +1,16 @@
 import PropTypes from "prop-types";
 import { DeckPropType } from "../../hooks/useDecks.js";
 import styles from "../TrackerView.module.css";
-import { Btn } from "./Btn.jsx";
 
 /**
- * Individual deck bar with win/loss display and controls
+ * Individual deck bar with win/loss display (read-only).
+ * Results come from recorded games, so there are no manual +/- controls.
+ * The delete button is only shown for decks in the registry (onDelete set).
  * @param {Object} props
  * @param {Deck} props.deck - Deck data
- * @param {Function} props.onIncWin - Increment wins
- * @param {Function} props.onDecWin - Decrement wins
- * @param {Function} props.onIncLoss - Increment losses
- * @param {Function} props.onDecLoss - Decrement losses
- * @param {Function} props.onDelete - Delete deck
+ * @param {Function|null} props.onDelete - Delete deck from the registry
  */
-export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onDelete }) {
+export function WinLossBar({ deck, onDelete = null }) {
   const total = deck.wins + deck.losses;
   const winPct = total === 0 ? 50 : (deck.wins / total) * 100;
   const lossPct = 100 - winPct;
@@ -23,17 +20,19 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
       {/* Row 1: Name + delete */}
       <div className={styles.deckHeader}>
         <div className={styles.deckName}>{deck.name}</div>
-        <button
-          onClick={onDelete}
-          className={styles.deleteButton}
-          title="Deck entfernen"
-          aria-label={`${deck.name} entfernen`}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-            <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-          </svg>
-        </button>
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className={styles.deleteButton}
+            title="Deck entfernen"
+            aria-label={`${deck.name} entfernen`}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Row 2: Bar */}
@@ -42,7 +41,7 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
           <div className={styles.winLossEmpty}>Noch keine Spiele</div>
         ) : (
           <>
-            <div 
+            <div
               className={styles.winLossSection}
               style={{
                 width: `${winPct}%`,
@@ -52,7 +51,7 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
             >
               {deck.wins > 0 && <span className={styles.winLossCount}>{deck.wins}</span>}
             </div>
-            <div 
+            <div
               className={styles.winLossSection}
               style={{
                 width: `${lossPct}%`,
@@ -65,26 +64,11 @@ export function WinLossBar({ deck, onIncWin, onDecWin, onIncLoss, onDecLoss, onD
           </>
         )}
       </div>
-
-      {/* Row 3: Controls */}
-      <div className={styles.controls}>
-        <span className={styles.controlLabelWin}>W</span>
-        <Btn onClick={onIncWin} bg="var(--color-btn-win-bg)" color="var(--color-success)" hoverBg="var(--color-btn-win-hover)" title="Sieg hinzufügen">+</Btn>
-        <Btn onClick={onDecWin} bg="var(--color-btn-neutral-bg)" color="var(--color-btn-neutral-text)" hoverBg="var(--color-btn-neutral-hover)" title="Sieg entfernen">−</Btn>
-        <div className={styles.controlSpacer} />
-        <Btn onClick={onDecLoss} bg="var(--color-btn-neutral-bg)" color="var(--color-btn-neutral-text)" hoverBg="var(--color-btn-neutral-hover)" title="Niederlage entfernen">−</Btn>
-        <Btn onClick={onIncLoss} bg="var(--color-btn-loss-bg)" color="var(--color-error)" hoverBg="var(--color-btn-loss-hover)" title="Niederlage hinzufügen">+</Btn>
-        <span className={styles.controlLabelLoss}>L</span>
-      </div>
     </div>
   );
 }
 
 WinLossBar.propTypes = {
   deck: DeckPropType.isRequired,
-  onIncWin: PropTypes.func.isRequired,
-  onDecWin: PropTypes.func.isRequired,
-  onIncLoss: PropTypes.func.isRequired,
-  onDecLoss: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
+  onDelete: PropTypes.func,
 };

@@ -30,7 +30,7 @@ import styles from "./TrackerView.module.css";
  * @param {Function} props.onToggleDark - Callback to toggle dark mode
  */
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
-  const { decks, loading, loaded, error, retry, updateDeck, addDecks, deleteDeck, restoreDeck } = useDecks(player);
+  const { decks, loading, loaded, error, retry, addDecks, deleteDeckByName, restoreDeck } = useDecks(player);
   const { games } = useGames();
   // Stats display combines frozen legacy counters with game-derived counts
   const combinedDecks = useMemo(
@@ -77,8 +77,8 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
 
   // Delete with 5s undo window (undo reinserts locally, the debounced
   // full sync restores the row in Supabase if it was already deleted)
-  const handleDeleteDeck = (idx) => {
-    const removed = deleteDeck(idx);
+  const handleDeleteDeck = (name) => {
+    const removed = deleteDeckByName(name);
     if (!removed) return;
     showToast({
       type: "undo",
@@ -160,10 +160,10 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
               
               {tab === "data" && (
                 <>
-                  <DecksTab 
-                    decks={decks} 
-                    updateDeck={updateDeck} 
-                    deleteDeck={handleDeleteDeck} 
+                  <DecksTab
+                    decks={combinedDecks}
+                    registryDecks={decks}
+                    deleteDeck={handleDeleteDeck}
                   />
                   <div className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}>
                     <ImportPanel 

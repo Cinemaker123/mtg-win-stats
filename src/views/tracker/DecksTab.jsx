@@ -5,13 +5,17 @@ import styles from "../TrackerView.module.css";
 import { WinLossBar } from "./WinLossBar.jsx";
 
 /**
- * Decks tab showing win/loss controls for each deck
+ * Decks tab: read-only win/loss bars (combined legacy + game stats).
+ * Decks that only exist in recorded games (not in the registry) are shown
+ * without a delete button — they disappear when their games are removed.
  * @param {Object} props
- * @param {Deck[]} props.decks - List of decks
- * @param {Function} props.updateDeck - Update a deck by index
- * @param {Function} props.deleteDeck - Delete a deck by index
+ * @param {Deck[]} props.decks - Combined deck stats to display
+ * @param {Deck[]} props.registryDecks - Decks in the registry (deletable)
+ * @param {Function} props.deleteDeck - Delete a registry deck by name
  */
-export function DecksTab({ decks, updateDeck, deleteDeck }) {
+export function DecksTab({ decks, registryDecks, deleteDeck }) {
+  const registryNames = new Set(registryDecks.map(d => d.name.toLowerCase()));
+
   return (
     <>
       {decks.length === 0 && (
@@ -22,16 +26,16 @@ export function DecksTab({ decks, updateDeck, deleteDeck }) {
           <div className={styles.emptyTitle}>Noch keine Decks</div>
         </div>
       )}
-      
-      {decks.map((deck, i) => (
+
+      {decks.map(deck => (
         <WinLossBar
-          key={i}
+          key={deck.name}
           deck={deck}
-          onIncWin={() => updateDeck(i, d => ({ ...d, wins: d.wins + 1 }))}
-          onDecWin={() => updateDeck(i, d => ({ ...d, wins: Math.max(0, d.wins - 1) }))}
-          onIncLoss={() => updateDeck(i, d => ({ ...d, losses: d.losses + 1 }))}
-          onDecLoss={() => updateDeck(i, d => ({ ...d, losses: Math.max(0, d.losses - 1) }))}
-          onDelete={() => deleteDeck(i)}
+          onDelete={
+            registryNames.has(deck.name.toLowerCase())
+              ? () => deleteDeck(deck.name)
+              : null
+          }
         />
       ))}
     </>
@@ -40,6 +44,6 @@ export function DecksTab({ decks, updateDeck, deleteDeck }) {
 
 DecksTab.propTypes = {
   decks: PropTypes.arrayOf(DeckPropType).isRequired,
-  updateDeck: PropTypes.func.isRequired,
+  registryDecks: PropTypes.arrayOf(DeckPropType).isRequired,
   deleteDeck: PropTypes.func.isRequired,
 };

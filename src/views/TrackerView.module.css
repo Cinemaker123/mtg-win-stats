@@ -351,37 +351,6 @@
   font-weight: 600;
 }
 
-.controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.controlLabel {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.controlLabelWin {
-  composes: controlLabel;
-  color: var(--color-success);
-}
-
-.controlLabelLoss {
-  composes: controlLabel;
-  color: var(--color-error);
-}
-
-.controlSpacer {
-  flex: 1;
-}
-
-.btn:hover {
-  background: var(--hover) !important;
-}
-
 /* Import panel */
 .importPanel {
   background: var(--color-surface);
@@ -397,15 +366,6 @@
 
 .importContent {
   padding: 0 12px 12px;
-}
-
-.importHint {
-  font-size: 10px;
-  color: var(--color-text-muted);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-bottom: 6px;
 }
 
 .importTextarea {
@@ -476,22 +436,4 @@
 
 .tabIcon {
   font-size: 20px;
-}
-
-/* Btn component */
-.btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  font-size: 20px;
-  font-weight: 900;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  transition: background var(--transition-fast);
-  flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
 }

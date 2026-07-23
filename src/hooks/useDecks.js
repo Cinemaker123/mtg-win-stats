@@ -17,9 +17,8 @@ import { supabase, getDecks, saveDecks } from "../supabaseClient.js";
  * @property {string|null} error - Error message if any
  * @property {Function} clearError - Clear error state
  * @property {Function} retry - Retry the initial load after a failure
- * @property {Function} updateDeck - Update a specific deck by index
  * @property {Function} addDecks - Add or merge new decks, returns { added, updated }
- * @property {Function} deleteDeck - Delete a deck by index, returns { deck, index } for undo
+ * @property {Function} deleteDeckByName - Delete a deck by name, returns { deck, index } for undo
  * @property {Function} restoreDeck - Reinsert a previously deleted deck (undo)
  */
 
@@ -110,11 +109,6 @@ export function useDecks(player) {
     };
   }, [player, load]);
 
-  const updateDeck = useCallback((idx, fn) => {
-    dirtyRef.current = true;
-    setDecks(ds => ds.map((d, i) => (i === idx ? fn(d) : d)));
-  }, []);
-
   const addDecks = useCallback((newDecks) => {
     dirtyRef.current = true;
     let added = 0;
@@ -134,9 +128,10 @@ export function useDecks(player) {
     return { added, updated };
   }, [decks]);
 
-  const deleteDeck = useCallback((idx) => {
+  const deleteDeckByName = useCallback((name) => {
+    const idx = decks.findIndex(d => d.name.toLowerCase() === name.toLowerCase());
+    if (idx < 0) return null;
     const removed = decks[idx];
-    if (!removed) return null;
     dirtyRef.current = true;
     setDecks(ds => ds.filter((_, i) => i !== idx));
     return { deck: removed, index: idx };
@@ -162,9 +157,8 @@ export function useDecks(player) {
     error,
     clearError,
     retry: load,
-    updateDeck,
     addDecks,
-    deleteDeck,
+    deleteDeckByName,
     restoreDeck,
   };
 }
