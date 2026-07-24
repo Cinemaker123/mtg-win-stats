@@ -33,7 +33,7 @@ export function winRate(d) {
 // played PRIOR_GAMES imaginary games at the 4-player pod baseline (25%).
 // Unproven decks therefore regress toward the random average instead of
 // topping the rankings on tiny samples (e.g. a lucky 2-0).
-export const PRIOR_GAMES = 5;
+export const PRIOR_GAMES = 10;
 export const PRIOR_WIN_RATE = 0.25;
 
 /**
