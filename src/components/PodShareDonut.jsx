@@ -60,8 +60,7 @@ export function PodShareDonut({ playerStats }) {
             strokeDashoffset={-s.offset * C}
             transform="rotate(-90 100 100)"
           >
-            <title>{`${s.player}: ${(s.arcShare * 100).toFixed(1)}%`}</title>
-          </circle>
+              <title>{`${s.player.charAt(0).toUpperCase() + s.player.slice(1)}: ${(s.rawShare * 100).toFixed(1)}% der Siege (Bayes-Anteil: ${(s.arcShare * 100).toFixed(1)}%)`}</title>          </circle>
         ))}
         <text x="100" y="97" textAnchor="middle" className={styles.centerValue}>{totalGames}</text>
         <text x="100" y="116" textAnchor="middle" className={styles.centerLabel}>Spiele</text>
