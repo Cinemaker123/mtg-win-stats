@@ -17,6 +17,27 @@ const MIN_GAMES = 5;
 const GOOD_ZONE_FILL = "#4cc9f0";
 const GOOD_ZONE_OPACITY = 0.1;
 
+const coordinateKey = d => `${d.totalGames}:${d.winRate.toFixed(6)}`;
+
+const clusterOffsets = count => {
+  if (count === 1) return [[0, 0]];
+
+  // Sized for your current maximum cluster of 9 dots
+  const radius =
+    count <= 2 ? 5 :
+    count <= 4 ? 6.5 :
+    count <= 6 ? 8 :
+    11.5;
+
+  return Array.from({ length: count }, (_, i) => {
+    const angle = -Math.PI / 2 + (i / count) * Math.PI * 2;
+    return [
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+    ];
+  });
+};
+
 /**
  * Activity vs. performance scatter: one dot per played deck,
  * x = games played, y = win rate. Dashed references at the 25%
@@ -46,7 +67,43 @@ export function DeckScatter({ decks }) {
   const y = wr => PAD.t + (1 - wr) * plotH;
 
   const keyOf = d => `${d.player}-${d.name}`;
+
+  // Group decks occupying the exact same coordinate
+  const coordinateGroups = new Map();
+
+  decks.forEach(d => {
+    const key = coordinateKey(d);
+
+    if (!coordinateGroups.has(key)) {
+      coordinateGroups.set(key, []);
+    }
+
+    coordinateGroups.get(key).push(d);
+  });
+
+  // Assign every deck a stable position within its coordinate cluster
+  const dotLayout = new Map();
+
+  coordinateGroups.forEach(group => {
+    const sortedGroup = [...group].sort((a, b) =>
+      keyOf(a).localeCompare(keyOf(b))
+    );
+
+    const offsets = clusterOffsets(sortedGroup.length);
+
+    sortedGroup.forEach((d, i) => {
+      dotLayout.set(keyOf(d), {
+        dx: offsets[i][0],
+        dy: offsets[i][1],
+        clusterSize: sortedGroup.length,
+      });
+    });
+  });
+
   const selected = decks.find(d => keyOf(d) === selectedKey) || null;
+
+  {/*const keyOf = d => `${d.player}-${d.name}`;
+  const selected = decks.find(d => keyOf(d) === selectedKey) || null;*/}
 
   const toggleSelect = (d) => {
     const key = keyOf(d);
@@ -103,7 +160,7 @@ export function DeckScatter({ decks }) {
           textAnchor="middle"
           className={styles.refLabel}
         >
-          Min. {MIN_GAMES}
+          Min. {MIN_GAMES} Spiele →
         </text>
 
         {/* Quadrant labels */}
@@ -113,9 +170,9 @@ export function DeckScatter({ decks }) {
         <text x={W - PAD.r - 5} y={y(0) - 5} textAnchor="end" className={styles.quadrantLabel}>🗑️</text>
 
         {/* X axis label */}
-        <text x={(PAD.l + W - PAD.r) / 2} y={H - 6} textAnchor="middle" className={styles.axisLabel}>
-          Gespielte Spiele →
-        </text>
+        {/*<text x={(PAD.l + W - PAD.r) / 2} y={H - 6} textAnchor="middle" className={styles.axisLabel}>
+          
+        </text>*/}
 
         {/* Deck dots */}
         {decks.map(d => {
