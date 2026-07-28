@@ -53,6 +53,10 @@ export function DeckScatter({ decks }) {
 
   if (decks.length === 0) return null;
 
+  const playedDecks = decks.filter(d =>
+    d.totalGames > 0 && Number.isFinite(d.winRate)
+  );
+
   const plotW = W - PAD.l - PAD.r;
   const plotH = H - PAD.t - PAD.b;
 
@@ -60,7 +64,7 @@ export function DeckScatter({ decks }) {
   const maxGames = Math.max(
     1,
     MIN_GAMES * 1.2,
-    ...decks.map(d => d.totalGames)
+    ...playedDecks.map(d => d.totalGames)
   ) * 1.1;
 
   const x = g => PAD.l + (g / maxGames) * plotW;
@@ -71,7 +75,7 @@ export function DeckScatter({ decks }) {
   // Group decks occupying the exact same coordinate
   const coordinateGroups = new Map();
 
-  decks.forEach(d => {
+  playedDecks.forEach(d => {
     const key = coordinateKey(d);
 
     if (!coordinateGroups.has(key)) {
@@ -100,10 +104,7 @@ export function DeckScatter({ decks }) {
     });
   });
 
-  const selected = decks.find(d => keyOf(d) === selectedKey) || null;
-
-  {/*const keyOf = d => `${d.player}-${d.name}`;
-  const selected = decks.find(d => keyOf(d) === selectedKey) || null;*/}
+  const selected = playedDecks.find(d => keyOf(d) === selectedKey) || null;
 
   const toggleSelect = (d) => {
     const key = keyOf(d);
@@ -175,26 +176,42 @@ export function DeckScatter({ decks }) {
         </text>*/}
 
         {/* Deck dots */}
-        {decks.map(d => {
+        {playedDecks.map(d => {
           const key = keyOf(d);
           const isSelected = key === selectedKey;
+
+          const layout = dotLayout.get(key) || {
+            dx: 0,
+            dy: 0,
+            clusterSize: 1,
+          };
+
+          const isClustered = layout.clusterSize > 1;
+          const cx = x(d.totalGames) + layout.dx;
+          const cy = y(d.winRate) + layout.dy;
+
+          let dotRadius = isClustered ? 3.8 : 5;
+          if (isSelected) {
+            dotRadius = isClustered ? 5.5 : 6.5;
+          }
+
           const label = `${d.name} (${d.player}) — ${(d.winRate * 100).toFixed(1)}% · ${d.wins}W ${d.losses}L`;
 
           return (
             <g key={key}>
               <circle
-                cx={x(d.totalGames)}
-                cy={y(d.winRate)}
-                r={isSelected ? 6.5 : 5}
+                cx={cx}
+                cy={cy}
+                r={dotRadius}
                 fill={PLAYER_COLORS[d.player]}
                 className={isSelected ? styles.dotSelected : styles.dot}
               />
 
               {/* Enlarged invisible hit area for touch and keyboard */}
               <circle
-                cx={x(d.totalGames)}
-                cy={y(d.winRate)}
-                r={14}
+                cx={cx}
+                cy={cy}
+                r={isClustered ? 9 : 14}
                 fill="transparent"
                 className={styles.hitArea}
                 role="button"
@@ -213,7 +230,7 @@ export function DeckScatter({ decks }) {
             </g>
           );
         })}
-      </svg>
+              </svg>
 
       {/* Pinned details (mobile tap / keyboard) or usage hint */}
       {selected ? (
