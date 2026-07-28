@@ -6,13 +6,21 @@ import styles from "./DeckScatter.module.css";
 const W = 320;
 const H = 200;
 const PAD = { l: 30, r: 10, t: 12, b: 24 };
+
 // 4-player pod baseline win rate
 const BASELINE_WR = 0.25;
+
+// Minimum sample size for the positive top-right zone
+const MIN_GAMES = 5;
+
+// Cyan/teal keeps the zone distinct from the red, purple, orange and green player dots
+const GOOD_ZONE_FILL = "#4cc9f0";
+const GOOD_ZONE_OPACITY = 0.1;
 
 /**
  * Activity vs. performance scatter: one dot per played deck,
  * x = games played, y = win rate. Dashed references at the 25%
- * pod baseline and the average games played. Hand-rolled SVG.
+ * pod baseline and the minimum-games threshold. Hand-rolled SVG.
  *
  * Desktop: hover tooltips. Mobile/keyboard: tap or focus a dot to
  * pin its details below the chart (hover tooltips don't exist on touch).
@@ -26,8 +34,13 @@ export function DeckScatter({ decks }) {
 
   const plotW = W - PAD.l - PAD.r;
   const plotH = H - PAD.t - PAD.b;
-  const maxGames = Math.max(1, ...decks.map(d => d.totalGames)) * 1.1;
-  const avgGames = decks.reduce((s, d) => s + d.totalGames, 0) / decks.length;
+
+  // Keep x=5 visible even if every deck currently has fewer games.
+  const maxGames = Math.max(
+    1,
+    MIN_GAMES * 1.2,
+    ...decks.map(d => d.totalGames)
+  ) * 1.1;
 
   const x = g => PAD.l + (g / maxGames) * plotW;
   const y = wr => PAD.t + (1 - wr) * plotH;
@@ -40,9 +53,22 @@ export function DeckScatter({ decks }) {
     setSelectedKey(prev => (prev === key ? null : key));
   };
 
+  const goodZoneX = x(MIN_GAMES);
+
   return (
     <div className={styles.wrapper}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={styles.scatter} role="img" aria-label="Aktivität vs. Winrate">
+      <svg viewBox={`0 0 ${W} ${H}`} className={styles.scatter} role="img" aria-label="Deckperformance">
+        {/* Positive zone: enough games and above the pod baseline */}
+        <rect
+          x={goodZoneX}
+          y={PAD.t}
+          width={W - PAD.r - goodZoneX}
+          height={y(BASELINE_WR) - PAD.t}
+          fill={GOOD_ZONE_FILL}
+          opacity={GOOD_ZONE_OPACITY}
+          pointerEvents="none"
+        />
+
         {/* Axes */}
         <line x1={PAD.l} y1={y(0)} x2={W - PAD.r} y2={y(0)} className={styles.axis} />
         <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={y(0)} className={styles.axis} />
@@ -55,15 +81,32 @@ export function DeckScatter({ decks }) {
         ))}
 
         {/* Reference: 25% pod baseline */}
-        <line x1={PAD.l} y1={y(BASELINE_WR)} x2={W - PAD.r} y2={y(BASELINE_WR)} className={styles.refLine} />
+        <line
+          x1={PAD.l}
+          y1={y(BASELINE_WR)}
+          x2={W - PAD.r}
+          y2={y(BASELINE_WR)}
+          className={styles.refLine}
+        />
         <text x={W - PAD.r} y={y(BASELINE_WR) - 3} textAnchor="end" className={styles.refLabel}>
           25% Baseline
         </text>
 
-        {/* Reference: average games played */}
-        <line x1={x(avgGames)} y1={PAD.t} x2={x(avgGames)} y2={y(0)} className={styles.refLine} />
-        <text x={x(avgGames)} y={H - PAD.b + 11} textAnchor="middle" className={styles.refLabel}>
-          Ø {Math.round(avgGames)}
+        {/* Reference: minimum games played */}
+        <line
+          x1={x(MIN_GAMES)}
+          y1={PAD.t}
+          x2={x(MIN_GAMES)}
+          y2={y(0)}
+          className={styles.refLine}
+        />
+        <text
+          x={x(MIN_GAMES)}
+          y={H - PAD.b + 11}
+          textAnchor="middle"
+          className={styles.refLabel}
+        >
+          Min. {MIN_GAMES}
         </text>
 
         {/* Quadrant labels */}
@@ -82,6 +125,7 @@ export function DeckScatter({ decks }) {
           const key = keyOf(d);
           const isSelected = key === selectedKey;
           const label = `${d.name} (${d.player}) — ${(d.winRate * 100).toFixed(1)}% · ${d.wins}W ${d.losses}L`;
+
           return (
             <g key={key}>
               <circle
@@ -91,6 +135,7 @@ export function DeckScatter({ decks }) {
                 fill={PLAYER_COLORS[d.player]}
                 className={isSelected ? styles.dotSelected : styles.dot}
               />
+
               {/* Enlarged invisible hit area for touch and keyboard */}
               <circle
                 cx={x(d.totalGames)}

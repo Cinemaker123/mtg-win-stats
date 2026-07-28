@@ -279,7 +279,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             {/* Activity vs. performance scatter */}
             {stats.allDecks.length > 0 && (
               <div className={styles.section}>
-                <div className={styles.sectionTitle}>Aktivität vs. Winrate</div>
+                <div className={styles.sectionTitle}>Deckperformance</div>
                 <div className={styles.card}>
                   <DeckScatter decks={stats.allDecks} />
                 </div>
