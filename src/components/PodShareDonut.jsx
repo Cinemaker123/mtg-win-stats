@@ -60,7 +60,7 @@ export function PodShareDonut({ playerStats }) {
             strokeDashoffset={-s.offset * C}
             transform="rotate(-90 100 100)"
           >
-            <title>{`${s.player}: ${(s.rawShare * 100).toFixed(1)}%`}</title>
+            <title>{`${s.player}: ${(s.arcShare * 100).toFixed(1)}%`}</title>
           </circle>
         ))}
         <text x="100" y="97" textAnchor="middle" className={styles.centerValue}>{totalGames}</text>
