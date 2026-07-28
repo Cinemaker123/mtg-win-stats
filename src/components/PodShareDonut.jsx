@@ -4,6 +4,12 @@ import styles from "./PodShareDonut.module.css";
 // Expected win share per player in a 4-player pod
 const BASELINE = 0.25;
 
+// Bayesian smoothing: treat every player as if they'd already played
+// PRIOR_GAMES imaginary games at the pod baseline win rate. This pulls
+// small-sample players (e.g. 2 wins from 2 games) back toward 25%
+// instead of letting them dominate the donut.
+const PRIOR_GAMES = 5;
+
 /**
  * Donut chart of each player's share of total wins, with per-player
  * delta against the 25% pod baseline. Hand-rolled SVG, no dependencies.
@@ -17,17 +23,26 @@ export function PodShareDonut({ playerStats }) {
 
   const R = 80;
   const C = 2 * Math.PI * R;
-  const shares = playerStats.map(p => p.totalWins / totalWins);
+
+  // Bayesian-adjusted win rate per player: (wins + priorGames * baseline) / (games + priorGames)
+  const adjustedRates = playerStats.map(
+    p => (p.totalWins + PRIOR_GAMES * BASELINE) / (p.totalGames + PRIOR_GAMES)
+  );
+  const adjustedTotal = adjustedRates.reduce((s, v) => s + v, 0);
+  // Renormalize so the segments still sum to 1 for the donut geometry
+  const shares = adjustedRates.map(r => r / adjustedTotal);
+
   const segments = playerStats.map((p, i) => ({
     player: p.player,
     color: p.color,
     share: shares[i],
+    rawShare: p.totalWins / totalWins,
     offset: shares.slice(0, i).reduce((s, v) => s + v, 0),
   }));
 
   return (
     <div className={styles.wrapper}>
-      <svg viewBox="0 0 200 200" className={styles.donut} role="img" aria-label="Sieg-Anteile pro Spieler">
+      <svg viewBox="0 0 200 200" className={styles.donut} role="img" aria-label="Spielerstärke">
         {segments.map(s => (
           <circle
             key={s.player}
