@@ -88,10 +88,7 @@ export function DeckScatter({ decks }) {
           y2={y(BASELINE_WR)}
           className={styles.refLine}
         />
-        <text x={W - PAD.r} y={y(BASELINE_WR) - 3} textAnchor="end" className={styles.refLabel}>
-          25% Baseline
-        </text>
-
+        
         {/* Reference: minimum games played */}
         <line
           x1={x(MIN_GAMES)}
@@ -110,10 +107,10 @@ export function DeckScatter({ decks }) {
         </text>
 
         {/* Quadrant labels */}
-        <text x={PAD.l + 5} y={PAD.t + 9} className={styles.quadrantLabel}>💎 Geheimtipp</text>
-        <text x={W - PAD.r - 5} y={PAD.t + 9} textAnchor="end" className={styles.quadrantLabel}>🏆 Top-Decks</text>
-        <text x={PAD.l + 5} y={y(0) - 5} className={styles.quadrantLabel}>Unbewährt</text>
-        <text x={W - PAD.r - 5} y={y(0) - 5} textAnchor="end" className={styles.quadrantLabel}>Sorgenkind</text>
+        <text x={PAD.l + 5} y={PAD.t + 9} className={styles.quadrantLabel}>❓</text>
+        <text x={W - PAD.r - 5} y={PAD.t + 9} textAnchor="end" className={styles.quadrantLabel}>🏆</text>
+        {/*<text x={PAD.l + 5} y={y(0) - 5} className={styles.quadrantLabel}>Unbewährt</text>*/}
+        <text x={W - PAD.r - 5} y={y(0) - 5} textAnchor="end" className={styles.quadrantLabel}>🗑️</text>
 
         {/* X axis label */}
         <text x={(PAD.l + W - PAD.r) / 2} y={H - 6} textAnchor="middle" className={styles.axisLabel}>
