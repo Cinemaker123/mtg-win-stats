@@ -269,7 +269,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             {/* Pod share donut */}
             {stats.totalWinsAll > 0 && (
               <div className={styles.section}>
-                <div className={styles.sectionTitle}>Sieg-Anteile</div>
+                <div className={styles.sectionTitle}>Spielerstärke</div>
                 <div className={styles.card}>
                   <PodShareDonut playerStats={stats.playerStats} />
                 </div>

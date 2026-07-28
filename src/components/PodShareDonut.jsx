@@ -7,12 +7,18 @@ const BASELINE = 0.25;
 // Bayesian smoothing: treat every player as if they'd already played
 // PRIOR_GAMES imaginary games at the pod baseline win rate. This pulls
 // small-sample players (e.g. 2 wins from 2 games) back toward 25%
-// instead of letting them dominate the donut.
+// instead of letting them dominate the donut arcs.
 const PRIOR_GAMES = 5;
 
 /**
  * Donut chart of each player's share of total wins, with per-player
  * delta against the 25% pod baseline. Hand-rolled SVG, no dependencies.
+ *
+ * Note: the donut arcs use Bayesian-adjusted (shrunk + renormalized)
+ * shares so small samples don't dominate visually. The legend's
+ * percentage and delta show the raw, unadjusted win share instead,
+ * so the numbers reflect actual results as played.
+ *
  * @param {Object} props
  * @param {Array} props.playerStats - Per-player stats ({ player, totalWins, totalGames, color })
  */
@@ -29,15 +35,15 @@ export function PodShareDonut({ playerStats }) {
     p => (p.totalWins + PRIOR_GAMES * BASELINE) / (p.totalGames + PRIOR_GAMES)
   );
   const adjustedTotal = adjustedRates.reduce((s, v) => s + v, 0);
-  // Renormalize so the segments still sum to 1 for the donut geometry
-  const shares = adjustedRates.map(r => r / adjustedTotal);
+  // Renormalize so the arcs sum to a full circle
+  const arcShares = adjustedRates.map(r => r / adjustedTotal);
 
   const segments = playerStats.map((p, i) => ({
     player: p.player,
     color: p.color,
-    share: shares[i],
+    arcShare: arcShares[i],
     rawShare: p.totalWins / totalWins,
-    offset: shares.slice(0, i).reduce((s, v) => s + v, 0),
+    offset: arcShares.slice(0, i).reduce((s, v) => s + v, 0),
   }));
 
   return (
@@ -50,11 +56,11 @@ export function PodShareDonut({ playerStats }) {
             fill="none"
             stroke={s.color}
             strokeWidth="30"
-            strokeDasharray={`${s.share * C} ${C - s.share * C}`}
+            strokeDasharray={`${s.arcShare * C} ${C - s.arcShare * C}`}
             strokeDashoffset={-s.offset * C}
             transform="rotate(-90 100 100)"
           >
-            <title>{`${s.player}: ${(s.share * 100).toFixed(1)}% der Siege`}</title>
+            <title>{`${s.player}: ${(s.rawShare * 100).toFixed(1)}%`}</title>
           </circle>
         ))}
         <text x="100" y="97" textAnchor="middle" className={styles.centerValue}>{totalGames}</text>
@@ -64,12 +70,12 @@ export function PodShareDonut({ playerStats }) {
       <div className={styles.legend}>
         <div className={styles.legendTitle}>Sieg-Anteil</div>
         {segments.map(s => {
-          const delta = s.share - BASELINE;
+          const delta = s.rawShare - BASELINE;
           return (
             <div key={s.player} className={styles.legendRow}>
               <span className={styles.dot} style={{ background: s.color }} />
               <span className={styles.legendName}>{s.player}</span>
-              <span className={styles.legendShare}>{(s.share * 100).toFixed(1)}%</span>
+              <span className={styles.legendShare}>{(s.rawShare * 100).toFixed(1)}%</span>
               <span
                 className={styles.legendDelta}
                 style={{ color: delta >= 0 ? "var(--color-success)" : "var(--color-error)" }}
