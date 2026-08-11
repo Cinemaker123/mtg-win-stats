@@ -2,6 +2,9 @@
   width: 100%;
   height: auto;
   display: block;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .wrapper {
@@ -49,6 +52,17 @@
   color: var(--color-text-muted);
   text-align: center;
   min-height: 18px;
+}
+
+.resetZoom {
+  align-self: center;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
 }
 
 .axis {

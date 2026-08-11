@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { PLAYER_COLORS } from "../utils/stats.js";
 import styles from "./DeckScatter.module.css";
@@ -16,6 +16,23 @@ const MIN_GAMES = 5;
 // Cyan/teal keeps the zone distinct from the red, purple, orange and green player dots
 const GOOD_ZONE_FILL = "#4cc9f0";
 const GOOD_ZONE_OPACITY = 0.1;
+
+// Pinch-zoom limits (1 = full chart, aspect ratio stays locked)
+const MAX_ZOOM = 6;
+const BASE_VIEW = { x: 0, y: 0, w: W, h: H };
+
+// Keep the visible window inside the chart bounds
+const clampView = (v) => {
+  const w = Math.min(W, Math.max(W / MAX_ZOOM, v.w));
+  const h = (w / W) * H;
+
+  return {
+    x: Math.min(W - w, Math.max(0, v.x)),
+    y: Math.min(H - h, Math.max(0, v.y)),
+    w,
+    h,
+  };
+};
 
 const coordinateKey = d => `${d.totalGames}:${d.winRate.toFixed(6)}`;
 
@@ -45,11 +62,106 @@ const clusterOffsets = count => {
  *
  * Desktop: hover tooltips. Mobile/keyboard: tap or focus a dot to
  * pin its details below the chart (hover tooltips don't exist on touch).
+ * Touch: two-finger pinch zooms, one finger pans while zoomed in.
  * @param {Object} props
  * @param {Array} props.decks - Played decks ({ name, player, wins, losses, totalGames, winRate })
  */
 export function DeckScatter({ decks }) {
   const [selectedKey, setSelectedKey] = useState(null);
+  const [view, setView] = useState(BASE_VIEW);
+  const svgRef = useRef(null);
+  const gestureRef = useRef(null);
+  const movedRef = useRef(false);
+  const suppressTapRef = useRef(false);
+
+  const zoomed = view.w < W * 0.999;
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const [a, b] = e.touches;
+      gestureRef.current = {
+        mode: "pinch",
+        startDist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+        startView: view,
+      };
+    } else if (e.touches.length === 1) {
+      const t = e.touches[0];
+      gestureRef.current = {
+        mode: "pan",
+        startX: t.clientX,
+        startY: t.clientY,
+        startView: view,
+      };
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    const g = gestureRef.current;
+    if (!g || !svgRef.current) return;
+
+    const rect = svgRef.current.getBoundingClientRect();
+
+    if (g.mode === "pinch" && e.touches.length === 2) {
+      const [a, b] = e.touches;
+      const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      const midX = (a.clientX + b.clientX) / 2 - rect.left;
+      const midY = (a.clientY + b.clientY) / 2 - rect.top;
+
+      // Zoom around the pinch midpoint
+      const w = Math.min(W, Math.max(W / MAX_ZOOM, g.startView.w * (g.startDist / dist)));
+      const factor = w / g.startView.w;
+      const h = g.startView.h * factor;
+      const focusX = g.startView.x + (midX / rect.width) * g.startView.w;
+      const focusY = g.startView.y + (midY / rect.height) * g.startView.h;
+
+      setView(clampView({
+        x: focusX - (midX / rect.width) * w,
+        y: focusY - (midY / rect.height) * h,
+        w,
+        h,
+      }));
+
+      if (Math.abs(dist - g.startDist) > 3) movedRef.current = true;
+    } else if (g.mode === "pan" && e.touches.length === 1 && zoomed) {
+      const t = e.touches[0];
+      const dx = ((t.clientX - g.startX) / rect.width) * g.startView.w;
+      const dy = ((t.clientY - g.startY) / rect.height) * g.startView.h;
+
+      setView(clampView({ ...g.startView, x: g.startView.x - dx, y: g.startView.y - dy }));
+
+      if (Math.abs(t.clientX - g.startX) + Math.abs(t.clientY - g.startY) > 3) {
+        movedRef.current = true;
+      }
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (e.touches.length === 1 && gestureRef.current?.mode === "pinch") {
+      // Second finger lifted: continue as a pan with the remaining one
+      const t = e.touches[0];
+      gestureRef.current = {
+        mode: "pan",
+        startX: t.clientX,
+        startY: t.clientY,
+        startView: view,
+      };
+      return;
+    }
+
+    if (e.touches.length === 0) {
+      gestureRef.current = null;
+
+      // Snap back when zoomed all the way out
+      if (!zoomed) setView(BASE_VIEW);
+
+      // Swallow the synthetic tap that follows a pan/pinch gesture
+      if (movedRef.current) {
+        suppressTapRef.current = true;
+        setTimeout(() => { suppressTapRef.current = false; }, 350);
+      }
+      movedRef.current = false;
+    }
+  };
 
   if (decks.length === 0) return null;
 
@@ -107,6 +219,7 @@ export function DeckScatter({ decks }) {
   const selected = playedDecks.find(d => keyOf(d) === selectedKey) || null;
 
   const toggleSelect = (d) => {
+    if (suppressTapRef.current) return;
     const key = keyOf(d);
     setSelectedKey(prev => (prev === key ? null : key));
   };
@@ -115,7 +228,17 @@ export function DeckScatter({ decks }) {
 
   return (
     <div className={styles.wrapper}>
-      <svg viewBox={`0 0 ${W} ${H}`} className={styles.scatter} role="img" aria-label="Deckperformance">
+      <svg
+        ref={svgRef}
+        viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
+        className={styles.scatter}
+        style={{ touchAction: zoomed ? "none" : "pan-y" }}
+        role="img"
+        aria-label="Deckperformance"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Positive zone: enough games and above the pod baseline */}
         <rect
           x={goodZoneX}
@@ -242,7 +365,17 @@ export function DeckScatter({ decks }) {
           </span>
         </div>
       ) : (
-        <div className={styles.hint}>Punkt antippen für Details</div>
+        <div className={styles.hint}>Punkt antippen für Details · Zwei Finger zum Zoomen</div>
+      )}
+
+      {zoomed && (
+        <button
+          type="button"
+          className={styles.resetZoom}
+          onClick={() => setView(BASE_VIEW)}
+        >
+          Zoom zurücksetzen
+        </button>
       )}
     </div>
   );
