@@ -191,8 +191,8 @@ Color coding via `getWinRateTier()` utility:
    - Player comparison with win rate bars (25% baseline tick, tier icons)
    - Pod-share donut (win shares vs. 25% baseline)
    - Activity vs. win rate scatter with quadrant labels (dots tappable
-     for details on touch devices, keyboard accessible, pinch-zoom +
-     pan on touch)
+     for details on touch devices, keyboard accessible, pinch-zoom /
+     double-click zoom + pan on touch)
    - Full list of all played decks, ranked by Bayesian-adjusted win rate
    - Best deck (min. 3 games) / Most played deck highlights
    - 📜 shortcut to the games archive

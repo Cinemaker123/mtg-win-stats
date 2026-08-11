@@ -63,6 +63,7 @@ const clusterOffsets = count => {
  * Desktop: hover tooltips. Mobile/keyboard: tap or focus a dot to
  * pin its details below the chart (hover tooltips don't exist on touch).
  * Touch: two-finger pinch zooms, one finger pans while zoomed in.
+ * Double-click/double-tap zooms 2x towards the clicked point.
  * @param {Object} props
  * @param {Array} props.decks - Played decks ({ name, player, wins, losses, totalGames, winRate })
  */
@@ -75,6 +76,27 @@ export function DeckScatter({ decks }) {
   const suppressTapRef = useRef(false);
 
   const zoomed = view.w < W * 0.999;
+  const zoom = W / view.w;
+
+  // Double-click/double-tap: zoom 2x towards the clicked point
+  const handleDoubleClick = (e) => {
+    if (!svgRef.current) return;
+
+    const rect = svgRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    const w = Math.max(W / MAX_ZOOM, view.w / 2);
+    const h = view.h * (w / view.w);
+    const focusX = view.x + px * view.w;
+    const focusY = view.y + py * view.h;
+
+    setView(clampView({
+      x: focusX - px * w,
+      y: focusY - py * h,
+      w,
+      h,
+    }));
+  };
 
   const handleTouchStart = (e) => {
     if (e.touches.length === 2) {
@@ -238,6 +260,7 @@ export function DeckScatter({ decks }) {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onDoubleClick={handleDoubleClick}
       >
         {/* Positive zone: enough games and above the pod baseline */}
         <rect
@@ -330,11 +353,12 @@ export function DeckScatter({ decks }) {
                 className={isSelected ? styles.dotSelected : styles.dot}
               />
 
-              {/* Enlarged invisible hit area for touch and keyboard */}
+              {/* Enlarged invisible hit area for touch and keyboard;
+                  shrinks with zoom so it stays ~constant on screen */}
               <circle
                 cx={cx}
                 cy={cy}
-                r={isClustered ? 9 : 14}
+                r={(isClustered ? 9 : 14) / zoom}
                 fill="transparent"
                 className={styles.hitArea}
                 role="button"
@@ -355,8 +379,8 @@ export function DeckScatter({ decks }) {
         })}
               </svg>
 
-      {/* Pinned details (mobile tap / keyboard) or usage hint */}
-      {selected ? (
+      {/* Pinned details (mobile tap / keyboard) */}
+      {selected && (
         <div className={styles.detail}>
           <span className={styles.detailDot} style={{ background: PLAYER_COLORS[selected.player] }} />
           <span className={styles.detailName}>{selected.name}</span>
@@ -364,18 +388,6 @@ export function DeckScatter({ decks }) {
             {selected.player} · {(selected.winRate * 100).toFixed(1)}% · {selected.wins}W {selected.losses}L
           </span>
         </div>
-      ) : (
-        <div className={styles.hint}>Punkt antippen für Details · Zwei Finger zum Zoomen</div>
-      )}
-
-      {zoomed && (
-        <button
-          type="button"
-          className={styles.resetZoom}
-          onClick={() => setView(BASE_VIEW)}
-        >
-          Zoom zurücksetzen
-        </button>
       )}
     </div>
   );
