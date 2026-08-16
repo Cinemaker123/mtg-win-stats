@@ -266,16 +266,6 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               </div>
             </div>
 
-            {/* Pod share donut */}
-            {stats.totalWinsAll > 0 && (
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>Spielerstärke</div>
-                <div className={styles.card}>
-                  <PodShareDonut playerStats={stats.playerStats} />
-                </div>
-              </div>
-            )}
-
             {/* Activity vs. performance scatter */}
             {stats.allDecks.length > 0 && (
               <div className={styles.section}>
@@ -319,6 +309,15 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+            {/* Pod share donut */}
+            {stats.totalWinsAll > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Spielerstärke</div>
+                <div className={styles.card}>
+                  <PodShareDonut playerStats={stats.playerStats} />
                 </div>
               </div>
             )}
