@@ -13,8 +13,8 @@ const BASELINE_WR = 0.25;
 // Minimum sample size for the positive top-right zone
 const MIN_GAMES = 5;
 
-// Cyan/teal keeps the zone distinct from the red, purple, orange and green player dots
-const GOOD_ZONE_FILL = "#4cc9f0";
+// Gold wash echoes the "Legendär" tier color, distinct from the emerald/red/violet/yellow player dots
+const GOOD_ZONE_FILL = "#b4923f";
 const GOOD_ZONE_OPACITY = 0.1;
 
 // Pinch-zoom limits (1 = full chart, aspect ratio stays locked)

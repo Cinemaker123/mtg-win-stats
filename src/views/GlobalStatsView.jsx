@@ -217,14 +217,14 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                   label="Bestes Deck"
                   value={stats.bestDeck ? stats.bestDeck.name : "-"}
                   sub={stats.bestDeck ? `${(stats.bestDeck.winRate * 100).toFixed(1)}% von ${capitalize(stats.bestDeck.player)}` : "Noch keine Daten"}
-                  accent="#f39c12"
+                  accent="#b4923f"
                   icon="🏆"
                 />
                 <StatCard
                   label="Meistgespielt"
                   value={stats.mostPlayed ? stats.mostPlayed.name : "-"}
                   sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${capitalize(stats.mostPlayed.player)}` : "Noch keine Daten"}
-                  accent="#9b59b6"
+                  accent="#b0399e"
                   icon="🎯"
                 />
                 {stats.topWinStreak && (

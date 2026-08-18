@@ -22,18 +22,18 @@ export function D20({ number, showResult }) {
       <div 
         className={styles.overlay}
         style={{
-          background: showResult && number === 20 
-            ? "#27ae60" 
-            : showResult && number === 1 
-              ? "#1a1a1a" 
+          background: showResult && number === 20
+            ? "#b4923f"
+            : showResult && number === 1
+              ? "#1c1712"
               : "rgba(0,0,0,0.5)",
         }}
       >
-        <span 
+        <span
           className={styles.number}
           style={{
             fontSize: showResult ? "29px" : "41px",
-            color: showResult && number === 1 ? "#e74c3c" : "#fff",
+            color: showResult && number === 1 ? "#c24f63" : "#fff",
           }}
         >
           {showResult ? number : "?"}

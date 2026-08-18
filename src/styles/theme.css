@@ -1,70 +1,71 @@
 /* CSS Custom Properties for MTG Win Stats Theme */
+/* "Kartenrahmen" — dark cardstock + foil / light parchment card face */
 /* Supports light/dark via data-theme attribute on <html> */
 
 :root {
-  /* Colors - Light Theme (default) */
-  --color-bg: #f5f5f7;
-  --color-surface: #ffffff;
-  --color-surface-elevated: #ffffff;
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-border-strong: #e0e0e0;
-  --color-text: #333333;
-  --color-text-secondary: #666666;
-  --color-text-muted: #888888;
-  --color-text-inverse: #ffffff;
+  /* Colors - Light Theme (default) — aged parchment card face */
+  --color-bg: #ece0c8;
+  --color-surface: #f6efdf;
+  --color-surface-elevated: #faf4e8;
+  --color-border: rgba(90, 60, 20, 0.16);
+  --color-border-strong: #d4c197;
+  --color-text: #2b2013;
+  --color-text-secondary: #5c4c34;
+  --color-text-muted: #8a7a5c;
+  --color-text-inverse: #f6efdf;
 
   /* Accent Colors */
-  --color-accent-primary: #667eea;
-  --color-accent-secondary: #764ba2;
+  --color-accent-primary: #3f5fc9;
+  --color-accent-secondary: #b4923f;
 
   /* Win Rate Colors */
-  --color-winrate-legendary: #1e8449;
-  --color-winrate-good: #2ecc71;
-  --color-winrate-struggling: #e74c3c;
-  --color-winrate-neutral: #888888;
+  --color-winrate-legendary: #b4923f;
+  --color-winrate-good: #3d7a56;
+  --color-winrate-struggling: #a8384a;
+  --color-winrate-neutral: #8a7a5c;
 
   /* Player Colors */
-  --color-player-baum: #27ae60;
+  --color-player-baum: #1f9670;
   --color-player-mary: #e74c3c;
-  --color-player-pascal: #6c3d82;
-  --color-player-wewy: #f39c12;
+  --color-player-pascal: #b0399e;
+  --color-player-wewy: #d9a521;
 
   /* Semantic Colors */
-  --color-success: #27ae60;
-  --color-success-light: #2ecc71;
-  --color-error: #e74c3c;
-  --color-error-dark: #c0392b;
-  --color-warning: #f39c12;
+  --color-success: #3d7a56;
+  --color-success-light: #4f9c6d;
+  --color-error: #a8384a;
+  --color-error-dark: #7c2536;
+  --color-warning: #c97a1f;
 
   /* Win/Loss Gradients */
   --gradient-win: linear-gradient(90deg, var(--color-success), var(--color-success-light));
   --gradient-loss: linear-gradient(90deg, var(--color-error), var(--color-error-dark));
 
   /* Button Backgrounds */
-  --color-btn-win-bg: #d5f5e3;
-  --color-btn-win-hover: #a9dfbf;
-  --color-btn-loss-bg: #fce4e4;
-  --color-btn-loss-hover: #f1a9a0;
-  --color-btn-neutral-bg: #f0f0f0;
-  --color-btn-neutral-hover: #ddd;
-  --color-btn-neutral-text: #777;
+  --color-btn-win-bg: #dcead9;
+  --color-btn-win-hover: #c3ddbc;
+  --color-btn-loss-bg: #f3dcdc;
+  --color-btn-loss-hover: #e6bcbc;
+  --color-btn-neutral-bg: #e7dcc4;
+  --color-btn-neutral-hover: #d9c9a8;
+  --color-btn-neutral-text: #6b5c42;
 
   /* Shadows */
-  --shadow-sm: 0 1px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 1px 12px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 8px 32px rgba(102, 126, 234, 0.5);
+  --shadow-sm: 0 1px 8px rgba(43, 32, 19, 0.08);
+  --shadow-md: 0 1px 12px rgba(43, 32, 19, 0.1), 0 0 0 1px rgba(43, 32, 19, 0.05);
+  --shadow-lg: 0 4px 20px rgba(43, 32, 19, 0.12);
+  --shadow-xl: 0 8px 32px rgba(63, 95, 201, 0.35);
 
   /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
   /* Typography */
-  --font-display: 'Outfit', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Work Sans', sans-serif;
 
   /* Spacing */
   --space-xs: 4px;
@@ -81,32 +82,32 @@
   --transition-slow: 0.3s ease;
 }
 
-/* Dark Theme */
+/* Dark Theme — card stock + foil */
 [data-theme="dark"] {
-  --color-bg: #1a1a2e;
-  --color-surface: #252536;
-  --color-surface-elevated: #2a2a3c;
-  --color-border: rgba(255, 255, 255, 0.07);
-  --color-border-strong: #353545;
-  --color-text: #f0f0f0;
-  --color-text-secondary: #b0b0b0;
-  --color-text-muted: #888888;
-  --color-text-inverse: #1a1a2e;
+  --color-bg: #1c1712;
+  --color-surface: #241d16;
+  --color-surface-elevated: #2a2118;
+  --color-border: rgba(180, 146, 63, 0.28);
+  --color-border-strong: #3a2f22;
+  --color-text: #f2ece0;
+  --color-text-secondary: #b8ab94;
+  --color-text-muted: #837a68;
+  --color-text-inverse: #1c1712;
 
-  /* Shadows - darker for dark mode */
+  /* Shadows - warmer, with a whisper of foil at the edge */
   --shadow-sm: 0 1px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 1px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-md: 0 1px 12px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(180, 146, 63, 0.12);
   --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.5);
 
   /* Button Backgrounds - Dark Mode */
-  --color-btn-win-bg: rgba(39, 174, 96, 0.2);
-  --color-btn-win-hover: rgba(39, 174, 96, 0.35);
-  --color-btn-loss-bg: rgba(231, 76, 60, 0.2);
-  --color-btn-loss-hover: rgba(231, 76, 60, 0.35);
-  --color-btn-neutral-bg: rgba(255, 255, 255, 0.1);
-  --color-btn-neutral-hover: rgba(255, 255, 255, 0.2);
-  --color-btn-neutral-text: #999;
+  --color-btn-win-bg: rgba(61, 122, 86, 0.22);
+  --color-btn-win-hover: rgba(61, 122, 86, 0.35);
+  --color-btn-loss-bg: rgba(168, 56, 74, 0.22);
+  --color-btn-loss-hover: rgba(168, 56, 74, 0.35);
+  --color-btn-neutral-bg: rgba(255, 255, 255, 0.08);
+  --color-btn-neutral-hover: rgba(255, 255, 255, 0.16);
+  --color-btn-neutral-text: #b8ab94;
 }
 
 /* Base styles */

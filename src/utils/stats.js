@@ -3,17 +3,17 @@
 export const PLAYERS = ["baum", "mary", "pascal", "wewy"];
 
 export const PLAYER_COLORS = {
-  baum: "#27ae60",
+  baum: "#1f9670",
   mary: "#e74c3c",
-  pascal: "#6c3d82",
-  wewy: "#f39c12",
+  pascal: "#b0399e",
+  wewy: "#d9a521",
 };
 
 export const PLAYER_GRADIENTS = {
-  baum: "linear-gradient(135deg, #27ae60, #2ecc71)",
-  mary: "linear-gradient(135deg, #e74c3c, #f39c12)",
-  pascal: "linear-gradient(135deg, #6c3d82, #a855f7)",
-  wewy: "linear-gradient(135deg, #f39c12, #f1c40f)",
+  baum: "linear-gradient(135deg, #1f9670, #35c194)",
+  mary: "linear-gradient(135deg, #e74c3c, #f1948a)",
+  pascal: "linear-gradient(135deg, #b0399e, #d15fc0)",
+  wewy: "linear-gradient(135deg, #d9a521, #e8c34a)",
 };
 
 // Viewport width below which the mobile layout is used
@@ -65,9 +65,9 @@ export function adjustedWinRate(d, priorGames = PRIOR_GAMES, priorWR = PRIOR_WIN
  * <25% = Struggling (below statistical average)
  */
 export const WIN_RATE_TIERS = {
-  LEGENDARY: { min: 0.5, color: "#1e8449", icon: "🏆", label: "Legendär" },
-  GOOD: { min: 0.25, color: "#2ecc71", icon: "📈", label: "Gut" },
-  STRUGGLING: { min: 0, color: "#e74c3c", icon: "📉", label: "Ausbaufähig" },
+  LEGENDARY: { min: 0.5, color: "#b4923f", icon: "🏆", label: "Legendär" },
+  GOOD: { min: 0.25, color: "#3d7a56", icon: "📈", label: "Gut" },
+  STRUGGLING: { min: 0, color: "#a8384a", icon: "📉", label: "Ausbaufähig" },
 };
 
 /**
@@ -80,20 +80,20 @@ export function getWinRateTier(wr) {
     return {
       tier: "legendary",
       ...WIN_RATE_TIERS.LEGENDARY,
-      gradient: "linear-gradient(90deg, #1e8449, #27ae60)",
+      gradient: "linear-gradient(90deg, #8a6d2c, #d1ab55)",
     };
   }
   if (wr >= WIN_RATE_TIERS.GOOD.min) {
     return {
       tier: "good",
       ...WIN_RATE_TIERS.GOOD,
-      gradient: "linear-gradient(90deg, #27ae60, #2ecc71)",
+      gradient: "linear-gradient(90deg, #2f5f43, #4f9c6d)",
     };
   }
   return {
     tier: "struggling",
     ...WIN_RATE_TIERS.STRUGGLING,
-    gradient: "linear-gradient(90deg, #e74c3c, #f39c12)",
+    gradient: "linear-gradient(90deg, #7c2536, #c24f63)",
   };
 }
 
@@ -147,7 +147,6 @@ export function getDynamicStats(decks) {
       icon: "🔧",
     });
   }
-
 
   return stats;
 }
