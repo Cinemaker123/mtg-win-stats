@@ -234,6 +234,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                     sub={capitalize(stats.topWinStreak.player)}
                     accent={WIN_RATE_TIERS.GOOD.color}
                     icon="🔥"
+                    wide
                   />
                 )}
                 {stats.topLossStreak && (
@@ -243,6 +244,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                     sub={capitalize(stats.topLossStreak.player)}
                     accent={WIN_RATE_TIERS.STRUGGLING.color}
                     icon="🥀"
+                    wide
                   />
                 )}
               </div>

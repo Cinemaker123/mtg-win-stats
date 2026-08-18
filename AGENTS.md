@@ -213,7 +213,10 @@ Color coding via `getWinRateTier()` utility:
      `games` at all, so `games.length` alone would undercount
    - "Serie": the longest active win streak and the longest active
      loss streak pod-wide, shown as separate cards, each only if at
-     least one player currently has one (player name capitalized)
+     least one player currently has one (player name capitalized).
+     Both render `wide` (StatCard's `wide` prop spans the full grid
+     row via `grid-column: 1 / -1`) — "X Niederlagen in Folge" is too
+     long to share a half-width mobile cell without clipping
    - Player strength: one dot per player at their Bayesian-adjusted win
      rate (same prior as deck rankings), sorted, against the 25%
      baseline — surfaces cases where the raw win-rate ranking below and
