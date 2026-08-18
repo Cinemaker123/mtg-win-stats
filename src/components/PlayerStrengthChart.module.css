@@ -1,0 +1,45 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.axisText {
+  font-size: 8px;
+  fill: var(--color-text-muted);
+}
+
+.refLine {
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.6;
+}
+
+.refLabel {
+  font-size: 8px;
+  fill: var(--color-text-muted);
+}
+
+.rowLabel {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.dot {
+  stroke: var(--color-surface);
+  stroke-width: 1.5;
+}
+
+.valueLabel {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+}

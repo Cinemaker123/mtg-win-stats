@@ -9,7 +9,7 @@ import { useGames } from "../hooks/useGames.js";
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { StatCard } from "../components/StatCard.jsx";
-import { PodShareDonut } from "../components/PodShareDonut.jsx";
+import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils / API
@@ -78,6 +78,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       const totalWins = decks.reduce((s, d) => s + d.wins, 0);
       const totalLosses = decks.reduce((s, d) => s + d.losses, 0);
       const rate = winRate({ wins: totalWins, losses: totalLosses });
+      const adjusted = adjustedWinRate({ wins: totalWins, losses: totalLosses });
       const deckCount = decks.length;
 
       return {
@@ -86,6 +87,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         totalWins,
         totalLosses,
         winRate: rate,
+        adjusted,
         deckCount,
         color: PLAYER_COLORS[player],
         gradient: PLAYER_GRADIENTS[player],
@@ -271,6 +273,16 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               </div>
             )}
 
+            {/* Player strength: adjusted win rate ranking */}
+            {stats.totalWinsAll > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Spielerstärke</div>
+                <div className={styles.card}>
+                  <PlayerStrengthChart playerStats={stats.playerStats} />
+                </div>
+              </div>
+            )}
+
             {/* All decks, ranked by Bayesian-adjusted win rate */}
             {stats.allDecks.length > 0 && (
               <div className={styles.section}>
@@ -304,15 +316,6 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-            {/* Pod share donut */}
-            {stats.totalWinsAll > 0 && (
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>Spielerstärke</div>
-                <div className={styles.card}>
-                  <PodShareDonut playerStats={stats.playerStats} />
                 </div>
               </div>
             )}

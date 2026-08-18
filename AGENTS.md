@@ -30,7 +30,7 @@ mtg-win-stats/
 │   │   ├── DeckScatter.jsx       # Activity vs. win rate scatter (SVG)
 │   │   ├── Logo.jsx              # MTG logo component
 │   │   ├── NewGameModal.jsx      # Game entry modal (2x2 grid, winner tap, quick-add deck)
-│   │   ├── PodShareDonut.jsx     # Win-share donut per player (SVG)
+│   │   ├── PlayerStrengthChart.jsx  # Adjusted win-rate ranking per player (SVG)
 │   │   ├── RollingD20.jsx        # D20 rolling animation
 │   │   └── StatCard.jsx          # Reusable statistics card
 │   ├── hooks/
@@ -202,10 +202,13 @@ Color coding via `getWinRateTier()` utility:
 5. **Global Stats View**
    - Cross-player game totals
    - Player comparison with win rate bars (25% baseline tick, tier icons)
-   - Pod-share donut (win shares vs. 25% baseline)
    - Activity vs. win rate scatter with quadrant labels (dots tappable
      for details on touch devices, keyboard accessible, pinch-zoom /
      double-click zoom + pan on touch)
+   - Player strength: one dot per player at their Bayesian-adjusted win
+     rate (same prior as deck rankings), sorted, against the 25%
+     baseline — surfaces cases where the raw win-rate ranking above and
+     the games-weighted ranking here disagree (small sample vs. proven)
    - Full list of all played decks, ranked by Bayesian-adjusted win rate
    - Best deck (min. 2 games) / Most played deck highlights
    - 📜 shortcut to the games archive
@@ -326,6 +329,7 @@ Completed in 2026-08 (post-review cleanup):
 | **Consistency** | Unified "best deck" logic behind `MIN_GAMES_FOR_BEST_DECK` — dashboard and Global Stats previously used different thresholds (2 vs. 3 games) and could disagree |
 | **Data layer** | `getAllDecks()` replaces 4x parallel per-player `getDecks()` calls in `GlobalStatsView`/`NewGameModal`; `useGames` split into a context (`GamesContext`/`useGames()`) + `GamesProvider` mounted once in `App.jsx`, so games are fetched/subscribed once instead of per-view |
 | **Cleanup** | `useToast` hook replaces duplicated toast state in `LandingPage`/`TrackerView`/`GamesArchiveView`; dead commented-out JSX removed from `DeckScatter`; inline win-rate math in `GlobalStatsView` now reuses `winRate()` |
+| **Global Stats content** | `PodShareDonut` (win-share donut, mixed adjusted arc sizes with raw-share numbers) replaced by `PlayerStrengthChart` — one dot per player at their Bayesian-adjusted win rate against the 25% baseline, no raw-vs-adjusted comparison; moved above "Alle Decks" (was previously the bottom-most section) |
 
 See git history for detailed commits:
 ```bash
