@@ -21,6 +21,9 @@ const GOOD_ZONE_OPACITY = 0.1;
 const MAX_ZOOM = 6;
 const BASE_VIEW = { x: 0, y: 0, w: W, h: H };
 
+// Fixed zoom level for double-click/double-tap (a toggle, not a repeatable zoom-in)
+const DOUBLE_TAP_ZOOM = 2;
+
 // Keep the visible window inside the chart bounds
 const clampView = (v) => {
   const w = Math.min(W, Math.max(W / MAX_ZOOM, v.w));
@@ -81,17 +84,25 @@ export function DeckScatter({ decks }) {
   const zoomed = view.w < W * 0.999;
   const zoom = W / view.w;
 
-  // Double-click/double-tap: zoom 2x towards the clicked point
+  // Double-click/double-tap: toggle between fit and a fixed zoom level
+  // centered on the tap — not a repeatable zoom-in (that felt like it
+  // kept zooming further with every double-tap). Zoomed in already ->
+  // zoom back out to fit, regardless of where this tap landed.
   const handleDoubleClick = (e) => {
     if (!svgRef.current) return;
+
+    if (zoomed) {
+      setView(BASE_VIEW);
+      return;
+    }
 
     const rect = svgRef.current.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width;
     const py = (e.clientY - rect.top) / rect.height;
-    const w = Math.max(W / MAX_ZOOM, view.w / 2);
-    const h = view.h * (w / view.w);
-    const focusX = view.x + px * view.w;
-    const focusY = view.y + py * view.h;
+    const w = W / DOUBLE_TAP_ZOOM;
+    const h = H / DOUBLE_TAP_ZOOM;
+    const focusX = px * W;
+    const focusY = py * H;
 
     setView(clampView({
       x: focusX - px * w,
@@ -355,7 +366,6 @@ export function DeckScatter({ decks }) {
         </text>
 
         {/* Quadrant labels */}
-        <text x={PAD.l + 5} y={PAD.t + 9} className={styles.quadrantLabel}>❓</text>
         <text x={W - PAD.r - 5} y={PAD.t + 9} textAnchor="end" className={styles.quadrantLabel}>🏆</text>
         <text x={W - PAD.r - 5} y={y(0) - 5} textAnchor="end" className={styles.quadrantLabel}>🗑️</text>
 
