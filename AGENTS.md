@@ -36,8 +36,10 @@ mtg-win-stats/
 │   ├── hooks/
 │   │   ├── useDarkMode.js        # Dark mode state management
 │   │   ├── useDecks.js           # Deck registry: dirty-flag saves, full sync, realtime
-│   │   ├── useGames.js           # Games archive: fetch + realtime (games, game_participants)
-│   │   └── useIsMobile.js        # Mobile detection hook (MOBILE_BREAKPOINT)
+│   │   ├── useGames.js           # Games archive context + hook (read side)
+│   │   ├── GamesProvider.jsx     # Games archive: fetch + realtime, mounted once in App.jsx
+│   │   ├── useIsMobile.js        # Mobile detection hook (MOBILE_BREAKPOINT)
+│   │   └── useToast.js           # Shared toast state (show/dismiss/auto-timeout)
 │   ├── utils/
 │   │   ├── stats.js              # Constants, winRate, adjustedWinRate, tiers, combineDeckStats
 │   │   └── stats.test.js         # Vitest unit tests
@@ -101,10 +103,18 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
   (no dirty flag); `updateGame` replaces participants wholesale.
 - **Realtime**: `useDecks` subscribes to `postgres_changes` filtered by
   player and refetches on remote writes (echoes of own saves suppressed
-  for 1s). `useGames` subscribes to `games` + `game_participants` with a
-  500ms debounced refetch. Requires the tables in the `supabase_realtime`
-  publication (see SUPABASE_SETUP.md). `GlobalStatsView` subscribes to
-  `decks` unfiltered with a 500ms debounced refresh.
+  for 1s). `GamesProvider` subscribes to `games` + `game_participants`
+  with a 500ms debounced refetch — mounted once in `App.jsx`, so every
+  view reads the same cache via `useGames()` instead of each view
+  fetching and subscribing independently. Requires the tables in the
+  `supabase_realtime` publication (see SUPABASE_SETUP.md).
+  `GlobalStatsView` subscribes to `decks` unfiltered with a 500ms
+  debounced refresh.
+- **Bulk deck fetch**: `getAllDecks()` fetches every player's decks in
+  one unfiltered query, grouped client-side. Used by `GlobalStatsView`
+  and `NewGameModal` (both need all 4 players' registries) instead of
+  four parallel per-player `getDecks()` calls. `useDecks` still calls
+  the per-player `getDecks(player)` — that one's correctly scoped.
 - **Undo on delete**: deck deletion is local + toast with 5s "Rückgängig";
   undo reinserts locally and the debounced sync restores the DB row.
   Game deletion offers the same 5s undo; undo re-inserts the game with a
@@ -112,10 +122,13 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
 
 ### Win Rate Ranking
 - Raw win rate (`winRate`) for display, always as 0-1 number
-- `adjustedWinRate` for **ranking** decks: Bayesian prior of 5 imaginary
+- `adjustedWinRate` for **ranking** decks: Bayesian prior of 10 imaginary
   games at the 25% pod baseline, so small samples regress to the mean
   (a lucky 2-0 no longer outranks a proven 18-2)
 - `getWinRateTier` accepts **0-1 only** (no percentage heuristic)
+- `MIN_GAMES_FOR_BEST_DECK` (2 games): shared threshold before a deck can
+  be crowned "best"/"worst" — used by both the per-player dashboard
+  (`getDynamicStats`) and Global Stats' `bestDeck`, so they always agree
 
 ### Data Model
 ```javascript
@@ -194,7 +207,7 @@ Color coding via `getWinRateTier()` utility:
      for details on touch devices, keyboard accessible, pinch-zoom /
      double-click zoom + pan on touch)
    - Full list of all played decks, ranked by Bayesian-adjusted win rate
-   - Best deck (min. 3 games) / Most played deck highlights
+   - Best deck (min. 2 games) / Most played deck highlights
    - 📜 shortcut to the games archive
    - Live updates via Supabase Realtime
 
@@ -306,6 +319,14 @@ Completed in 2026-07 (Data Model v2, see `plan2.md`):
 | **Archive** | `GamesArchiveView` at `#/games`: day grouping, edit, delete with 5s undo (re-insert) |
 | **Deprecation** | Read-only deck bars (no +/- controls), single-deck add replaces bulk import, `updateDeck` removed, name-based `deleteDeckByName`, `Btn.jsx` deleted |
 
+Completed in 2026-08 (post-review cleanup):
+
+| Phase | Changes |
+|-------|---------|
+| **Consistency** | Unified "best deck" logic behind `MIN_GAMES_FOR_BEST_DECK` — dashboard and Global Stats previously used different thresholds (2 vs. 3 games) and could disagree |
+| **Data layer** | `getAllDecks()` replaces 4x parallel per-player `getDecks()` calls in `GlobalStatsView`/`NewGameModal`; `useGames` split into a context (`GamesContext`/`useGames()`) + `GamesProvider` mounted once in `App.jsx`, so games are fetched/subscribed once instead of per-view |
+| **Cleanup** | `useToast` hook replaces duplicated toast state in `LandingPage`/`TrackerView`/`GamesArchiveView`; dead commented-out JSX removed from `DeckScatter`; inline win-rate math in `GlobalStatsView` now reuses `winRate()` |
+
 See git history for detailed commits:
 ```bash
 git log --oneline --all
@@ -314,7 +335,9 @@ git log --oneline --all
 ## Git Workflow Prerogatives
 
 ### Author Attribution
-When making commits on behalf of the user:
+When making commits on behalf of the user, each AI tool attributes its own commits — the steps differ per tool because Claude Code's operating rules never permit changing git config (see below), so it uses a different mechanism than Kimi to reach the same result.
+
+**Kimi:**
 
 1. **Before committing**, set Git user to "Kimi":
    ```bash
@@ -330,7 +353,17 @@ When making commits on behalf of the user:
    git config user.email "54896623+Cinemaker123@users.noreply.github.com"
    ```
 
-> Note: Kimi should not push commits to the remote by default. Keep commits local and let the user push when they are ready.
+**Claude Code:**
+
+Claude Code must never run `git config`, so it doesn't do the mutate-then-restore dance above. Instead it sets the commit's author directly via `git commit --author`, which needs no config change and leaves nothing to restore:
+
+```bash
+git commit --author="Claude <noreply@anthropic.com>" -m "..."
+```
+
+The committer identity (and the default `git log` view) stays pascal müller either way — only the recorded author changes.
+
+> Note: neither Kimi nor Claude Code should push commits to the remote by default. Keep commits local and let the user push when they're ready.
 
 ## Deployment
 
@@ -340,6 +373,21 @@ When making commits on behalf of the user:
 3. Build command: `npm run build` (auto-detected)
 4. Output directory: `dist` (auto-detected)
 5. Add environment variables in Vercel dashboard
+
+## CI & Backups
+
+`.github/workflows/ci.yml` runs `lint` + `test` + `build` on every PR and
+push to `main`. It only reports status — to make it an actual merge gate,
+enable a branch protection rule on `main` requiring the `check` job.
+
+`.github/workflows/backup.yml` runs daily (06:00 UTC, plus manual
+`workflow_dispatch`) and commits a JSON export of `decks`, `games`, and
+`game_participants` to `backups/` — the free Supabase tier has no
+automated backups, so this is the actual data-loss insurance (see
+`auth.md`). Both workflows need `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_ANON_KEY` added as **GitHub Actions secrets**
+(repo Settings → Secrets and variables → Actions) — same values as the
+Vercel env vars, but Actions can't read those directly.
 
 ## Future Enhancements (Potential)
 
