@@ -87,6 +87,10 @@ export function getWinRateTier(wr) {
   };
 }
 
+// Minimum games played before a deck can be crowned "best"/"worst" —
+// shared by the per-player dashboard and Global Stats so both agree.
+export const MIN_GAMES_FOR_BEST_DECK = 2;
+
 export function getDynamicStats(decks) {
   if (decks.length === 0) return [];
   const totalGames = decks.reduce((s, d) => s + d.wins + d.losses, 0);
@@ -119,7 +123,7 @@ export function getDynamicStats(decks) {
     icon: tier.icon,
   });
 
-  if (best && (best.wins + best.losses) >= 2) {
+  if (best && (best.wins + best.losses) >= MIN_GAMES_FOR_BEST_DECK) {
     const bestTier = getWinRateTier(winRate(best));
     stats.push({
       label: "Bestes Deck",
@@ -130,7 +134,7 @@ export function getDynamicStats(decks) {
     });
   }
 
-  if (worst && (worst.wins + worst.losses) >= 2 && worst !== best) {
+  if (worst && (worst.wins + worst.losses) >= MIN_GAMES_FOR_BEST_DECK && worst !== best) {
     const worstTier = getWinRateTier(winRate(worst));
     stats.push({
       label: "Ausbaufähig",

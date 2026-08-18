@@ -48,6 +48,29 @@ export async function getDecks(player) {
 }
 
 /**
+ * Fetch all decks for every player in one call.
+ * @returns {Promise<Array>} - array of { player, name, wins, losses }
+ */
+export async function getAllDecks() {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching all decks:', error)
+    throw error
+  }
+
+  return (data || []).map(row => ({
+    player: row.player,
+    name: row.name,
+    wins: row.wins,
+    losses: row.losses,
+  }))
+}
+
+/**
  * Quote a value for use inside a PostgREST `in` filter list
  * @param {string} value - raw filter value
  * @returns {string} - quoted and escaped value

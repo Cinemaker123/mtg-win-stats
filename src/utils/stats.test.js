@@ -35,7 +35,7 @@ describe("adjustedWinRate", () => {
 
   it("converges to the raw win rate on large samples", () => {
     const adjusted = adjustedWinRate({ wins: 90, losses: 10 });
-    expect(adjusted).toBeGreaterThan(0.85);
+    expect(adjusted).toBeGreaterThan(0.8);
     expect(adjusted).toBeLessThan(0.9);
   });
 

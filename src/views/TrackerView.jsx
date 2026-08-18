@@ -1,11 +1,12 @@
 // React
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
 import { useDecks } from "../hooks/useDecks.js";
 import { useGames } from "../hooks/useGames.js";
 import { useIsMobile } from "../hooks/useIsMobile.js";
+import { useToast } from "../hooks/useToast.js";
 
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
@@ -41,26 +42,11 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
     [decks, games, player]
   );
   const [tab, setTab] = useState("dashboard");
-  const [toast, setToast] = useState(null);
-  const toastTimeoutRef = useRef(null);
+  const { toast, showToast, dismissToast } = useToast();
   const isMobile = useIsMobile();
   const px = isMobile ? 12 : 24;
   const accentColor = PLAYER_COLORS[player];
   const TAB_H = 58;
-
-  // Show a toast, replacing any current one (clears the previous timeout)
-  const showToast = useCallback((toastData, duration = 3000) => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToast(toastData);
-    toastTimeoutRef.current = setTimeout(() => setToast(null), duration);
-  }, []);
-
-  // Clean up pending toast timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    };
-  }, []);
 
   // Surface hook errors (load/save failures) as toasts
   useEffect(() => {
@@ -93,8 +79,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
 
   const handleToastAction = () => {
     if (toast?.onAction) toast.onAction();
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToast(null);
+    dismissToast();
   };
 
   // Rename a registry deck locally (synced via dirty flag) and in the

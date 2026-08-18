@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 // Hooks
 import { useIsMobile } from "./hooks/useIsMobile.js";
 import { useDarkMode } from "./hooks/useDarkMode.js";
+import { GamesProvider } from "./hooks/GamesProvider.jsx";
 
 // Components
 import { RollingD20 } from "./components/RollingD20.jsx";
@@ -106,37 +107,39 @@ export default function App() {
 
   return (
     <div onClick={handleClick} className={styles.root}>
-      {route.view === 'landing' && (
-        <LandingPage 
-          onSelectPlayer={handleSelectPlayer}
-          onShowGlobalStats={handleShowGlobalStats}
-          isDark={isDark} 
-          onToggleDark={() => setIsDark(!isDark)} 
-        />
-      )}
-      {route.view === 'tracker' && route.player && (
-        <TrackerView 
-          player={route.player} 
-          onBack={handleBack}
-          isDark={isDark}
-          onToggleDark={() => setIsDark(!isDark)}
-        />
-      )}
-      {route.view === 'global' && (
-        <GlobalStatsView 
-          onBack={handleBack}
-          isDark={isDark}
-          onToggleDark={() => setIsDark(!isDark)}
-        />
-      )}
-      {route.view === 'games' && (
-        <GamesArchiveView
-          onBack={handleBack}
-          isDark={isDark}
-          onToggleDark={() => setIsDark(!isDark)}
-        />
-      )}
-      
+      <GamesProvider>
+        {route.view === 'landing' && (
+          <LandingPage
+            onSelectPlayer={handleSelectPlayer}
+            onShowGlobalStats={handleShowGlobalStats}
+            isDark={isDark}
+            onToggleDark={() => setIsDark(!isDark)}
+          />
+        )}
+        {route.view === 'tracker' && route.player && (
+          <TrackerView
+            player={route.player}
+            onBack={handleBack}
+            isDark={isDark}
+            onToggleDark={() => setIsDark(!isDark)}
+          />
+        )}
+        {route.view === 'global' && (
+          <GlobalStatsView
+            onBack={handleBack}
+            isDark={isDark}
+            onToggleDark={() => setIsDark(!isDark)}
+          />
+        )}
+        {route.view === 'games' && (
+          <GamesArchiveView
+            onBack={handleBack}
+            isDark={isDark}
+            onToggleDark={() => setIsDark(!isDark)}
+          />
+        )}
+      </GamesProvider>
+
       {showDie && (
         <RollingD20 
           onLanded={handleDieLanded}

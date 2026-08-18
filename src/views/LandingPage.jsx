@@ -1,9 +1,10 @@
 // React
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
 import { useIsMobile } from "../hooks/useIsMobile.js";
+import { useToast } from "../hooks/useToast.js";
 
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
@@ -19,21 +20,7 @@ import styles from "./LandingPage.module.css";
 export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggleDark }) {
   const isMobile = useIsMobile();
   const [showNewGame, setShowNewGame] = useState(false);
-  const [toast, setToast] = useState(null);
-  const toastTimeoutRef = useRef(null);
-
-  // Clean up pending toast timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    };
-  }, []);
-
-  const showToast = (msg) => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToast(msg);
-    toastTimeoutRef.current = setTimeout(() => setToast(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   const handleGameSaved = (msg) => {
     setShowNewGame(false);

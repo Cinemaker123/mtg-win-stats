@@ -13,8 +13,8 @@ import { PodShareDonut } from "../components/PodShareDonut.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils / API
-import { supabase, getDecks } from "../supabaseClient.js";
-import { getWinRateTier, adjustedWinRate, combineDeckStats, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+import { supabase, getAllDecks } from "../supabaseClient.js";
+import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, MIN_GAMES_FOR_BEST_DECK, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
@@ -30,16 +30,11 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
 
   const loadAll = useCallback(() => {
     setError(null);
-    return Promise.all(
-      PLAYERS.map(player =>
-        getDecks(player).then(decks => ({ player, decks }))
-      )
-    )
-    .then(results => {
+    return getAllDecks()
+    .then(decks => {
       const data = {};
-      results.forEach(({ player, decks }) => {
-        data[player] = decks;
-      });
+      PLAYERS.forEach(player => { data[player] = []; });
+      decks.forEach(deck => { data[deck.player]?.push(deck); });
       setAllData(data);
     })
     .catch(e => {
@@ -82,7 +77,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       const totalGames = decks.reduce((s, d) => s + d.wins + d.losses, 0);
       const totalWins = decks.reduce((s, d) => s + d.wins, 0);
       const totalLosses = decks.reduce((s, d) => s + d.losses, 0);
-      const winRate = totalGames === 0 ? 0 : totalWins / totalGames;
+      const rate = winRate({ wins: totalWins, losses: totalLosses });
       const deckCount = decks.length;
 
       return {
@@ -90,7 +85,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         totalGames,
         totalWins,
         totalLosses,
-        winRate,
+        winRate: rate,
         deckCount,
         color: PLAYER_COLORS[player],
         gradient: PLAYER_GRADIENTS[player],
@@ -116,7 +111,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             ...deck,
             player,
             totalGames: total,
-            winRate: deck.wins / total,
+            winRate: winRate(deck),
             adjusted: adjustedWinRate(deck),
           });
         }
@@ -124,9 +119,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     });
     allDecks.sort((a, b) => b.adjusted - a.adjusted);
 
-    // Best deck across all players (adjusted ranking, min. 3 games
-    // so a fresh 2-0 deck can't take the crown)
-    const bestDeck = allDecks.find(d => d.totalGames >= 3) || null;
+    // Best deck across all players (adjusted ranking, same minimum-games
+    // threshold as the per-player dashboard so both agree)
+    const bestDeck = allDecks.find(d => d.totalGames >= MIN_GAMES_FOR_BEST_DECK) || null;
 
     // Most played deck
     let mostPlayed = null;

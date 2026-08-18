@@ -1,10 +1,11 @@
 // React
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
 import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useGames } from "../hooks/useGames.js";
+import { useToast } from "../hooks/useToast.js";
 
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
@@ -56,37 +57,23 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
   const isMobile = useIsMobile();
   const { games, loading, error, retry } = useGames();
   const [editGame, setEditGame] = useState(null);
-  const [toast, setToast] = useState(null);
+  const { toast, showToast, dismissToast } = useToast();
   const [pendingDelete, setPendingDelete] = useState(null);
-  const toastTimeoutRef = useRef(null);
   const px = isMobile ? 12 : 24;
 
-  // Clean up pending toast timeout on unmount
+  // The undo offer only makes sense while its toast is visible
   useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    };
-  }, []);
+    if (!toast) setPendingDelete(null);
+  }, [toast]);
 
   const groups = useMemo(() => groupByDay(games), [games]);
-
-  const showToast = (msg, duration = 3000) => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToast(msg);
-    toastTimeoutRef.current = setTimeout(() => setToast(null), duration);
-  };
 
   const handleDelete = async (game) => {
     setEditGame(null);
     try {
       await deleteGame(game.id);
       setPendingDelete(game);
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-      setToast("Spiel gelöscht");
-      toastTimeoutRef.current = setTimeout(() => {
-        setToast(null);
-        setPendingDelete(null);
-      }, UNDO_WINDOW_MS);
+      showToast("Spiel gelöscht", UNDO_WINDOW_MS);
     } catch (e) {
       console.error("Delete game failed:", e);
       showToast("⚠️ Löschen fehlgeschlagen");
@@ -95,8 +82,7 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
 
   const handleUndo = async () => {
     if (!pendingDelete) return;
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToast(null);
+    dismissToast();
     const game = pendingDelete;
     setPendingDelete(null);
     try {

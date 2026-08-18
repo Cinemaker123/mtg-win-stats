@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { getDecks, addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
+import { getAllDecks, addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
 import styles from "./NewGameModal.module.css";
 
@@ -48,10 +48,14 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load all players' deck registries on mount
+  // Load all players' deck registries on mount (one query, grouped locally)
   useEffect(() => {
-    Promise.all(PLAYERS.map(p => getDecks(p).then(decks => [p, decks])))
-      .then(entries => setPlayersDecks(Object.fromEntries(entries)))
+    getAllDecks()
+      .then(decks => {
+        const byPlayer = Object.fromEntries(PLAYERS.map(p => [p, []]));
+        decks.forEach(d => { byPlayer[d.player]?.push(d); });
+        setPlayersDecks(byPlayer);
+      })
       .catch(e => {
         console.error("Failed to load decks for game modal:", e);
         setError("Decks konnten nicht geladen werden.");

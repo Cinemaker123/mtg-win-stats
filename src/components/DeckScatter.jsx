@@ -313,13 +313,7 @@ export function DeckScatter({ decks }) {
         {/* Quadrant labels */}
         <text x={PAD.l + 5} y={PAD.t + 9} className={styles.quadrantLabel}>❓</text>
         <text x={W - PAD.r - 5} y={PAD.t + 9} textAnchor="end" className={styles.quadrantLabel}>🏆</text>
-        {/*<text x={PAD.l + 5} y={y(0) - 5} className={styles.quadrantLabel}>Unbewährt</text>*/}
         <text x={W - PAD.r - 5} y={y(0) - 5} textAnchor="end" className={styles.quadrantLabel}>🗑️</text>
-
-        {/* X axis label */}
-        {/*<text x={(PAD.l + W - PAD.r) / 2} y={H - 6} textAnchor="middle" className={styles.axisLabel}>
-          
-        </text>*/}
 
         {/* Deck dots */}
         {playedDecks.map(d => {

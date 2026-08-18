@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-import { supabase, getGames } from "../supabaseClient.js";
+import { createContext, useContext } from "react";
 
 /**
  * @typedef {Object} GameParticipant
@@ -15,53 +14,19 @@ import { supabase, getGames } from "../supabaseClient.js";
  * @property {GameParticipant[]} participants
  */
 
+export const GamesContext = createContext(null);
+
 /**
- * Hook for the games archive (Data Model v2) with realtime updates.
- * Mutations (addGame/updateGame/deleteGame) are called directly from
- * components; the realtime subscription refetches afterwards.
+ * Read the shared games archive (Data Model v2). The data is fetched and
+ * kept live once by `GamesProvider` (mounted at the app root) so every
+ * view reads the same cache instead of each fetching and subscribing to
+ * realtime independently.
  * @returns {{games: Game[], loading: boolean, error: string|null, retry: Function}}
  */
 export function useGames() {
-  const [games, setGames] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const load = useCallback(() => {
-    setError(null);
-
-    return getGames()
-      .then(data => setGames(data))
-      .catch(e => {
-        console.error("Failed to load games:", e);
-        setError("Fehler beim Laden der Spiele.");
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  // Load games on mount
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Realtime: refetch when games or participants change (debounced)
-  useEffect(() => {
-    let timeout = null;
-    const schedule = () => {
-      if (timeout) clearTimeout(timeout);
-      timeout = setTimeout(load, 500);
-    };
-
-    const channel = supabase
-      .channel("games-all")
-      .on("postgres_changes", { event: "*", schema: "public", table: "games" }, schedule)
-      .on("postgres_changes", { event: "*", schema: "public", table: "game_participants" }, schedule)
-      .subscribe();
-
-    return () => {
-      if (timeout) clearTimeout(timeout);
-      supabase.removeChannel(channel);
-    };
-  }, [load]);
-
-  return { games, loading, error, retry: load };
+  const ctx = useContext(GamesContext);
+  if (!ctx) {
+    throw new Error("useGames must be used within a GamesProvider");
+  }
+  return ctx;
 }
