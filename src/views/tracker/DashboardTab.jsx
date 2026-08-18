@@ -1,7 +1,10 @@
 import PropTypes from "prop-types";
 import { Logo } from "../../components/Logo.jsx";
 import { StatCard } from "../../components/StatCard.jsx";
-import { winRate, adjustedWinRate, getDynamicStats, getWinRateTier } from "../../utils/stats.js";
+import {
+  winRate, adjustedWinRate, getDynamicStats, getWinRateTier,
+  getCurrentStreak, getLastPlayed, WIN_RATE_TIERS,
+} from "../../utils/stats.js";
 import { DeckPropType } from "../../hooks/useDecks.js";
 import styles from "../TrackerView.module.css";
 
@@ -9,9 +12,33 @@ import styles from "../TrackerView.module.css";
  * Dashboard tab showing statistics and deck overview
  * @param {Object} props
  * @param {Deck[]} props.decks - List of decks
+ * @param {Array} props.games - All recorded games (for streak / last-played)
+ * @param {string} props.player - Player identifier
  */
-export function DashboardTab({ decks }) {
+export function DashboardTab({ decks, games, player }) {
   const stats = getDynamicStats(decks);
+
+  const lastPlayed = getLastPlayed(games, player);
+  if (lastPlayed) {
+    stats.push({
+      label: "Zuletzt gespielt",
+      value: lastPlayed.deck,
+      sub: new Date(lastPlayed.playedAt).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }),
+      accent: "#667eea",
+      icon: "🕐",
+    });
+  }
+
+  const streak = getCurrentStreak(games, player);
+  if (streak && streak.count >= 2) {
+    const isWin = streak.type === "win";
+    stats.push({
+      label: "Serie",
+      value: `${streak.count} ${isWin ? "Siege" : "Niederlagen"} in Folge`,
+      accent: isWin ? WIN_RATE_TIERS.GOOD.color : WIN_RATE_TIERS.STRUGGLING.color,
+      icon: isWin ? "🔥" : "🥶",
+    });
+  }
 
   return (
     <>
@@ -76,4 +103,6 @@ export function DashboardTab({ decks }) {
 
 DashboardTab.propTypes = {
   decks: PropTypes.arrayOf(DeckPropType).isRequired,
+  games: PropTypes.array.isRequired,
+  player: PropTypes.string.isRequired,
 };

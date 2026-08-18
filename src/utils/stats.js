@@ -103,13 +103,6 @@ export function getDynamicStats(decks) {
   const best = sortedByWR[0];
   const worst = sortedByWR[sortedByWR.length - 1];
 
-  const sortedByPlays = [...decks].sort((a, b) => (a.wins + a.losses) - (b.wins + b.losses));
-  const leastPlayed = sortedByPlays[0];
-  const maxPlays = Math.max(...decks.map(d => d.wins + d.losses));
-  const minPlays = leastPlayed ? leastPlayed.wins + leastPlayed.losses : 0;
-  // Show "Least played" only when there's a meaningful gap (3+ games difference)
-  const hasPlayDiscrepancy = (maxPlays - minPlays) >= 3;
-
   const stats = [];
 
   // Use consolidated win rate tier logic
@@ -145,16 +138,6 @@ export function getDynamicStats(decks) {
     });
   }
 
-  // Only show "Least played" when one deck is significantly behind others
-  if (leastPlayed && hasPlayDiscrepancy) {
-    stats.push({
-      label: "Wenig gespielt",
-      value: leastPlayed.name,
-      sub: `${leastPlayed.wins + leastPlayed.losses} Spiele`,
-      accent: "#f39c12",
-      icon: "📉",
-    });
-  }
 
   return stats;
 }
@@ -188,4 +171,50 @@ export function combineDeckStats(legacyDecks, games, player) {
     }
   }
   return [...combined.values()];
+}
+
+/**
+ * A player's own recorded games, newest first, with the deck/result for
+ * each. Legacy baseline stats (pre-Data Model v2) have no per-game
+ * timestamps and are not represented here.
+ * @param {Array} games - games ({ playedAt, participants: [{ player, deck, isWinner }] })
+ * @param {string} player - player to filter to
+ * @returns {Array<{playedAt: string, deck: string, isWinner: boolean}>}
+ */
+export function playerGameHistory(games, player) {
+  return games
+    .map(g => ({ game: g, entry: g.participants.find(p => p.player === player) }))
+    .filter(({ entry }) => entry)
+    .map(({ game, entry }) => ({ playedAt: game.playedAt, deck: entry.deck, isWinner: entry.isWinner }))
+    .sort((a, b) => new Date(b.playedAt) - new Date(a.playedAt));
+}
+
+/**
+ * A player's current win or loss streak, based on their most recent games.
+ * @param {Array} games - all recorded games
+ * @param {string} player - player to compute the streak for
+ * @returns {{type: 'win'|'loss', count: number}|null} - null if no games recorded
+ */
+export function getCurrentStreak(games, player) {
+  const history = playerGameHistory(games, player);
+  if (history.length === 0) return null;
+
+  const type = history[0].isWinner ? "win" : "loss";
+  let count = 0;
+  for (const g of history) {
+    if (g.isWinner !== (type === "win")) break;
+    count++;
+  }
+  return { type, count };
+}
+
+/**
+ * The deck and date of a player's most recently recorded game.
+ * @param {Array} games - all recorded games
+ * @param {string} player - player to look up
+ * @returns {{deck: string, playedAt: string}|null} - null if no games recorded
+ */
+export function getLastPlayed(games, player) {
+  const [latest] = playerGameHistory(games, player);
+  return latest ? { deck: latest.deck, playedAt: latest.playedAt } : null;
 }

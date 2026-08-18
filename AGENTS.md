@@ -191,6 +191,10 @@ Color coding via `getWinRateTier()` utility:
 4. **Tracker View (per player)**
    - Dashboard tab with win rate stats (Bayesian-ranked) and deck bars
      with 25% baseline tick
+   - "Zuletzt gespielt" (deck + date of the player's most recent
+     recorded game) and "Serie" (current win/loss streak, shown once
+     it's 2+ games) — both derived from `games`, not just win/loss
+     totals, via `playerGameHistory`/`getCurrentStreak`/`getLastPlayed`
    - Decks tab with read-only win/loss bars (legacy + game-derived);
      unplayed decks show a neutral bar; games-only decks have no delete
    - Rename registry decks inline (pencil); renames propagate to the
@@ -200,7 +204,12 @@ Color coding via `getWinRateTier()` utility:
    - Live updates via Supabase Realtime
 
 5. **Global Stats View**
-   - Cross-player game totals
+   - Distinct games played, pod-wide (not a "Gesamt-Winrate" — with
+     one winner per multiplayer game, an all-players win rate is
+     mathematically pinned near 1/pod-size and doesn't say anything
+     the 25% baseline doesn't already say)
+   - "Serie": whichever player currently has the longest active
+     win/loss streak, pod-wide
    - Player strength: one dot per player at their Bayesian-adjusted win
      rate (same prior as deck rankings), sorted, against the 25%
      baseline — surfaces cases where the raw win-rate ranking below and

@@ -169,7 +169,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
             </div>
           ) : (
             <>
-              {tab === "dashboard" && <DashboardTab decks={combinedDecks} />}
+              {tab === "dashboard" && <DashboardTab decks={combinedDecks} games={games} player={player} />}
               
               {tab === "data" && (
                 <>

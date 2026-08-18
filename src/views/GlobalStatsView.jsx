@@ -14,7 +14,7 @@ import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils / API
 import { supabase, getAllDecks } from "../supabaseClient.js";
-import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, MIN_GAMES_FOR_BEST_DECK, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
@@ -99,7 +99,13 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     const totalGamesAll = playerStats.reduce((s, p) => s + p.totalGames, 0);
     const totalWinsAll = playerStats.reduce((s, p) => s + p.totalWins, 0);
     const totalLossesAll = playerStats.reduce((s, p) => s + p.totalLosses, 0);
-    const overallWinRate = totalGamesAll === 0 ? 0 : totalWinsAll / totalGamesAll;
+
+    // Longest active win/loss streak pod-wide
+    const streaks = PLAYERS
+      .map(player => ({ player, streak: getCurrentStreak(games, player) }))
+      .filter(s => s.streak);
+    streaks.sort((a, b) => b.streak.count - a.streak.count);
+    const topStreak = streaks[0] || null;
 
     // All played decks, ranked by bayesian-adjusted win rate so small
     // samples regress toward the 25% pod baseline
@@ -144,7 +150,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       totalGamesAll,
       totalWinsAll,
       totalLossesAll,
-      overallWinRate,
+      topStreak,
       bestDeck,
       mostPlayed,
       // All played decks, sorted by Bayesian-adjusted win rate
@@ -188,26 +194,35 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Gesamtübersicht</div>
               <div className={isMobile ? styles.statsGridMobile : styles.statsGrid}>
-                <StatCard 
-                  label="Gesamt-Winrate" 
-                  value={`${(stats.overallWinRate * 100).toFixed(1)}%`}
-                  sub={stats.totalGamesAll === 0 ? "Noch keine Spiele" : undefined}
-                  accent={getWinRateTier(stats.overallWinRate).color} 
-                  icon="📈"
+                <StatCard
+                  label="Spiele insgesamt"
+                  value={games.length}
+                  sub={games.length === 0 ? "Noch keine Spiele" : undefined}
+                  accent="#667eea"
+                  icon="🎲"
                 />
-                <StatCard 
-                  label="Bestes Deck" 
+                <StatCard
+                  label="Bestes Deck"
                   value={stats.bestDeck ? stats.bestDeck.name : "-"}
                   sub={stats.bestDeck ? `${(stats.bestDeck.winRate * 100).toFixed(1)}% von ${stats.bestDeck.player}` : "Noch keine Daten"}
-                  accent="#f39c12" 
+                  accent="#f39c12"
                   icon="🏆"
                 />
-                <StatCard 
-                  label="Meistgespielt" 
+                <StatCard
+                  label="Meistgespielt"
                   value={stats.mostPlayed ? stats.mostPlayed.name : "-"}
                   sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${stats.mostPlayed.player}` : "Noch keine Daten"}
-                  accent="#9b59b6" 
+                  accent="#9b59b6"
                   icon="🎯"
+                />
+                <StatCard
+                  label="Serie"
+                  value={stats.topStreak ? stats.topStreak.player : "-"}
+                  sub={stats.topStreak
+                    ? `${stats.topStreak.streak.count} ${stats.topStreak.streak.type === "win" ? "Siege" : "Niederlagen"} in Folge`
+                    : "Noch keine Daten"}
+                  accent={stats.topStreak?.streak.type === "loss" ? WIN_RATE_TIERS.STRUGGLING.color : WIN_RATE_TIERS.GOOD.color}
+                  icon={stats.topStreak?.streak.type === "loss" ? "🥶" : "🔥"}
                 />
               </div>
             </div>
