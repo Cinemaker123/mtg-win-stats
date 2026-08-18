@@ -10,7 +10,7 @@ A **React + Vite application** for tracking Magic: The Gathering deck performanc
 - **Language**: JavaScript (JSX) with PropTypes
 - **Styling**: CSS Modules with CSS custom properties
 - **Storage**: Supabase (PostgreSQL backend) with Realtime subscriptions
-- **Fonts**: Google Fonts (Cinzel display, Work Sans body) loaded via `<link>` in `index.html`
+- **Fonts**: Google Fonts (Baloo 2 display, Figtree body) loaded via `<link>` in `index.html`
 - **Build Tool**: Vite with Hot Module Replacement
 - **Tooling**: ESLint 9 (flat config: react + react-hooks) and Vitest
 
