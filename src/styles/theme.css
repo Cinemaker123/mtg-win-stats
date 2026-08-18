@@ -66,6 +66,10 @@
   /* Typography */
   --font-display: 'Baloo 2', sans-serif;
   --font-body: 'Figtree', sans-serif;
+  /* Kept alongside the Spielmatte pair for the few spots that read
+     better with the Kartenrahmen original: stat-card big values, the
+     landing page player names, and Spielerstärke's names/percentages */
+  --font-display-alt: 'Cinzel', serif;
 
   /* Spacing */
   --space-xs: 4px;

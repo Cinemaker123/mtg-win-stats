@@ -27,7 +27,7 @@
 }
 
 .rowLabel {
-  font-family: var(--font-display);
+  font-family: var(--font-display-alt);
   font-weight: 700;
   font-size: 12px;
   text-transform: capitalize;
@@ -39,7 +39,7 @@
 }
 
 .valueLabel {
-  font-family: var(--font-display);
+  font-family: var(--font-display-alt);
   font-weight: 700;
   font-size: 11px;
 }

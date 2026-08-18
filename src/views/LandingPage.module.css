@@ -102,7 +102,7 @@
 }
 
 .playerName {
-  font-family: var(--font-display);
+  font-family: var(--font-display-alt);
   font-weight: 700;
   font-size: 18px;
   color: var(--color-text);
