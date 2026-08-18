@@ -380,14 +380,19 @@ The committer identity (and the default `git log` view) stays pascal müller eit
 push to `main`. It only reports status — to make it an actual merge gate,
 enable a branch protection rule on `main` requiring the `check` job.
 
-`.github/workflows/backup.yml` runs daily (06:00 UTC, plus manual
-`workflow_dispatch`) and commits a JSON export of `decks`, `games`, and
-`game_participants` to `backups/` — the free Supabase tier has no
-automated backups, so this is the actual data-loss insurance (see
-`auth.md`). Both workflows need `VITE_SUPABASE_URL` and
-`VITE_SUPABASE_ANON_KEY` added as **GitHub Actions secrets**
-(repo Settings → Secrets and variables → Actions) — same values as the
-Vercel env vars, but Actions can't read those directly.
+`.github/workflows/backup.yml` runs weekly (Sundays, ~evening Central
+European time, plus manual `workflow_dispatch`) and exports `decks`,
+`games`, and `game_participants` as JSON — the free Supabase tier has
+no automated backups, so this is the actual data-loss insurance (see
+`auth.md`). The export is pushed to a **separate private repo**
+(`Cinemaker123/mtg-win-stats-backups`), not committed here — this repo
+is public and the data includes player names. Both workflows need
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` added as **GitHub
+Actions secrets** (repo Settings → Secrets and variables → Actions) —
+same values as the Vercel env vars, but Actions can't read those
+directly. `backup.yml` additionally needs `BACKUP_REPO_TOKEN`, a
+fine-grained PAT scoped to `contents: write` on the private backup
+repo only.
 
 ## Future Enhancements (Potential)
 

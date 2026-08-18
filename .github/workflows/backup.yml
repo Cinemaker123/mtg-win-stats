@@ -2,32 +2,46 @@ name: Backup
 
 on:
   schedule:
-    - cron: '0 6 * * *' # daily 06:00 UTC
+    # Sundays ~20:00-21:00 Central European time (19:00 UTC; drifts by an
+    # hour across the CET/CEST switch since cron is always UTC — fine for
+    # a weekly backup)
+    - cron: '0 19 * * 0'
   workflow_dispatch: {}
-
-permissions:
-  contents: write
 
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Export tables
         env:
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
-          mkdir -p backups
+          mkdir -p export
           for table in decks games game_participants; do
             curl -sf "$SUPABASE_URL/rest/v1/$table?select=*" \
               -H "apikey: $SUPABASE_KEY" \
               -H "Authorization: Bearer $SUPABASE_KEY" \
-              -o "backups/${table}-$(date +%F).json"
+              -o "export/${table}-$(date +%F).json"
           done
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      # Backups contain player names, so they're pushed to a separate
+      # PRIVATE repo instead of committed here (this repo is public).
+      - name: Checkout private backup repo
+        uses: actions/checkout@v7
         with:
-          commit_message: "Daily backup $(date +%F)"
-          file_pattern: backups/*.json
+          repository: Cinemaker123/mtg-win-stats-backups
+          token: ${{ secrets.BACKUP_REPO_TOKEN }}
+          path: backup-repo
+
+      - name: Commit export to private repo
+        run: |
+          mkdir -p backup-repo/backups
+          cp export/*.json backup-repo/backups/
+          cd backup-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backups/*.json
+          git diff --cached --quiet && echo "Nothing changed, skipping commit" && exit 0
+          git commit -m "Weekly backup $(date +%F)"
+          git push

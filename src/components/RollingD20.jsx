@@ -66,7 +66,11 @@ export function RollingD20({ onLanded, screenWidth }) {
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, []); // Run once on mount
+    // Intentionally once-on-mount: screenWidth/duration/onLanded are read
+    // as the starting conditions for this single roll. Re-running on their
+    // change would restart the animation mid-roll instead of finishing it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div 
