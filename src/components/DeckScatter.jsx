@@ -13,7 +13,7 @@ const BASELINE_WR = 0.25;
 // Minimum sample size for the positive top-right zone
 const MIN_GAMES = 5;
 
-// Gold wash echoes the "Legendär" tier color, distinct from the indigo/emerald/violet/amber player dots
+// Gold wash echoes the "Legendär" tier color, distinct from the emerald/red/violet/yellow player dots
 const GOOD_ZONE_FILL = "#b4923f";
 const GOOD_ZONE_OPACITY = 0.1;
 

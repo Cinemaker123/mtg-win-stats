@@ -336,9 +336,9 @@ Dark cardstock + foil / light parchment card-face theme, replacing the
 original purple/green/Outfit look app-wide:
 - **Typography**: `Cinzel` (display, engraved-capitals headers/labels) +
   `Work Sans` (body) replace `Outfit` + `DM Sans`
-- **Palette**: `PLAYER_COLORS` re-mapped to indigo (baum), emerald
-  (mary), violet-magenta (pascal), amber (wewy) — same hex in both
-  themes, matching the pre-existing theme-independent architecture.
+- **Palette**: `PLAYER_COLORS` re-mapped to emerald (baum), red
+  (mary), violet-magenta (pascal), gold-yellow (wewy) — same hex in
+  both themes, matching the pre-existing theme-independent architecture.
   `theme.css` tokens rebuilt for both a dark cardstock surface
   (`#1c1712`) and a light parchment surface (`#ece0c8`); win-rate tiers
   restyled to gold/sage-green/crimson so they stay visually distinct

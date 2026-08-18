@@ -3,17 +3,17 @@
 export const PLAYERS = ["baum", "mary", "pascal", "wewy"];
 
 export const PLAYER_COLORS = {
-  baum: "#3f5fc9",
-  mary: "#1f9670",
+  baum: "#1f9670",
+  mary: "#e74c3c",
   pascal: "#b0399e",
-  wewy: "#c97a1f",
+  wewy: "#d9a521",
 };
 
 export const PLAYER_GRADIENTS = {
-  baum: "linear-gradient(135deg, #3f5fc9, #6b85e0)",
-  mary: "linear-gradient(135deg, #1f9670, #35c194)",
+  baum: "linear-gradient(135deg, #1f9670, #35c194)",
+  mary: "linear-gradient(135deg, #e74c3c, #f1948a)",
   pascal: "linear-gradient(135deg, #b0399e, #d15fc0)",
-  wewy: "linear-gradient(135deg, #c97a1f, #e6a13f)",
+  wewy: "linear-gradient(135deg, #d9a521, #e8c34a)",
 };
 
 // Viewport width below which the mobile layout is used
