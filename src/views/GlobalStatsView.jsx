@@ -212,13 +212,33 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               </div>
             </div>
 
+            {/* Player strength: adjusted win rate ranking */}
+            {stats.totalWinsAll > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Spielerstärke</div>
+                <div className={styles.card}>
+                  <PlayerStrengthChart playerStats={stats.playerStats} />
+                </div>
+              </div>
+            )}
+
+            {/* Activity vs. performance scatter */}
+            {stats.allDecks.length > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Deckperformance</div>
+                <div className={styles.card}>
+                  <DeckScatter decks={stats.allDecks} />
+                </div>
+              </div>
+            )}
+
             {/* Player Comparison */}
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Spieler-Vergleich</div>
               <div className={styles.playerList}>
                 {stats.playerStats.map((p) => (
                   <div key={p.player} className={styles.playerRow}>
-                    <div 
+                    <div
                       className={styles.playerAvatar}
                       style={{ background: p.gradient }}
                     >
@@ -231,7 +251,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       </div>
                     </div>
                     <div className={styles.playerStats}>
-                      <div 
+                      <div
                         className={styles.winRate}
                         style={{ color: getWinRateTier(p.winRate).color }}
                       >
@@ -250,38 +270,18 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                         className={styles.winRateBaseline}
                         title="Zufalls-Baseline (25%)"
                       />
-                      <div 
+                      <div
                         className={styles.winRateBarFill}
-                        style={{ 
-                          width: `${Math.max(0, Math.min(100, p.winRate * 100))}%`, 
+                        style={{
+                          width: `${Math.max(0, Math.min(100, p.winRate * 100))}%`,
                           background: p.gradient,
-                        }} 
+                        }}
                       />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Activity vs. performance scatter */}
-            {stats.allDecks.length > 0 && (
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>Deckperformance</div>
-                <div className={styles.card}>
-                  <DeckScatter decks={stats.allDecks} />
-                </div>
-              </div>
-            )}
-
-            {/* Player strength: adjusted win rate ranking */}
-            {stats.totalWinsAll > 0 && (
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>Spielerstärke</div>
-                <div className={styles.card}>
-                  <PlayerStrengthChart playerStats={stats.playerStats} />
-                </div>
-              </div>
-            )}
 
             {/* All decks, ranked by Bayesian-adjusted win rate */}
             {stats.allDecks.length > 0 && (
