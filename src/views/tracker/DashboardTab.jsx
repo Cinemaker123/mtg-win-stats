@@ -36,7 +36,7 @@ export function DashboardTab({ decks, games, player }) {
       label: "Serie",
       value: `${streak.count} ${isWin ? "Siege" : "Niederlagen"} in Folge`,
       accent: isWin ? WIN_RATE_TIERS.GOOD.color : WIN_RATE_TIERS.STRUGGLING.color,
-      icon: isWin ? "🔥" : "🥶",
+      icon: isWin ? "🔥" : "🥀",
     });
   }
 

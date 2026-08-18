@@ -230,8 +230,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                 {stats.topWinStreak && (
                   <StatCard
                     label="Serie"
-                    value={`${stats.topWinStreak.streak.count} Siege in Folge`}
-                    sub={capitalize(stats.topWinStreak.player)}
+                    value={capitalize(stats.topWinStreak.player)}
+                    sub={`${stats.topWinStreak.streak.count} Siege in Folge`}
                     accent={WIN_RATE_TIERS.GOOD.color}
                     icon="🔥"
                     wide
@@ -240,8 +240,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                 {stats.topLossStreak && (
                   <StatCard
                     label="Serie"
-                    value={`${stats.topLossStreak.streak.count} Niederlagen in Folge`}
-                    sub={capitalize(stats.topLossStreak.player)}
+                    value={capitalize(stats.topLossStreak.player)}
+                    sub={`${stats.topLossStreak.streak.count} Niederlagen in Folge`}
                     accent={WIN_RATE_TIERS.STRUGGLING.color}
                     icon="🥀"
                     wide
