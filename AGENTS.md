@@ -204,12 +204,16 @@ Color coding via `getWinRateTier()` utility:
    - Live updates via Supabase Realtime
 
 5. **Global Stats View**
-   - Distinct games played, pod-wide (not a "Gesamt-Winrate" — with
-     one winner per multiplayer game, an all-players win rate is
-     mathematically pinned near 1/pod-size and doesn't say anything
-     the 25% baseline doesn't already say)
-   - "Serie": whichever player currently has the longest active
-     win/loss streak, pod-wide
+   - Games played, pod-wide (not a "Gesamt-Winrate" — with one winner
+     per multiplayer game, an all-players win rate is mathematically
+     pinned near 1/pod-size and doesn't say anything the 25% baseline
+     doesn't already say). Value is the highest per-player total
+     (wins + losses), not `games.length` — legacy pre-Data-Model-v2
+     games only survive as frozen counters on `decks`, with no row in
+     `games` at all, so `games.length` alone would undercount
+   - "Serie": the longest active win streak and the longest active
+     loss streak pod-wide, shown as separate cards, each only if at
+     least one player currently has one (player name capitalized)
    - Player strength: one dot per player at their Bayesian-adjusted win
      rate (same prior as deck rankings), sorted, against the 25%
      baseline — surfaces cases where the raw win-rate ranking below and

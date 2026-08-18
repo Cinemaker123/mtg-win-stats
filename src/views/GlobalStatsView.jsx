@@ -14,7 +14,7 @@ import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils / API
 import { supabase, getAllDecks } from "../supabaseClient.js";
-import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, capitalize, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
@@ -100,12 +100,22 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     const totalWinsAll = playerStats.reduce((s, p) => s + p.totalWins, 0);
     const totalLossesAll = playerStats.reduce((s, p) => s + p.totalLosses, 0);
 
-    // Longest active win/loss streak pod-wide
+    // "Games played" headline: the games table only covers Data Model v2 —
+    // legacy pre-migration games only survive as frozen win/loss counters
+    // on decks, with no per-game record at all. The most complete estimate
+    // is the highest total (wins + losses) any single player has, not
+    // games.length (which would only count v2-recorded games).
+    const maxPlayerGames = Math.max(0, ...playerStats.map(p => p.totalGames));
+
+    // Longest active win streak and longest active loss streak, pod-wide
+    // (shown separately, each only if at least one player currently has one)
     const streaks = PLAYERS
       .map(player => ({ player, streak: getCurrentStreak(games, player) }))
-      .filter(s => s.streak);
-    streaks.sort((a, b) => b.streak.count - a.streak.count);
-    const topStreak = streaks[0] || null;
+      .filter(s => s.streak && s.streak.count >= 2);
+    const winStreaks = streaks.filter(s => s.streak.type === "win").sort((a, b) => b.streak.count - a.streak.count);
+    const lossStreaks = streaks.filter(s => s.streak.type === "loss").sort((a, b) => b.streak.count - a.streak.count);
+    const topWinStreak = winStreaks[0] || null;
+    const topLossStreak = lossStreaks[0] || null;
 
     // All played decks, ranked by bayesian-adjusted win rate so small
     // samples regress toward the 25% pod baseline
@@ -150,7 +160,9 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       totalGamesAll,
       totalWinsAll,
       totalLossesAll,
-      topStreak,
+      maxPlayerGames,
+      topWinStreak,
+      topLossStreak,
       bestDeck,
       mostPlayed,
       // All played decks, sorted by Bayesian-adjusted win rate
@@ -196,34 +208,43 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               <div className={isMobile ? styles.statsGridMobile : styles.statsGrid}>
                 <StatCard
                   label="Spiele insgesamt"
-                  value={games.length}
-                  sub={games.length === 0 ? "Noch keine Spiele" : undefined}
+                  value={stats.maxPlayerGames}
+                  sub={stats.maxPlayerGames === 0 ? "Noch keine Spiele" : undefined}
                   accent="#667eea"
                   icon="🎲"
                 />
                 <StatCard
                   label="Bestes Deck"
                   value={stats.bestDeck ? stats.bestDeck.name : "-"}
-                  sub={stats.bestDeck ? `${(stats.bestDeck.winRate * 100).toFixed(1)}% von ${stats.bestDeck.player}` : "Noch keine Daten"}
+                  sub={stats.bestDeck ? `${(stats.bestDeck.winRate * 100).toFixed(1)}% von ${capitalize(stats.bestDeck.player)}` : "Noch keine Daten"}
                   accent="#f39c12"
                   icon="🏆"
                 />
                 <StatCard
                   label="Meistgespielt"
                   value={stats.mostPlayed ? stats.mostPlayed.name : "-"}
-                  sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${stats.mostPlayed.player}` : "Noch keine Daten"}
+                  sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${capitalize(stats.mostPlayed.player)}` : "Noch keine Daten"}
                   accent="#9b59b6"
                   icon="🎯"
                 />
-                <StatCard
-                  label="Serie"
-                  value={stats.topStreak ? stats.topStreak.player : "-"}
-                  sub={stats.topStreak
-                    ? `${stats.topStreak.streak.count} ${stats.topStreak.streak.type === "win" ? "Siege" : "Niederlagen"} in Folge`
-                    : "Noch keine Daten"}
-                  accent={stats.topStreak?.streak.type === "loss" ? WIN_RATE_TIERS.STRUGGLING.color : WIN_RATE_TIERS.GOOD.color}
-                  icon={stats.topStreak?.streak.type === "loss" ? "🥶" : "🔥"}
-                />
+                {stats.topWinStreak && (
+                  <StatCard
+                    label="Serie"
+                    value={`${stats.topWinStreak.streak.count} Siege in Folge`}
+                    sub={capitalize(stats.topWinStreak.player)}
+                    accent={WIN_RATE_TIERS.GOOD.color}
+                    icon="🔥"
+                  />
+                )}
+                {stats.topLossStreak && (
+                  <StatCard
+                    label="Serie"
+                    value={`${stats.topLossStreak.streak.count} Niederlagen in Folge`}
+                    sub={capitalize(stats.topLossStreak.player)}
+                    accent={WIN_RATE_TIERS.STRUGGLING.color}
+                    icon="🥀"
+                  />
+                )}
               </div>
             </div>
 

@@ -20,6 +20,16 @@ export const PLAYER_GRADIENTS = {
 export const MOBILE_BREAKPOINT = 640;
 
 /**
+ * Capitalize a player identifier for display (player names are stored
+ * lowercase — "baum", "mary" — but should read as "Baum", "Mary").
+ * @param {string} name
+ * @returns {string}
+ */
+export function capitalize(name) {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/**
  * Raw win rate of a deck (0-1)
  * @param {{wins: number, losses: number}} d - Deck object
  * @returns {number} Win rate between 0 and 1
