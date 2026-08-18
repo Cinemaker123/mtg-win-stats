@@ -85,7 +85,7 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
             style={isDark ? {
               "--glow": "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)",
             } : {
-              "--glow": "0 8px 32px rgba(39, 174, 96, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
+              "--glow": "0 8px 32px rgba(201, 122, 31, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
             }}
           >
             <div className={isMobile ? styles.globalStatsContentMobile : styles.globalStatsContent}>
@@ -104,7 +104,7 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
             style={isDark ? {
               "--glow": "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)",
             } : {
-              "--glow": "0 8px 32px rgba(102, 126, 234, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
+              "--glow": "0 8px 32px rgba(63, 95, 201, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
             }}
           >
             <div className={isMobile ? styles.globalStatsContentMobile : styles.globalStatsContent}>

@@ -139,7 +139,7 @@
   gap: 12px;
   transition: all var(--transition-base);
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(63, 95, 201, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .globalStatsButton:hover {
@@ -153,8 +153,8 @@
 }
 
 .globalStatsButtonDark {
-  background: linear-gradient(135deg, #3d3d5a, #2a2a40);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #2a3563, #1e2547);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
 }
 
 .globalStatsContent {
@@ -214,8 +214,8 @@
 
 .newGameButton {
   composes: globalStatsButton;
-  background: linear-gradient(135deg, #27ae60, #2ecc71);
-  box-shadow: 0 4px 20px rgba(39, 174, 96, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #c97a1f, #e6a13f);
+  box-shadow: 0 4px 20px rgba(201, 122, 31, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .newGameButtonMobile {
@@ -224,8 +224,8 @@
 }
 
 .newGameButtonDark {
-  background: linear-gradient(135deg, #2a4a3a, #1f3a2c);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #6b4a1a, #4a3212);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
 }
 
 .toast {

@@ -10,7 +10,7 @@ A **React + Vite application** for tracking Magic: The Gathering deck performanc
 - **Language**: JavaScript (JSX) with PropTypes
 - **Styling**: CSS Modules with CSS custom properties
 - **Storage**: Supabase (PostgreSQL backend) with Realtime subscriptions
-- **Fonts**: Google Fonts (Outfit, DM Sans) loaded via CSS @import
+- **Fonts**: Google Fonts (Cinzel display, Work Sans body) loaded via `<link>` in `index.html`
 - **Build Tool**: Vite with Hot Module Replacement
 - **Tooling**: ESLint 9 (flat config: react + react-hooks) and Vitest
 
@@ -330,6 +330,27 @@ Completed in 2026-08 (post-review cleanup):
 | **Data layer** | `getAllDecks()` replaces 4x parallel per-player `getDecks()` calls in `GlobalStatsView`/`NewGameModal`; `useGames` split into a context (`GamesContext`/`useGames()`) + `GamesProvider` mounted once in `App.jsx`, so games are fetched/subscribed once instead of per-view |
 | **Cleanup** | `useToast` hook replaces duplicated toast state in `LandingPage`/`TrackerView`/`GamesArchiveView`; dead commented-out JSX removed from `DeckScatter`; inline win-rate math in `GlobalStatsView` now reuses `winRate()` |
 | **Global Stats content** | `PodShareDonut` (win-share donut, mixed adjusted arc sizes with raw-share numbers) replaced by `PlayerStrengthChart` — one dot per player at their Bayesian-adjusted win rate against the 25% baseline, no raw-vs-adjusted comparison; moved from the bottom-most section to right after "Gesamtübersicht", swapping places with "Spieler-Vergleich" |
+
+**`design/kartenrahmen` branch (not on `main` yet) — "Kartenrahmen" visual redesign:**
+Dark cardstock + foil / light parchment card-face theme, replacing the
+original purple/green/Outfit look app-wide:
+- **Typography**: `Cinzel` (display, engraved-capitals headers/labels) +
+  `Work Sans` (body) replace `Outfit` + `DM Sans`
+- **Palette**: `PLAYER_COLORS` re-mapped to indigo (baum), emerald
+  (mary), violet-magenta (pascal), amber (wewy) — same hex in both
+  themes, matching the pre-existing theme-independent architecture.
+  `theme.css` tokens rebuilt for both a dark cardstock surface
+  (`#1c1712`) and a light parchment surface (`#ece0c8`); win-rate tiers
+  restyled to gold/sage-green/crimson so they stay visually distinct
+  from the new player hues. Colors were picked by eye for this
+  direction, not run through colorblind-safety validation (see
+  `no-colorblind-palette-validation` project memory).
+- Every hardcoded color that didn't already flow through a `theme.css`
+  token was hunted down and updated individually: `DarkModeToggle`
+  icons now use `currentColor` instead of baked-in old-theme hex,
+  `D20`'s critical-hit/fail colors, `LandingPage`'s button gradients
+  and glow shadows, `GlobalStatsView`'s ad-hoc `StatCard` accents, and
+  `DeckScatter`'s "good zone" wash.
 
 See git history for detailed commits:
 ```bash

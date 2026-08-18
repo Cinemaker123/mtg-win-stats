@@ -402,7 +402,7 @@
   background: var(--color-bg);
   line-height: 1.6;
   resize: none;
-  font-family: 'DM Sans', monospace;
+  font-family: var(--font-body), monospace;
 }
 
 .importTextarea:focus {
