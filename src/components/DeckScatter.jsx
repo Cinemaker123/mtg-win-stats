@@ -62,6 +62,9 @@ const clusterOffsets = count => {
  *
  * Desktop: hover tooltips. Mobile/keyboard: tap or focus a dot to
  * pin its details below the chart (hover tooltips don't exist on touch).
+ * Taps are resolved to the nearest dot anywhere in the plot (not a
+ * precise hit on the dot itself), so tightly-packed small decks stay
+ * easy to select. Keyboard users still tab dot-by-dot.
  * Touch: two-finger pinch zooms, one finger pans while zoomed in.
  * Double-click/double-tap zooms 2x towards the clicked point.
  * @param {Object} props
@@ -246,6 +249,46 @@ export function DeckScatter({ decks }) {
     setSelectedKey(prev => (prev === key ? null : key));
   };
 
+  // Plotted position of every dot (cluster offsets applied), for nearest-point hit testing
+  const plotted = playedDecks.map(d => {
+    const layout = dotLayout.get(keyOf(d)) || { dx: 0, dy: 0, clusterSize: 1 };
+    return { deck: d, cx: x(d.totalGames) + layout.dx, cy: y(d.winRate) + layout.dy };
+  });
+
+  // Tap/click anywhere in the plot: select the nearest dot rather than
+  // requiring a precise hit on its own small circle. Individual hit
+  // circles overlap when dots sit close but not at the exact same
+  // coordinate, so "nearest wins" beats fighting over tiny targets —
+  // especially for small, tightly-packed clusters on touch.
+  const handlePlotTap = (e) => {
+    if (suppressTapRef.current || !svgRef.current || plotted.length === 0) return;
+
+    const rect = svgRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    const tapX = view.x + px * view.w;
+    const tapY = view.y + py * view.h;
+
+    let nearest = plotted[0];
+    let bestDist = Infinity;
+    for (const p of plotted) {
+      const dist = Math.hypot(p.cx - tapX, p.cy - tapY);
+      if (dist < bestDist) {
+        bestDist = dist;
+        nearest = p;
+      }
+    }
+
+    // Generous, zoom-compensated reach so it still feels precise —
+    // this isn't "tap anywhere," just "tap near enough."
+    const maxDist = 22 / zoom;
+    if (bestDist <= maxDist) {
+      toggleSelect(nearest.deck);
+    } else {
+      setSelectedKey(null);
+    }
+  };
+
   const goodZoneX = x(MIN_GAMES);
 
   return (
@@ -261,6 +304,7 @@ export function DeckScatter({ decks }) {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onDoubleClick={handleDoubleClick}
+        onClick={handlePlotTap}
       >
         {/* Positive zone: enough games and above the pod baseline */}
         <rect
@@ -347,8 +391,10 @@ export function DeckScatter({ decks }) {
                 className={isSelected ? styles.dotSelected : styles.dot}
               />
 
-              {/* Enlarged invisible hit area for touch and keyboard;
-                  shrinks with zoom so it stays ~constant on screen */}
+              {/* Keyboard-only focus target (pointer taps are resolved by
+                  handlePlotTap's nearest-point search on the whole plot,
+                  not per-dot — overlapping small hit areas made close-
+                  together dots hard to tap precisely) */}
               <circle
                 cx={cx}
                 cy={cy}
@@ -358,7 +404,6 @@ export function DeckScatter({ decks }) {
                 role="button"
                 tabIndex={0}
                 aria-label={label}
-                onClick={() => toggleSelect(d)}
                 onKeyDown={e => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();

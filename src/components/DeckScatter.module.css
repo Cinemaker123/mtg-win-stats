@@ -5,6 +5,7 @@
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
+  cursor: pointer;
 }
 
 .wrapper {
@@ -14,7 +15,9 @@
 }
 
 .hitArea {
-  cursor: pointer;
+  /* Keyboard focus target only — pointer taps go through to the SVG's
+     nearest-point handler, so this never competes with a neighboring dot */
+  pointer-events: none;
 }
 
 .hitArea:focus {
@@ -84,9 +87,11 @@
 .dot {
   stroke: var(--color-surface);
   stroke-width: 1.5;
+  transition: r var(--transition-fast), stroke-width var(--transition-fast);
 }
 
 .dotSelected {
   stroke: var(--color-text);
   stroke-width: 2.5;
+  transition: r var(--transition-fast), stroke-width var(--transition-fast);
 }

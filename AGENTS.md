@@ -205,9 +205,11 @@ Color coding via `getWinRateTier()` utility:
      rate (same prior as deck rankings), sorted, against the 25%
      baseline — surfaces cases where the raw win-rate ranking below and
      the games-weighted ranking here disagree (small sample vs. proven)
-   - Activity vs. win rate scatter with quadrant labels (dots tappable
-     for details on touch devices, keyboard accessible, pinch-zoom /
-     double-click zoom + pan on touch)
+   - Activity vs. win rate scatter with quadrant labels; a tap anywhere
+     in the plot resolves to the *nearest* dot rather than requiring a
+     precise hit, so tightly-packed small decks stay easy to select
+     (keyboard users still tab dot-by-dot); pinch-zoom / double-click
+     zoom + pan on touch
    - Player comparison with win rate bars (25% baseline tick, tier icons)
    - Full list of all played decks, ranked by Bayesian-adjusted win rate
    - Best deck (min. 2 games) / Most played deck highlights
