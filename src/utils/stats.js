@@ -19,6 +19,24 @@ export const PLAYER_GRADIENTS = {
 // Viewport width below which the mobile layout is used
 export const MOBILE_BREAKPOINT = 640;
 
+// Expected win rate in a 4-player pod if every game were a coin flip.
+// This single number anchors the whole statistical story: the Bayesian
+// prior, the "Gut" tier boundary, and the baseline ticks the charts draw.
+export const POD_BASELINE_WR = 1 / PLAYERS.length;
+
+// Neutral accent for informational stat cards (no win/loss meaning).
+export const ACCENT_INFO = "#667eea";
+
+/**
+ * Format a 0-1 win rate as a percentage string.
+ * @param {number} wr - Win rate between 0 and 1
+ * @param {number} [digits] - Decimal places
+ * @returns {string} e.g. "42.9%"
+ */
+export function formatPct(wr, digits = 1) {
+  return `${(wr * 100).toFixed(digits)}%`;
+}
+
 /**
  * Capitalize a player identifier for display (player names are stored
  * lowercase — "baum", "mary" — but should read as "Baum", "Mary").
@@ -44,7 +62,7 @@ export function winRate(d) {
 // Unproven decks therefore regress toward the random average instead of
 // topping the rankings on tiny samples (e.g. a lucky 2-0).
 export const PRIOR_GAMES = 10;
-export const PRIOR_WIN_RATE = 0.25;
+export const PRIOR_WIN_RATE = POD_BASELINE_WR;
 
 /**
  * Bayesian-adjusted win rate for ranking decks (0-1)
@@ -65,8 +83,8 @@ export function adjustedWinRate(d, priorGames = PRIOR_GAMES, priorWR = PRIOR_WIN
  * <25% = Struggling (below statistical average)
  */
 export const WIN_RATE_TIERS = {
-  LEGENDARY: { min: 0.5, color: "#b4923f", icon: "🏆", label: "Legendär" },
-  GOOD: { min: 0.25, color: "#3d7a56", icon: "📈", label: "Gut" },
+  LEGENDARY: { min: 2 * POD_BASELINE_WR, color: "#b4923f", icon: "🏆", label: "Legendär" },
+  GOOD: { min: POD_BASELINE_WR, color: "#3d7a56", icon: "📈", label: "Gut" },
   STRUGGLING: { min: 0, color: "#a8384a", icon: "📉", label: "Ausbaufähig" },
 };
 
@@ -101,8 +119,71 @@ export function getWinRateTier(wr) {
 // shared by the per-player dashboard and Global Stats so both agree.
 export const MIN_GAMES_FOR_BEST_DECK = 2;
 
-export function getDynamicStats(decks) {
-  if (decks.length === 0) return [];
+// Minimum consecutive results before a streak is worth surfacing —
+// shared by the per-player dashboard and Global Stats so both agree.
+export const MIN_STREAK_GAMES = 2;
+
+// Games a deck needs before the scatter plot treats its win rate as
+// meaningful (the "bewährt" zone). Deliberately stricter than
+// MIN_GAMES_FOR_BEST_DECK, which only gates a headline card.
+export const PROVEN_DECK_GAMES = 5;
+
+/**
+ * Presentation for a win/loss streak, as a StatCard-shaped object.
+ * Both the dashboard and Global Stats render streaks, and previously each
+ * re-implemented the icon, accent color and wording independently.
+ * @param {{type: 'win'|'loss', count: number}|null} streak
+ * @returns {{icon: string, accent: string, noun: string}|null} - null if not worth showing
+ */
+export function streakDisplay(streak) {
+  if (!streak || streak.count < MIN_STREAK_GAMES) return null;
+  const isWin = streak.type === "win";
+  return {
+    icon: isWin ? "🔥" : "🥀",
+    accent: isWin ? WIN_RATE_TIERS.GOOD.color : WIN_RATE_TIERS.STRUGGLING.color,
+    noun: isWin ? "Siege" : "Niederlagen",
+  };
+}
+
+/**
+ * The stat cards shown on a player's dashboard.
+ * Games are optional so the deck-only cards stay unit-testable on their own.
+ * @param {Array} decks - combined deck stats for the player
+ * @param {Array} [games] - all recorded games (for last-played / streak cards)
+ * @param {string} [player] - player the games belong to
+ * @returns {Array} StatCard props
+ */
+export function getDynamicStats(decks, games = [], player = null) {
+  const stats = decks.length === 0 ? [] : deckStatCards(decks);
+
+  if (player) {
+    const lastPlayed = getLastPlayed(games, player);
+    if (lastPlayed) {
+      stats.push({
+        label: "Zuletzt gespielt",
+        value: lastPlayed.deck,
+        sub: new Date(lastPlayed.playedAt).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }),
+        accent: ACCENT_INFO,
+        icon: "🕐",
+      });
+    }
+
+    const streak = getCurrentStreak(games, player);
+    const display = streakDisplay(streak);
+    if (display) {
+      stats.push({
+        label: "Serie",
+        value: `${streak.count} ${display.noun} in Folge`,
+        accent: display.accent,
+        icon: display.icon,
+      });
+    }
+  }
+
+  return stats;
+}
+
+function deckStatCards(decks) {
   const totalGames = decks.reduce((s, d) => s + d.wins + d.losses, 0);
   const totalWins = decks.reduce((s, d) => s + d.wins, 0);
   const overallWR = totalGames === 0 ? 0 : totalWins / totalGames;
@@ -191,11 +272,19 @@ export function combineDeckStats(legacyDecks, games, player) {
  * @returns {Array<{playedAt: string, deck: string, isWinner: boolean}>}
  */
 export function playerGameHistory(games, player) {
-  return games
-    .map(g => ({ game: g, entry: g.participants.find(p => p.player === player) }))
-    .filter(({ entry }) => entry)
-    .map(({ game, entry }) => ({ playedAt: game.playedAt, deck: entry.deck, isWinner: entry.isWinner }))
-    .sort((a, b) => new Date(b.playedAt) - new Date(a.playedAt));
+  const played = [];
+  for (const game of games) {
+    const entry = game.participants.find(p => p.player === player);
+    // Timestamp parsed once per game here, rather than twice per
+    // comparison inside the sort below.
+    if (entry) played.push({ game, entry, at: new Date(game.playedAt).getTime() });
+  }
+  played.sort((a, b) => b.at - a.at);
+  return played.map(({ game, entry }) => ({
+    playedAt: game.playedAt,
+    deck: entry.deck,
+    isWinner: entry.isWinner,
+  }));
 }
 
 /**

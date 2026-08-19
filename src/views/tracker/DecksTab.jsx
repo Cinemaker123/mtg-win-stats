@@ -21,7 +21,7 @@ export function DecksTab({ decks, registryDecks, deleteDeck, renameDeck }) {
     <>
       {decks.length === 0 && (
         <div className={styles.emptyState} style={{ padding: "40px 20px" }}>
-          <div style={{ marginBottom: 16, display: "flex", justifyContent: "center" }}>
+          <div className={styles.emptyLogoWrapper}>
             <Logo size={60} />
           </div>
           <div className={styles.emptyTitle}>Noch keine Decks</div>

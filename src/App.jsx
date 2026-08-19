@@ -101,6 +101,11 @@ export default function App() {
     window.location.hash = "/";
   };
 
+  // One stable toggle instead of a fresh `() => setIsDark(!isDark)` closure
+  // per route branch (the updater form also can't read a stale `isDark`).
+  const toggleDark = () => setIsDark(d => !d);
+  const themeProps = { isDark, onToggleDark: toggleDark };
+
   if (!darkLoaded) {
     return null;
   }
@@ -112,31 +117,17 @@ export default function App() {
           <LandingPage
             onSelectPlayer={handleSelectPlayer}
             onShowGlobalStats={handleShowGlobalStats}
-            isDark={isDark}
-            onToggleDark={() => setIsDark(!isDark)}
+            {...themeProps}
           />
         )}
         {route.view === 'tracker' && route.player && (
-          <TrackerView
-            player={route.player}
-            onBack={handleBack}
-            isDark={isDark}
-            onToggleDark={() => setIsDark(!isDark)}
-          />
+          <TrackerView player={route.player} onBack={handleBack} {...themeProps} />
         )}
         {route.view === 'global' && (
-          <GlobalStatsView
-            onBack={handleBack}
-            isDark={isDark}
-            onToggleDark={() => setIsDark(!isDark)}
-          />
+          <GlobalStatsView onBack={handleBack} {...themeProps} />
         )}
         {route.view === 'games' && (
-          <GamesArchiveView
-            onBack={handleBack}
-            isDark={isDark}
-            onToggleDark={() => setIsDark(!isDark)}
-          />
+          <GamesArchiveView onBack={handleBack} {...themeProps} />
         )}
       </GamesProvider>
 

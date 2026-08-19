@@ -18,17 +18,11 @@
   --color-accent-primary: #3f5fc9;
   --color-accent-secondary: #b4923f;
 
-  /* Win Rate Colors */
-  --color-winrate-legendary: #b4923f;
-  --color-winrate-good: #3d7a56;
-  --color-winrate-struggling: #a8384a;
-  --color-winrate-neutral: #8a7a5c;
-
-  /* Player Colors */
-  --color-player-baum: #1f9670;
-  --color-player-mary: #e74c3c;
-  --color-player-pascal: #b0399e;
-  --color-player-wewy: #d9a521;
+  /* Win-rate tier and per-player colors deliberately live only in
+     src/utils/stats.js (WIN_RATE_TIERS / PLAYER_COLORS). They are applied
+     as inline style props, so duplicating them here as custom properties
+     created a second, unreferenced source of truth that could silently
+     drift from the real one. */
 
   /* Semantic Colors */
   --color-success: #3d7a56;

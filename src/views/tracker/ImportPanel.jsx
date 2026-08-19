@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
-import { PLAYER_GRADIENTS, PLAYER_COLORS } from "../../utils/stats.js";
+import { PLAYERS, PLAYER_GRADIENTS, PLAYER_COLORS } from "../../utils/stats.js";
 import styles from "../TrackerView.module.css";
 
 /**
@@ -66,7 +66,7 @@ export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
 }
 
 ImportPanel.propTypes = {
-  player: PropTypes.oneOf(["baum", "mary", "pascal", "wewy"]).isRequired,
+  player: PropTypes.oneOf(PLAYERS).isRequired,
   addDecks: PropTypes.func.isRequired,
   onImport: PropTypes.func.isRequired,
   autoFocus: PropTypes.bool,

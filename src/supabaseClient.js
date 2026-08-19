@@ -2,6 +2,7 @@
 // Players: baum, mary, pascal, wewy
 
 import { createClient } from '@supabase/supabase-js'
+import { PLAYERS } from './utils/stats.js'
 
 // Get these from: https://supabase.com/dashboard → Project Settings → API
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
@@ -71,6 +72,19 @@ export async function getAllDecks() {
 }
 
 /**
+ * Fetch all decks in one call, grouped by player. Every player in PLAYERS
+ * gets an entry (empty array if they have no decks yet); rows belonging to
+ * an unknown player are ignored.
+ * @returns {Promise<Object>} - { [player]: Array<{ name, wins, losses }> }
+ */
+export async function getDecksByPlayer() {
+  const decks = await getAllDecks()
+  const byPlayer = Object.fromEntries(PLAYERS.map(p => [p, []]))
+  decks.forEach(d => { byPlayer[d.player]?.push(d) })
+  return byPlayer
+}
+
+/**
  * Quote a value for use inside a PostgREST `in` filter list
  * @param {string} value - raw filter value
  * @returns {string} - quoted and escaped value
@@ -87,9 +101,9 @@ function quoteFilterValue(value) {
  * @param {Array} decks - array of deck objects
  */
 export async function saveDecks(player, decks) {
-  if (decks.length > 0) {
-    // Bulk upsert all decks in a single API call
-    const { error } = await supabase
+  // Bulk upsert all decks in a single API call
+  const upsert = decks.length > 0
+    ? supabase
       .from(TABLE_NAME)
       .upsert(
         decks.map(deck => ({
@@ -101,29 +115,31 @@ export async function saveDecks(player, decks) {
         })),
         { onConflict: 'player,name' }
       )
-
-    if (error) {
-      console.error('Error upserting decks:', error)
-      throw error
-    }
-  }
+    : null
 
   // Delete rows that are no longer in local state (full sync)
-  let query = supabase
+  let remove = supabase
     .from(TABLE_NAME)
     .delete()
     .eq('player', player)
 
   if (decks.length > 0) {
     const names = decks.map(d => quoteFilterValue(d.name)).join(',')
-    query = query.not('name', 'in', `(${names})`)
+    remove = remove.not('name', 'in', `(${names})`)
   }
 
-  const { error } = await query
+  // Disjoint row sets (the delete excludes everything the upsert writes),
+  // so the two round trips can overlap instead of running back to back.
+  const [upsertResult, removeResult] = await Promise.all([upsert, remove])
 
-  if (error) {
-    console.error('Error deleting removed decks:', error)
-    throw error
+  if (upsertResult?.error) {
+    console.error('Error upserting decks:', upsertResult.error)
+    throw upsertResult.error
+  }
+
+  if (removeResult.error) {
+    console.error('Error deleting removed decks:', removeResult.error)
+    throw removeResult.error
   }
 }
 
@@ -161,6 +177,28 @@ export async function getGames() {
 }
 
 /**
+ * Insert a game's participant rows. Shared by addGame and updateGame,
+ * which build the identical payload.
+ * @param {string} gameId - game the participants belong to
+ * @param {Array} participants - [{ player, deck, isWinner }]
+ */
+async function insertParticipants(gameId, participants) {
+  const { error } = await supabase
+    .from(PARTICIPANTS_TABLE)
+    .insert(participants.map(p => ({
+      game_id: gameId,
+      player: p.player,
+      deck: p.deck,
+      is_winner: p.isWinner,
+    })))
+
+  if (error) {
+    console.error('Error inserting participants:', error)
+    throw error
+  }
+}
+
+/**
  * Insert a game with its participants
  * @param {Object} game
  * @param {string} [game.playedAt] - ISO timestamp (defaults to now)
@@ -179,19 +217,7 @@ export async function addGame({ playedAt, participants }) {
     throw error
   }
 
-  const { error: pError } = await supabase
-    .from(PARTICIPANTS_TABLE)
-    .insert(participants.map(p => ({
-      game_id: game.id,
-      player: p.player,
-      deck: p.deck,
-      is_winner: p.isWinner,
-    })))
-
-  if (pError) {
-    console.error('Error inserting participants:', pError)
-    throw pError
-  }
+  await insertParticipants(game.id, participants)
 
   return game.id
 }
@@ -202,39 +228,30 @@ export async function addGame({ playedAt, participants }) {
  * @param {Object} game - { playedAt, participants }
  */
 export async function updateGame(id, { playedAt, participants }) {
-  const { error } = await supabase
-    .from(GAMES_TABLE)
-    .update({ played_at: playedAt })
-    .eq('id', id)
+  // Different tables, neither depends on the other's result — overlap them.
+  const [{ error }, { error: delError }] = await Promise.all([
+    supabase
+      .from(GAMES_TABLE)
+      .update({ played_at: playedAt })
+      .eq('id', id),
+    supabase
+      .from(PARTICIPANTS_TABLE)
+      .delete()
+      .eq('game_id', id),
+  ])
 
   if (error) {
     console.error('Error updating game:', error)
     throw error
   }
 
-  const { error: delError } = await supabase
-    .from(PARTICIPANTS_TABLE)
-    .delete()
-    .eq('game_id', id)
-
   if (delError) {
     console.error('Error replacing participants:', delError)
     throw delError
   }
 
-  const { error: insError } = await supabase
-    .from(PARTICIPANTS_TABLE)
-    .insert(participants.map(p => ({
-      game_id: id,
-      player: p.player,
-      deck: p.deck,
-      is_winner: p.isWinner,
-    })))
-
-  if (insError) {
-    console.error('Error inserting participants:', insError)
-    throw insError
-  }
+  // The insert must follow the delete — it replaces the same rows.
+  await insertParticipants(id, participants)
 }
 
 /**

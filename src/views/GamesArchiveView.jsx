@@ -13,15 +13,21 @@ import { NewGameModal } from "../components/NewGameModal.jsx";
 
 // Utils / API
 import { addGame, deleteGame } from "../supabaseClient.js";
-import { PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import { PLAYER_GRADIENTS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GamesArchiveView.module.css";
 
 const UNDO_WINDOW_MS = 5000;
 
+// Built once instead of per game per render — constructing an Intl
+// formatter is by far the most expensive thing this view does.
+const TIME_FORMAT = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
+
 /**
  * Group games (already newest-first) by calendar day, preserving order.
+ * Each game is decorated with the presentation-ready values the card
+ * needs, so rendering stays free of per-row formatting and sorting.
  * @param {Array} games
  * @returns {Array<{key: string, label: string, games: Array}>}
  */
@@ -43,7 +49,14 @@ function groupByDay(games) {
       byKey.set(key, group);
       groups.push(group);
     }
-    byKey.get(key).games.push(game);
+    byKey.get(key).games.push({
+      game,
+      time: TIME_FORMAT.format(d),
+      // Winner first
+      participants: [...game.participants].sort(
+        (a, b) => Number(b.isWinner) - Number(a.isWinner)
+      ),
+    });
   });
 
   return groups;
@@ -136,26 +149,18 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
           groups.map(group => (
             <div key={group.key} className={styles.section}>
               <div className={styles.sectionTitle}>{group.label}</div>
-              {group.games.map(game => {
-                const time = new Date(game.playedAt).toLocaleTimeString("de-DE", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-                const sorted = [...game.participants].sort(
-                  (a, b) => Number(b.isWinner) - Number(a.isWinner)
-                );
-                return (
+              {group.games.map(({ game, time, participants }) => (
                   <button
                     key={game.id}
                     className={styles.gameCard}
                     onClick={() => setEditGame(game)}
                   >
                     <div className={styles.participantList}>
-                      {sorted.map(p => (
+                      {participants.map(p => (
                         <div key={p.player} className={styles.participant}>
                           <div
                             className={styles.avatar}
-                            style={{ background: PLAYER_GRADIENTS[p.player] || PLAYER_COLORS[p.player] }}
+                            style={{ background: PLAYER_GRADIENTS[p.player] }}
                           >
                             {p.player[0].toUpperCase()}
                           </div>
@@ -171,8 +176,7 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
                     </div>
                     <span className={styles.time}>{time}</span>
                   </button>
-                );
-              })}
+              ))}
             </div>
           ))
         )}

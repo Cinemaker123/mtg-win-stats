@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { getAllDecks, addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
+import { getDecksByPlayer, addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
 import styles from "./NewGameModal.module.css";
 
@@ -50,12 +50,8 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
 
   // Load all players' deck registries on mount (one query, grouped locally)
   useEffect(() => {
-    getAllDecks()
-      .then(decks => {
-        const byPlayer = Object.fromEntries(PLAYERS.map(p => [p, []]));
-        decks.forEach(d => { byPlayer[d.player]?.push(d); });
-        setPlayersDecks(byPlayer);
-      })
+    getDecksByPlayer()
+      .then(setPlayersDecks)
       .catch(e => {
         console.error("Failed to load decks for game modal:", e);
         setError("Decks konnten nicht geladen werden.");
@@ -237,8 +233,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
               })}
 
               {/* Empty slots to re-add removed players */}
-              {availablePlayers.length > 0 &&
-                [...Array(4 - participants.length)].map((_, i) => (
+              {availablePlayers.map((_, i) => (
                   <div key={`empty-${i}`} className={styles.emptyCell}>
                     <select
                       className={styles.deckSelect}
@@ -251,7 +246,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
                       ))}
                     </select>
                   </div>
-                ))}
+              ))}
             </div>
 
             <div className={styles.actions}>

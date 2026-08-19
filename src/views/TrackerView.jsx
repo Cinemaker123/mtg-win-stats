@@ -12,7 +12,7 @@ import { useToast } from "../hooks/useToast.js";
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 
 // Utils
-import { PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
+import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
 
 // Utils / API
 import { renameDeckInGames } from "../supabaseClient.js";
@@ -222,7 +222,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
 }
 
 TrackerView.propTypes = {
-  player: PropTypes.oneOf(["baum", "mary", "pascal", "wewy"]).isRequired,
+  player: PropTypes.oneOf(PLAYERS).isRequired,
   onBack: PropTypes.func.isRequired,
   isDark: PropTypes.bool.isRequired,
   onToggleDark: PropTypes.func.isRequired,
