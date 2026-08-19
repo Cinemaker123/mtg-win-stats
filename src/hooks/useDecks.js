@@ -137,10 +137,14 @@ export function useDecks(player) {
     if (decks.some((d, i) => i !== idx && d.name.toLowerCase() === name.toLowerCase())) {
       return { ok: false, reason: "duplicate" };
     }
-    if (decks[idx].name === name) return { ok: true, renamed: false };
-    dirtyRef.current = true;
+    const id = decks[idx].id;
+    if (decks[idx].name === name) return { ok: true, renamed: false, id };
+    // Not routed through the dirty-flag full sync: the caller persists the
+    // rename directly by id (renameDeckRegistry), so the debounced
+    // saveDecks below never races an in-flight id-based rename with a
+    // name-based upsert that could otherwise create a duplicate row
     setDecks(ds => ds.map((d, i) => (i === idx ? { ...d, name } : d)));
-    return { ok: true, renamed: true };
+    return { ok: true, renamed: true, id };
   }, [decks]);
 
   const deleteDeckByName = useCallback((name) => {
@@ -181,6 +185,7 @@ export function useDecks(player) {
 
 // PropTypes for Deck object
 export const DeckPropType = PropTypes.shape({
+  id: PropTypes.string,
   name: PropTypes.string.isRequired,
   wins: PropTypes.number.isRequired,
   losses: PropTypes.number.isRequired,

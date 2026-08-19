@@ -21,6 +21,30 @@ export const supabase = createClient(
 
 // Table name for decks
 const TABLE_NAME = 'decks'
+const PLAYERS_TABLE = 'players'
+
+/**
+ * Fetch and cache the player slug -> id map from the `players` table.
+ * Cached for the lifetime of the page since the 4 players never change.
+ * @returns {Promise<Object>} - { [slug]: id }
+ */
+let playerIdMapPromise = null
+async function getPlayerIdMap() {
+  if (!playerIdMapPromise) {
+    playerIdMapPromise = supabase
+      .from(PLAYERS_TABLE)
+      .select('id, slug')
+      .then(({ data, error }) => {
+        if (error) {
+          playerIdMapPromise = null
+          console.error('Error fetching players:', error)
+          throw error
+        }
+        return Object.fromEntries((data || []).map(p => [p.slug, p.id]))
+      })
+  }
+  return playerIdMapPromise
+}
 
 /**
  * Fetch all decks for a player
@@ -41,6 +65,7 @@ export async function getDecks(player) {
 
   // Transform to app format
   return (data || []).map(row => ({
+    id: row.id,
     name: row.name,
     wins: row.wins,
     losses: row.losses,
@@ -49,7 +74,7 @@ export async function getDecks(player) {
 
 /**
  * Fetch all decks for every player in one call.
- * @returns {Promise<Array>} - array of { player, name, wins, losses }
+ * @returns {Promise<Array>} - array of { id, player, name, wins, losses }
  */
 export async function getAllDecks() {
   const { data, error } = await supabase
@@ -63,6 +88,7 @@ export async function getAllDecks() {
   }
 
   return (data || []).map(row => ({
+    id: row.id,
     player: row.player,
     name: row.name,
     wins: row.wins,
@@ -88,12 +114,14 @@ function quoteFilterValue(value) {
  */
 export async function saveDecks(player, decks) {
   if (decks.length > 0) {
+    const playerIdMap = await getPlayerIdMap()
     // Bulk upsert all decks in a single API call
     const { error } = await supabase
       .from(TABLE_NAME)
       .upsert(
         decks.map(deck => ({
           player,
+          player_id: playerIdMap[player] ?? null,
           name: deck.name,
           wins: deck.wins,
           losses: deck.losses,
@@ -141,7 +169,7 @@ const PARTICIPANTS_TABLE = 'game_participants'
 export async function getGames() {
   const { data, error } = await supabase
     .from(GAMES_TABLE)
-    .select('id, played_at, game_participants(player, deck, is_winner)')
+    .select('id, played_at, game_participants(player, deck, is_winner, decks(name))')
     .order('played_at', { ascending: false })
 
   if (error) {
@@ -154,7 +182,10 @@ export async function getGames() {
     playedAt: g.played_at,
     participants: (g.game_participants || []).map(p => ({
       player: p.player,
-      deck: p.deck,
+      // Prefer the live deck name via deck_id join, so renames are
+      // instant; fall back to the frozen snapshot text for games whose
+      // deck was since deleted from the registry (deck_id -> null)
+      deck: p.decks?.name ?? p.deck,
       isWinner: p.is_winner,
     })),
   }))
@@ -179,12 +210,15 @@ export async function addGame({ playedAt, participants }) {
     throw error
   }
 
+  const playerIdMap = await getPlayerIdMap()
   const { error: pError } = await supabase
     .from(PARTICIPANTS_TABLE)
     .insert(participants.map(p => ({
       game_id: game.id,
       player: p.player,
+      player_id: playerIdMap[p.player] ?? null,
       deck: p.deck,
+      deck_id: p.deckId ?? null,
       is_winner: p.isWinner,
     })))
 
@@ -222,12 +256,15 @@ export async function updateGame(id, { playedAt, participants }) {
     throw delError
   }
 
+  const playerIdMap = await getPlayerIdMap()
   const { error: insError } = await supabase
     .from(PARTICIPANTS_TABLE)
     .insert(participants.map(p => ({
       game_id: id,
       player: p.player,
+      player_id: playerIdMap[p.player] ?? null,
       deck: p.deck,
+      deck_id: p.deckId ?? null,
       is_winner: p.isWinner,
     })))
 
@@ -258,38 +295,43 @@ export async function deleteGame(id) {
  * Existing decks are left untouched (ignoreDuplicates).
  * @param {string} player - player name
  * @param {string} name - deck name
+ * @returns {Promise<string|null>} - the deck's id, or null if it already
+ *   existed (ignoreDuplicates skips the row, so there's nothing to return)
  */
 export async function addDeckToRegistry(player, name) {
-  const { error } = await supabase
+  const playerIdMap = await getPlayerIdMap()
+  const { data, error } = await supabase
     .from(TABLE_NAME)
     .upsert(
-      { player, name, wins: 0, losses: 0, updated_at: new Date().toISOString() },
+      { player, player_id: playerIdMap[player] ?? null, name, wins: 0, losses: 0, updated_at: new Date().toISOString() },
       { onConflict: 'player,name', ignoreDuplicates: true }
     )
+    .select('id')
+    .maybeSingle()
 
   if (error) {
     console.error('Error adding deck to registry:', error)
     throw error
   }
+
+  return data?.id ?? null
 }
 
 /**
- * Rename a deck in all recorded games of a player.
- * The registry rename happens via saveDecks (full sync); this keeps the
- * game history pointing at the same deck so combined stats don't split.
- * @param {string} player - player name
- * @param {string} oldName - current deck name
+ * Rename a deck by id. Since `game_participants.deck_id` points at this
+ * same row, every game's displayed deck name updates instantly via the
+ * join in `getGames()` — no need to touch game history rows at all.
+ * @param {string} id - deck id
  * @param {string} newName - new deck name
  */
-export async function renameDeckInGames(player, oldName, newName) {
+export async function renameDeckRegistry(id, newName) {
   const { error } = await supabase
-    .from(PARTICIPANTS_TABLE)
-    .update({ deck: newName })
-    .eq('player', player)
-    .eq('deck', oldName)
+    .from(TABLE_NAME)
+    .update({ name: newName, updated_at: new Date().toISOString() })
+    .eq('id', id)
 
   if (error) {
-    console.error('Error renaming deck in games:', error)
+    console.error('Error renaming deck:', error)
     throw error
   }
 }

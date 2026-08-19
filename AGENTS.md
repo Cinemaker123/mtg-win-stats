@@ -104,15 +104,28 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
   Used only for registry changes (add/delete deck).
 - **Game CRUD**: `addGame` / `updateGame` / `deleteGame` write directly
   (no dirty flag); `updateGame` replaces participants wholesale.
+- **IDs alongside names**: `decks` and `game_participants` carry
+  `player_id`/`deck_id` foreign keys (into `players`/`decks`) next to
+  their original `player`/`deck` text columns — the text columns are
+  never dropped. `getGames()` embeds `decks(name)` via `deck_id` and
+  prefers that live name over the stored `deck` text; `deck_id` is
+  `ON DELETE SET NULL`, so once a registry deck is deleted the join
+  returns null and the stored text becomes a permanent historical
+  snapshot instead of a dangling reference. `getPlayerIdMap()` caches
+  the player slug→id lookup for the page lifetime and is used whenever
+  a row is written (`saveDecks`, `addDeckToRegistry`, `addGame`,
+  `updateGame`) so `player_id` stays populated on new rows.
 - **Realtime**: `useDecks` subscribes to `postgres_changes` filtered by
   player and refetches on remote writes (echoes of own saves suppressed
   for 1s). `GamesProvider` subscribes to `games` + `game_participants`
-  with a 500ms debounced refetch — mounted once in `App.jsx`, so every
-  view reads the same cache via `useGames()` instead of each view
-  fetching and subscribing independently. Requires the tables in the
-  `supabase_realtime` publication (see SUPABASE_SETUP.md).
-  `GlobalStatsView` subscribes to `decks` unfiltered with a 500ms
-  debounced refresh.
+  + `decks` with a 500ms debounced refetch — mounted once in `App.jsx`,
+  so every view reads the same cache via `useGames()` instead of each
+  view fetching and subscribing independently. `decks` is included
+  because a deck rename only touches the `decks` table now (see below);
+  without it, the cached `games` join would keep showing the pre-rename
+  name until reload. Requires the tables in the `supabase_realtime`
+  publication (see SUPABASE_SETUP.md). `GlobalStatsView` subscribes to
+  `decks` unfiltered with a 500ms debounced refresh.
 - **Bulk deck fetch**: `getAllDecks()` fetches every player's decks in
   one unfiltered query, grouped client-side. Used by `GlobalStatsView`
   and `NewGameModal` (both need all 4 players' registries) instead of
@@ -137,6 +150,7 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
 ```javascript
 // Deck object structure (registry; wins/losses = frozen legacy baseline)
 {
+  id: string,        // uuid — what game_participants.deck_id points at
   player: string,    // "baum" | "mary" | "pascal" | "wewy"
   name: string,      // Deck name (e.g., "Azorius Control")
   wins: number,      // Legacy wins (frozen, pre-v2)
@@ -150,7 +164,9 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
   participants: [
     {
       player: string,     // player identifier
-      deck: string,       // deck name (plain text, history-safe)
+      deck: string,       // deck name — live via deck_id join when the
+                           // deck still exists, else the frozen text
+                           // snapshot from when the game was recorded
       isWinner: boolean   // exactly one winner per game
     }
   ]                  // 2-4 participants
@@ -200,8 +216,10 @@ Color coding via `getWinRateTier()` utility:
      totals, via `playerGameHistory`/`getCurrentStreak`/`getLastPlayed`
    - Decks tab with read-only win/loss bars (legacy + game-derived);
      unplayed decks show a neutral bar; games-only decks have no delete
-   - Rename registry decks inline (pencil); renames propagate to the
-     game history via `renameDeckInGames` so stats don't split
+   - Rename registry decks inline (pencil); persisted as a single
+     `renameDeckRegistry(id, name)` update on the deck's row — game
+     history references the same `deck_id`, so the new name shows up
+     everywhere via the join, no propagation write needed
    - Delete registry decks with 5s undo toast
    - Single-deck add panel
    - Live updates via Supabase Realtime
@@ -373,6 +391,28 @@ original purple/green/Outfit look app-wide:
   `D20`'s critical-hit/fail colors, `LandingPage`'s button gradients
   and glow shadows, `GlobalStatsView`'s ad-hoc `StatCard` accents, and
   `DeckScatter`'s "good zone" wash.
+
+Completed in 2026-08 (DB IDs migration):
+
+`player`/`deck` text columns stay (never dropped, and remain the
+permanent historical snapshot for deleted decks), but `decks` and
+`game_participants` gained `player_id`/`deck_id` foreign keys (new
+`players` table added). SQL run manually by the user in the Supabase
+SQL Editor (see SUPABASE_SETUP.md); this phase is the code side:
+- `getPlayerIdMap()` in `supabaseClient.js` caches the player slug→id
+  lookup, used by every write path (`saveDecks`, `addDeckToRegistry`,
+  `addGame`, `updateGame`) to populate `player_id`
+- `getGames()` embeds `decks(name)` via `deck_id` and prefers the live
+  name over the stored text, so renames show up everywhere instantly
+- `renameDeckInGames` (propagation write into every game row) removed
+  entirely; replaced by `renameDeckRegistry(id, name)`, a single-row
+  update on the deck itself — `useDecks`'s `renameDeck` no longer marks
+  the change dirty for the debounced full-sync, since racing that
+  name-keyed upsert against the new id-keyed update could otherwise
+  create a duplicate row
+- `GamesProvider`'s realtime subscription added `decks` alongside
+  `games`/`game_participants`, since a rename now only touches `decks`
+  — without it, the cached join would show the old name until reload
 
 See git history for detailed commits:
 ```bash
