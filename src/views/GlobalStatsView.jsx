@@ -204,7 +204,6 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
           <>
             {/* Overall Stats */}
             <div className={styles.section}>
-              <div className={styles.sectionTitle}>Gesamtübersicht</div>
               <div className={isMobile ? styles.statsGridMobile : styles.statsGrid}>
                 <StatCard
                   label="Spiele insgesamt"
