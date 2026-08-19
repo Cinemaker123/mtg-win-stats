@@ -94,10 +94,10 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
       return;
     }
     try {
-      await addDeckToRegistry(player, name);
+      const id = await addDeckToRegistry(player, name);
       setPlayersDecks(pd => ({
         ...pd,
-        [player]: [...(pd[player] || []), { name, wins: 0, losses: 0 }],
+        [player]: [...(pd[player] || []), { id, name, wins: 0, losses: 0 }],
       }));
       setDeckByPlayer(d => ({ ...d, [player]: name }));
       setAddingDeckFor(null);
@@ -119,11 +119,16 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     setError(null);
     const payload = {
       playedAt: new Date(playedAt).toISOString(),
-      participants: participants.map(p => ({
-        player: p,
-        deck: deckByPlayer[p],
-        isWinner: p === winner,
-      })),
+      participants: participants.map(p => {
+        const deckName = deckByPlayer[p];
+        const deckId = (playersDecks[p] || []).find(d => d.name === deckName)?.id ?? null;
+        return {
+          player: p,
+          deck: deckName,
+          deckId,
+          isWinner: p === winner,
+        };
+      }),
     };
     try {
       if (editGame) {
