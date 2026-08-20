@@ -22,8 +22,10 @@ import styles from "./GlobalStatsView.module.css";
 import chrome from "../styles/viewChrome.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
-  const { games } = useGames();
-  const { decksByPlayer: allData, loading, error } = useAllDecks();
+  const { games, loading: gamesLoading, error: gamesError } = useGames();
+  const { decksByPlayer: allData, loading: decksLoading, error: decksError } = useAllDecks();
+  const loading = gamesLoading || decksLoading;
+  const error = gamesError || decksError;
 
   // Calculate statistics
   // Win rates are kept as 0-1 numbers throughout; formatted only at render time
