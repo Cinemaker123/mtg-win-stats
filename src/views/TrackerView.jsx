@@ -10,6 +10,7 @@ import { useToast } from "../hooks/useToast.js";
 
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
+import { Toast } from "../components/Toast.jsx";
 
 // Utils
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
@@ -60,10 +61,6 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
     }
   }, [loading, loaded, decks.length]);
 
-  const handleImport = (msg) => {
-    showToast({ type: msg.startsWith("✅") ? "success" : "error", message: msg });
-  };
-
   // Delete with 5s undo window (undo reinserts locally, the debounced
   // full sync restores the row in Supabase if it was already deleted)
   const handleDeleteDeck = (name) => {
@@ -73,13 +70,11 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
       type: "undo",
       message: `„${removed.deck.name}" gelöscht`,
       actionLabel: "Rückgängig",
-      onAction: () => restoreDeck(removed.deck, removed.index),
+      onAction: () => {
+        dismissToast();
+        restoreDeck(removed.deck, removed.index);
+      },
     }, 5000);
-  };
-
-  const handleToastAction = () => {
-    if (toast?.onAction) toast.onAction();
-    dismissToast();
   };
 
   // Rename a registry deck locally (synced via dirty flag) and in the
@@ -110,21 +105,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   return (
     <>
       <div className={styles.container}>
-        {/* Toast notification */}
-        {toast && (
-          <div className={
-            toast.type === "success" ? styles.toastSuccess
-            : toast.type === "error" ? styles.toastError
-            : styles.toastUndo
-          }>
-            <span>{toast.message}</span>
-            {toast.actionLabel && (
-              <button className={styles.toastAction} onClick={handleToastAction}>
-                {toast.actionLabel}
-              </button>
-            )}
-          </div>
-        )}
+        {toast && <Toast toast={toast} />}
 
         {/* Loading spinner */}
         {loading && (
@@ -183,7 +164,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                     <ImportPanel 
                       player={player} 
                       addDecks={addDecks} 
-                      onImport={handleImport}
+                      onImport={showToast}
                       autoFocus={decks.length === 0}
                     />
                   </div>

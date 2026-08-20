@@ -10,6 +10,7 @@ import { useToast } from "../hooks/useToast.js";
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { Logo } from "../components/Logo.jsx";
 import { NewGameModal } from "../components/NewGameModal.jsx";
+import { Toast } from "../components/Toast.jsx";
 
 // Utils
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
@@ -22,19 +23,16 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
   const [showNewGame, setShowNewGame] = useState(false);
   const { toast, showToast } = useToast();
 
+  // NewGameModal only reports back once the save succeeded — it surfaces
+  // failures inline, in the modal that is still open.
   const handleGameSaved = (msg) => {
     setShowNewGame(false);
-    showToast(msg);
+    showToast({ type: "success", message: msg });
   };
 
   return (
     <div className={isMobile ? styles.containerMobile : styles.container}>
-      {/* Toast notification */}
-      {toast && (
-        <div className={toast.startsWith("✅") ? styles.toastSuccess : styles.toastError}>
-          {toast}
-        </div>
-      )}
+      {toast && <Toast toast={toast} />}
 
       {/* Dark mode toggle */}
       <div className={styles.darkModeToggle}>

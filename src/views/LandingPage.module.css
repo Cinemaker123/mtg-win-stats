@@ -228,29 +228,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
 }
 
-.toast {
-  position: fixed;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  z-index: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.toastSuccess {
-  composes: toast;
-  background: var(--color-success);
-}
-
-.toastError {
-  composes: toast;
-  background: var(--color-error);
-}
+/* Toast styling lives in components/Toast.module.css */
 
 .archiveLink {
   display: block;

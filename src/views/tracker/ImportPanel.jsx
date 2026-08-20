@@ -9,7 +9,7 @@ import styles from "../TrackerView.module.css";
  * @param {Object} props
  * @param {string} props.player - Player identifier
  * @param {Function} props.addDecks - Callback to add decks
- * @param {Function} props.onImport - Callback with result message
+ * @param {Function} props.onImport - Callback with a toast: { type, message }
  * @param {boolean} props.autoFocus - Whether to auto-focus input when no decks exist
  */
 export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
@@ -26,12 +26,12 @@ export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
   const addSingleDeck = () => {
     const name = singleDeckName.trim();
     if (!name) {
-      onImport("❌ Bitte gib einen Decknamen ein");
+      onImport({ type: "error", message: "❌ Bitte gib einen Decknamen ein" });
       return;
     }
     addDecks([{ name, wins: 0, losses: 0 }]);
     setSingleDeckName("");
-    onImport(`✅ "${name}" hinzugefügt`);
+    onImport({ type: "success", message: `✅ "${name}" hinzugefügt` });
   };
 
   return (

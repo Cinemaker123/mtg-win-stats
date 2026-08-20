@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * Shared toast-notification state: show a toast (string or object,
- * caller's choice), auto-dismiss after a duration, and clean up the
- * pending timeout on unmount.
+ * Shared toast-notification state: show a toast, auto-dismiss it after a
+ * duration, and clean up the pending timeout on unmount.
+ *
+ * The toast is always the object `components/Toast.jsx` renders —
+ * `{ type, message, actionLabel?, onAction? }`. Passing a bare string used to
+ * be allowed, which left each view sniffing the leading emoji off the message
+ * to guess the styling.
  * @param {number} [defaultDuration] - Default auto-dismiss delay in ms
- * @returns {{toast: *, showToast: Function, dismissToast: Function}}
+ * @returns {{toast: Object|null, showToast: Function, dismissToast: Function}}
  */
 export function useToast(defaultDuration = 3000) {
   const [toast, setToast] = useState(null);

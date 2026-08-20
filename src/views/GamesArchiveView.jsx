@@ -1,5 +1,5 @@
 // React
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
@@ -10,6 +10,7 @@ import { useToast } from "../hooks/useToast.js";
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { NewGameModal } from "../components/NewGameModal.jsx";
+import { Toast } from "../components/Toast.jsx";
 
 // Utils / API
 import { addGame, deleteGame } from "../supabaseClient.js";
@@ -71,55 +72,42 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
   const { games, loading, error, retry } = useGames();
   const [editGame, setEditGame] = useState(null);
   const { toast, showToast, dismissToast } = useToast();
-  const [pendingDelete, setPendingDelete] = useState(null);
   const px = isMobile ? 12 : 24;
-
-  // The undo offer only makes sense while its toast is visible
-  useEffect(() => {
-    if (!toast) setPendingDelete(null);
-  }, [toast]);
 
   const groups = useMemo(() => groupByDay(games), [games]);
 
-  const handleDelete = async (game) => {
-    setEditGame(null);
-    try {
-      await deleteGame(game.id);
-      setPendingDelete(game);
-      showToast("Spiel gelöscht", UNDO_WINDOW_MS);
-    } catch (e) {
-      console.error("Delete game failed:", e);
-      showToast("⚠️ Löschen fehlgeschlagen");
-    }
-  };
-
-  const handleUndo = async () => {
-    if (!pendingDelete) return;
+  // The deleted game rides along on the toast's own action handler, so the
+  // undo offer can't outlive the toast that carries it.
+  const handleUndo = async (game) => {
     dismissToast();
-    const game = pendingDelete;
-    setPendingDelete(null);
     try {
       // Re-insert restores the game with a new id (acceptable for undo)
       await addGame({ playedAt: game.playedAt, participants: game.participants });
     } catch (e) {
       console.error("Undo delete failed:", e);
-      showToast("⚠️ Wiederherstellen fehlgeschlagen");
+      showToast({ type: "error", message: "⚠️ Wiederherstellen fehlgeschlagen" });
+    }
+  };
+
+  const handleDelete = async (game) => {
+    setEditGame(null);
+    try {
+      await deleteGame(game.id);
+      showToast({
+        type: "undo",
+        message: "Spiel gelöscht",
+        actionLabel: "Rückgängig",
+        onAction: () => handleUndo(game),
+      }, UNDO_WINDOW_MS);
+    } catch (e) {
+      console.error("Delete game failed:", e);
+      showToast({ type: "error", message: "⚠️ Löschen fehlgeschlagen" });
     }
   };
 
   return (
     <div className={styles.container}>
-      {/* Toast notification */}
-      {toast && (
-        <div className={toast.startsWith("⚠️") ? styles.toastError : styles.toastSuccess}>
-          {toast}
-          {pendingDelete && (
-            <button className={styles.undoButton} onClick={handleUndo}>
-              Rückgängig
-            </button>
-          )}
-        </div>
-      )}
+      {toast && <Toast toast={toast} />}
 
       {/* Header */}
       <div className={styles.header} style={{ padding: `0 ${px}px` }}>
@@ -189,7 +177,7 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
           onClose={() => setEditGame(null)}
           onSaved={(msg) => {
             setEditGame(null);
-            showToast(msg);
+            showToast({ type: "success", message: msg });
           }}
           onDelete={handleDelete}
         />
