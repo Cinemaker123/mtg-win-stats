@@ -150,7 +150,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                     deleteDeck={handleDeleteDeck}
                     renameDeck={handleRenameDeck}
                   />
-                  <div className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}>
+                  <div className={styles.importPanel}>
                     <ImportPanel 
                       player={player} 
                       addDecks={addDecks} 

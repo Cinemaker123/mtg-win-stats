@@ -8,14 +8,17 @@ import { MOBILE_BREAKPOINT } from "../utils/stats.js";
  * Animates a D20 die rolling across the screen
  * @param {Object} props
  * @param {Function} props.onLanded - Callback when animation completes
- * @param {number} props.screenWidth - Screen width for animation calculation
  */
-export function RollingD20({ onLanded, screenWidth }) {
+export function RollingD20({ onLanded }) {
   const [position, setPosition] = useState({ x: -156, y: 150, rotation: 0 });
   const [finalNumber] = useState(() => Math.floor(Math.random() * 20) + 1);
   const [showResult, setShowResult] = useState(false);
-  const isMobile = screenWidth < MOBILE_BREAKPOINT;
-  const duration = isMobile ? 1400 : 2200;
+  // Read once: the animation runs to completion from mount, and this is the
+  // one place the pixel width is genuinely needed in JS. App used to pass it
+  // down as either window.innerWidth or a hardcoded 1024, so on wide screens
+  // the die aimed at the middle of a 1024px window rather than the real one.
+  const [screenWidth] = useState(() => window.innerWidth);
+  const duration = screenWidth < MOBILE_BREAKPOINT ? 1400 : 2200;
   const animRef = useRef(null);
 
   // Run animation once on mount
@@ -94,5 +97,4 @@ export function RollingD20({ onLanded, screenWidth }) {
 
 RollingD20.propTypes = {
   onLanded: PropTypes.func.isRequired,
-  screenWidth: PropTypes.number.isRequired,
 };

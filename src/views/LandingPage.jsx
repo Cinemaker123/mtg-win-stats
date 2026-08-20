@@ -70,15 +70,7 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
         <div className={styles.buttonRow}>
           <button
             onClick={() => setShowNewGame(true)}
-            className={`
-              ${styles.newGameButton}
-              ${isDark ? styles.newGameButtonDark : ""}
-            `}
-            style={isDark ? {
-              "--glow": "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-            } : {
-              "--glow": "0 8px 32px rgba(201, 122, 31, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
-            }}
+            className={styles.newGameButton}
           >
             <div className={styles.globalStatsContent}>
               <span className={styles.globalStatsIcon}>⚔️</span>
@@ -89,15 +81,7 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
           </button>
           <button
             onClick={onShowGlobalStats}
-            className={`
-              ${styles.globalStatsButton}
-              ${isDark ? styles.globalStatsButtonDark : ""}
-            `}
-            style={isDark ? {
-              "--glow": "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-            } : {
-              "--glow": "0 8px 32px rgba(63, 95, 201, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
-            }}
+            className={styles.globalStatsButton}
           >
             <div className={styles.globalStatsContent}>
               <span className={styles.globalStatsIcon}>📊</span>

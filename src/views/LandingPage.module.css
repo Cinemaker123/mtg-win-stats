@@ -97,14 +97,13 @@
   box-shadow: 0 4px 20px rgba(63, 95, 201, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
+.globalStatsButton {
+  --glow: 0 8px 32px rgba(63, 95, 201, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
 .globalStatsButton:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: var(--glow);
-}
-
-.globalStatsButtonDark {
-  background: linear-gradient(135deg, #2a3563, #1e2547);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
 }
 
 .globalStatsContent {
@@ -145,9 +144,19 @@
   composes: globalStatsButton;
   background: linear-gradient(135deg, #c97a1f, #e6a13f);
   box-shadow: 0 4px 20px rgba(201, 122, 31, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  --glow: 0 8px 32px rgba(201, 122, 31, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
-.newGameButtonDark {
+/* Dark theme. useDarkMode already stamps data-theme on <html>, so the theme
+   does not also have to travel down as a prop. The .newGameButton rule must
+   follow the .globalStatsButton one — it composes it, so both match. */
+:global([data-theme="dark"]) .globalStatsButton {
+  background: linear-gradient(135deg, #2a3563, #1e2547);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
+  --glow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme="dark"]) .newGameButton {
   background: linear-gradient(135deg, #6b4a1a, #4a3212);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
 }
