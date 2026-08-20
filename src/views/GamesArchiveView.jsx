@@ -8,12 +8,12 @@ import { useToast } from "../hooks/useToast.js";
 
 // Components
 import { NewGameModal } from "../components/NewGameModal.jsx";
+import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
 import { Toast } from "../components/Toast.jsx";
 import { ViewHeader } from "../components/ViewHeader.jsx";
 
 // Utils / API
 import { addGame, deleteGame } from "../supabaseClient.js";
-import { PLAYER_GRADIENTS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GamesArchiveView.module.css";
@@ -143,12 +143,7 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
                     <div className={styles.participantList}>
                       {participants.map(p => (
                         <div key={p.player} className={styles.participant}>
-                          <div
-                            className={styles.avatar}
-                            style={{ background: PLAYER_GRADIENTS[p.player] }}
-                          >
-                            {p.player[0].toUpperCase()}
-                          </div>
+                          <PlayerAvatar player={p.player} className={styles.avatar} />
                           <div className={styles.participantInfo}>
                             <div className={styles.participantName}>
                               {p.isWinner && <span className={styles.crown}>👑</span>}

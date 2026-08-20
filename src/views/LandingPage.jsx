@@ -8,11 +8,12 @@ import { useToast } from "../hooks/useToast.js";
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { Logo } from "../components/Logo.jsx";
+import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
 import { NewGameModal } from "../components/NewGameModal.jsx";
 import { Toast } from "../components/Toast.jsx";
 
 // Utils
-import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import { PLAYERS, PLAYER_COLORS } from "../utils/stats.js";
 
 // Styles
 import styles from "./LandingPage.module.css";
@@ -56,12 +57,7 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
               "--accent-soft": `${PLAYER_COLORS[player]}40`,
             }}
           >
-            <div 
-              className={styles.playerAvatar}
-              style={{ background: PLAYER_GRADIENTS[player] }}
-            >
-              {player[0]}
-            </div>
+            <PlayerAvatar player={player} className={styles.playerAvatar} />
             <span className={styles.playerName}>
               {player}
             </span>

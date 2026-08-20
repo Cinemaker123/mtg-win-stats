@@ -6,6 +6,7 @@ import PropTypes from "prop-types";
 import { useGames } from "../hooks/useGames.js";
 
 // Components
+import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
 import { ViewHeader } from "../components/ViewHeader.jsx";
 import { StatCard } from "../components/StatCard.jsx";
 import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
@@ -253,12 +254,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                   const tier = getWinRateTier(p.winRate);
                   return (
                     <div key={p.player} className={styles.playerRow}>
-                      <div
-                        className={styles.playerAvatar}
-                        style={{ background: p.gradient }}
-                      >
-                        {p.player[0].toUpperCase()}
-                      </div>
+                      <PlayerAvatar player={p.player} className={styles.playerAvatar} />
                       <div className={styles.playerInfo}>
                         <div className={styles.playerName}>{p.player}</div>
                         <div className={styles.playerMeta}>
@@ -303,12 +299,11 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                     const tier = getWinRateTier(deck.winRate);
                     return (
                       <div key={`${deck.player}-${deck.name}`} className={styles.deckRow}>
-                        <div
+                        <PlayerAvatar
+                          player={deck.player}
                           className={styles.deckAvatar}
-                          style={{ background: PLAYER_COLORS[deck.player] }}
-                        >
-                          {deck.player[0].toUpperCase()}
-                        </div>
+                          background={PLAYER_COLORS[deck.player]}
+                        />
                         <div className={styles.deckInfo}>
                           <div className={styles.deckName}>{deck.name}</div>
                           <div className={styles.deckPlayer}>{deck.player}</div>

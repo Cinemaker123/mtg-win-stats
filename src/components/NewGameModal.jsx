@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { getDecksByPlayer, addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
-import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import { PLAYERS, PLAYER_COLORS } from "../utils/stats.js";
+import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import styles from "./NewGameModal.module.css";
 
 /**
@@ -229,9 +230,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
                     {isWinner && <span className={styles.crown}>👑</span>}
 
                     <div className={styles.playerRow}>
-                      <div className={styles.avatar} style={{ background: PLAYER_GRADIENTS[player] }}>
-                        {player[0]}
-                      </div>
+                      <PlayerAvatar player={player} className={styles.avatar} />
                       <span className={styles.playerName}>{player}</span>
                     </div>
 

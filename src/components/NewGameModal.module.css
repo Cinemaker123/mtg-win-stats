@@ -120,19 +120,12 @@
   padding-left: 14px;
 }
 
+/* Sizing only — the avatar body lives in components/PlayerAvatar.module.css */
 .avatar {
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  color: #fff;
-  font-weight: 800;
   font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-transform: uppercase;
-  font-family: var(--font-display);
-  flex-shrink: 0;
 }
 
 .playerName {

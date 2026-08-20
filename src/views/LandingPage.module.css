@@ -59,18 +59,12 @@
   box-shadow: 0 8px 24px var(--accent-soft);
 }
 
+/* Sizing only — the avatar body lives in components/PlayerAvatar.module.css */
 .playerAvatar {
   width: 80px;
   height: 80px;
   font-size: 36px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  color: #fff;
-  font-family: var(--font-display);
-  text-transform: uppercase;
 }
 
 .playerName {

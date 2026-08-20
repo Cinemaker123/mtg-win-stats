@@ -22,18 +22,12 @@
   composes: spinner from "../styles/viewChrome.module.css";
 }
 
+/* Sizing only — the avatar body lives in components/PlayerAvatar.module.css */
 .playerAvatar {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 14px;
-  font-weight: 800;
-  color: #fff;
-  font-family: var(--font-display);
-  text-transform: uppercase;
 }
 
 .playerName {

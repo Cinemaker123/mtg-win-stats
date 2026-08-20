@@ -8,6 +8,7 @@ import { useGames } from "../hooks/useGames.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
+import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
 import { Toast } from "../components/Toast.jsx";
 import { ViewHeader } from "../components/ViewHeader.jsx";
 
@@ -112,14 +113,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
         )}
 
         <ViewHeader
-          icon={
-            <div
-              className={styles.playerAvatar}
-              style={{ background: PLAYER_GRADIENTS[player] }}
-            >
-              {player[0]}
-            </div>
-          }
+          icon={<PlayerAvatar player={player} className={styles.playerAvatar} />}
           title={player}
           titleClassName={styles.playerName}
           onBack={onBack}
