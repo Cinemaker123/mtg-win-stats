@@ -16,7 +16,7 @@ import { ViewHeader } from "../components/ViewHeader.jsx";
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
 
 // Utils / API
-import { renameDeckInGames } from "../supabaseClient.js";
+import { renameDeckRegistry } from "../supabaseClient.js";
 
 // Sub-components
 import { DashboardTab } from "./tracker/DashboardTab.jsx";
@@ -74,8 +74,9 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
     }, 5000);
   };
 
-  // Rename a registry deck locally (synced via dirty flag) and in the
-  // game history, so combined stats don't split into old/new names
+  // Rename a registry deck locally, then persist by id directly — the
+  // deck's id is what game history points at (deck_id), so this single
+  // update is all that's needed for the new name to show up everywhere
   const handleRenameDeck = async (oldName, newName) => {
     const result = renameDeck(oldName, newName);
     if (!result.ok) {
@@ -89,12 +90,12 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
     }
     if (!result.renamed) return;
     try {
-      await renameDeckInGames(player, oldName, newName.trim());
+      await renameDeckRegistry(result.id, newName.trim());
       showToast({ type: "success", message: `✅ „${oldName}" umbenannt in „${newName.trim()}"` });
     } catch {
       showToast({
         type: "error",
-        message: "⚠️ Name im Spielarchiv konnte nicht aktualisiert werden",
+        message: "⚠️ Umbenennen konnte nicht gespeichert werden",
       });
     }
   };

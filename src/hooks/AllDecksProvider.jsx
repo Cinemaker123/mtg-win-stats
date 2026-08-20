@@ -50,11 +50,12 @@ export function AllDecksProvider({ children }) {
   }, [load]);
 
   // Show a just-created deck immediately rather than waiting out the
-  // debounce; the realtime refetch reconciles it moments later.
-  const addDeckLocally = useCallback((player, name) => {
+  // debounce; the realtime refetch reconciles it moments later. The deck
+  // must carry its `id` — callers resolve `deck_id` out of this cache.
+  const addDeckLocally = useCallback((player, deck) => {
     setDecksByPlayer(current => ({
       ...current,
-      [player]: [...(current[player] || []), { name, wins: 0, losses: 0 }],
+      [player]: [...(current[player] || []), deck],
     }));
   }, []);
 

@@ -30,7 +30,12 @@ export function GamesProvider({ children }) {
     load();
   }, [load]);
 
-  // Realtime: refetch when games or participants change (debounced)
+  // Realtime: refetch when games, participants, or deck names change
+  // (debounced). Decks is included because a rename only touches the
+  // decks table now — game_participants.deck_id stays put — so without
+  // this, the cached games here would keep showing the old deck name
+  // via the join in getGames() until reload, splitting stats against
+  // the freshly-renamed registry entry.
   useEffect(() => {
     let timeout = null;
     const schedule = () => {
@@ -42,6 +47,7 @@ export function GamesProvider({ children }) {
       .channel("games-all")
       .on("postgres_changes", { event: "*", schema: "public", table: "games" }, schedule)
       .on("postgres_changes", { event: "*", schema: "public", table: "game_participants" }, schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "decks" }, schedule)
       .subscribe();
 
     return () => {

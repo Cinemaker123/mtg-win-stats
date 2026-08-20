@@ -132,8 +132,11 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
       return;
     }
     try {
-      await addDeckToRegistry(player, name);
-      addDeckLocally(player, name);
+      // The id matters: `save` below resolves each participant's deck_id
+      // out of this cache, so an entry without one would record the game
+      // with a null deck_id and lose the link to the registry row.
+      const id = await addDeckToRegistry(player, name);
+      addDeckLocally(player, { id, name, wins: 0, losses: 0 });
       setDeckByPlayer(d => ({ ...d, [player]: name }));
       setAddingDeckFor(null);
       setNewDeckName("");
@@ -154,11 +157,16 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     setError(null);
     const payload = {
       playedAt: new Date(playedAt).toISOString(),
-      participants: participants.map(p => ({
-        player: p,
-        deck: deckByPlayer[p],
-        isWinner: p === winner,
-      })),
+      participants: participants.map(p => {
+        const deckName = deckByPlayer[p];
+        const deckId = (playersDecks[p] || []).find(d => d.name === deckName)?.id ?? null;
+        return {
+          player: p,
+          deck: deckName,
+          deckId,
+          isWinner: p === winner,
+        };
+      }),
     };
     try {
       if (editGame) {

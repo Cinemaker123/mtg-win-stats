@@ -132,3 +132,62 @@ comment on column public.decks.wins   is 'Legacy baseline (pre-games era), froze
 comment on column public.decks.losses is 'Legacy baseline (pre-games era), frozen';
 ```
 
+## IDs statt Namen: `players`-Tabelle + Fremdschlüssel
+
+Ursprünglich identifizierten `decks.player` und `game_participants.player`/
+`deck` per Klartext. Diese Textspalten bleiben unverändert bestehen (u.a.
+als dauerhafter Namens-Schnappschuss für gelöschte Decks), bekommen aber
+zusätzlich `player_id`/`deck_id`-Fremdschlüssel an die Seite gestellt.
+Vorteil: Ein Deck umbenennen wird ein einzelnes Update auf `decks.name`
+statt eines Propagations-Writes über die komplette Spielhistorie, und
+Namenskollisionen zwischen Decks können Statistiken nicht mehr
+zusammenlegen.
+
+Im **SQL Editor** ausführen:
+
+```sql
+-- 1) Spieler-Tabelle
+create table public.players (
+  id         uuid primary key default gen_random_uuid(),
+  slug       text not null unique,   -- "baum" | "mary" | "pascal" | "wewy"
+  name       text not null,
+  created_at timestamptz not null default now()
+);
+
+insert into public.players (slug, name) values
+  ('baum', 'baum'), ('mary', 'mary'), ('pascal', 'pascal'), ('wewy', 'wewy');
+
+alter table public.players disable row level security;
+alter publication supabase_realtime add table public.players;
+
+-- 2) Fremdschlüssel-Spalten (nullable, nichts bricht dabei)
+alter table public.decks             add column player_id uuid references public.players(id);
+alter table public.game_participants add column player_id uuid references public.players(id);
+alter table public.game_participants add column deck_id   uuid references public.decks(id) on delete set null;
+
+-- 3) Backfill anhand der bestehenden Textspalten
+update public.decks d set player_id = p.id
+  from public.players p where p.slug = d.player;
+
+update public.game_participants gp set player_id = p.id
+  from public.players p where p.slug = gp.player;
+
+update public.game_participants gp set deck_id = d.id
+  from public.decks d
+  where d.player = gp.player and d.name = gp.deck;
+  -- Zeilen ohne Treffer (Deck war zum Zeitpunkt der Migration bereits aus
+  -- der Registry gelöscht) bleiben deck_id = null — korrekt, das ist genau
+  -- das "gelöschtes Deck"-Signal, auf das der App-Code sich verlässt
+
+-- 4) Erst NOT NULL setzen, wenn der App-Code (supabaseClient.js) auf den
+--    neuen Spalten schreibt — sonst schlagen Inserts aus altem Code fehl.
+--    deck_id bleibt für immer nullable (das ist das "gelöscht"-Signal).
+alter table public.decks             alter column player_id set not null;
+alter table public.game_participants alter column player_id set not null;
+```
+
+Nach diesem Schritt ggf. den PostgREST-Schema-Cache neu laden (Dashboard →
+Database → API → "Reload schema"), damit der `decks(name)`-Embed in
+`getGames()` sofort funktioniert, statt auf den automatischen Reload zu
+warten.
+
