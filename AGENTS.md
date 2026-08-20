@@ -31,17 +31,22 @@ mtg-win-stats/
 │   │   ├── D20.jsx               # D20 die display component
 │   │   ├── DarkModeToggle.jsx    # Dark mode toggle button
 │   │   ├── DeckScatter.jsx       # Activity vs. win rate scatter (SVG)
-│   │   ├── Logo.jsx              # MTG logo component
+│   │   ├── Logo.jsx              # MTG logo (size prop optional; omit to size from CSS)
 │   │   ├── NewGameModal.jsx      # Game entry modal (2x2 grid, winner tap, quick-add deck)
+│   │   ├── PlayerAvatar.jsx      # Player initial on their gradient (all 6 avatar sites)
 │   │   ├── PlayerStrengthChart.jsx  # Adjusted win-rate ranking per player (SVG)
-│   │   ├── RollingD20.jsx        # D20 rolling animation
-│   │   └── StatCard.jsx          # Reusable statistics card
+│   │   ├── RollingD20.jsx        # D20 rolling animation (reads window.innerWidth itself)
+│   │   ├── StatCard.jsx          # Reusable statistics card
+│   │   ├── StatRow.jsx           # Ranked-list row, player/deck variant (Global Stats)
+│   │   ├── Toast.jsx             # The only toast renderer ({type, message, action})
+│   │   └── ViewHeader.jsx        # Back button + icon + title + DarkModeToggle
 │   ├── hooks/
+│   │   ├── useAllDecks.js        # All players' registries: context + hook (read side)
+│   │   ├── AllDecksProvider.jsx  # All registries: fetch + realtime, mounted once in App.jsx
 │   │   ├── useDarkMode.js        # Dark mode state management
 │   │   ├── useDecks.js           # Deck registry: dirty-flag saves, full sync, realtime
 │   │   ├── useGames.js           # Games archive context + hook (read side)
 │   │   ├── GamesProvider.jsx     # Games archive: fetch + realtime, mounted once in App.jsx
-│   │   ├── useIsMobile.js        # Mobile detection hook (MOBILE_BREAKPOINT)
 │   │   └── useToast.js           # Shared toast state (show/dismiss/auto-timeout)
 │   ├── utils/
 │   │   ├── stats.js              # Constants, winRate, adjustedWinRate, tiers, combineDeckStats
@@ -57,7 +62,8 @@ mtg-win-stats/
 │   │       ├── ImportPanel.jsx   # Single-deck add
 │   │       └── WinLossBar.jsx    # Read-only win/loss bar
 │   ├── styles/
-│   │   └── theme.css             # CSS custom properties (light/dark)
+│   │   ├── theme.css             # CSS custom properties (light/dark) + reset
+│   │   └── viewChrome.module.css # Shell/header/spinner shared by the 3 full views
 │   ├── supabaseClient.js         # Supabase API client (decks + games CRUD)
 │   └── main.jsx                  # Vite entry point
 ├── public/
@@ -76,7 +82,13 @@ mtg-win-stats/
 
 ### State Management
 - **Local React state** via `useState` hooks
-- **Custom hooks**: `useDecks` for data persistence, `useDarkMode` for theming
+- **Custom hooks**: `useDecks` for the editing player's registry,
+  `useDarkMode` for theming
+- **Two providers, mounted once in `App.jsx`**: `GamesProvider` (games
+  archive) and `AllDecksProvider` (every player's registry). Each owns
+  one fetch + one debounced realtime subscription, and every view reads
+  them via `useGames()` / `useAllDecks()`. Anything needing a *third*
+  copy of that machinery should extend a provider instead.
 - **Persistence**: Supabase PostgreSQL database
 - **Per-player data isolation**: Decks stored with player identifier
 
@@ -107,17 +119,21 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
 - **Realtime**: `useDecks` subscribes to `postgres_changes` filtered by
   player and refetches on remote writes (echoes of own saves suppressed
   for 1s). `GamesProvider` subscribes to `games` + `game_participants`
-  with a 500ms debounced refetch — mounted once in `App.jsx`, so every
-  view reads the same cache via `useGames()` instead of each view
-  fetching and subscribing independently. Requires the tables in the
-  `supabase_realtime` publication (see SUPABASE_SETUP.md).
-  `GlobalStatsView` subscribes to `decks` unfiltered with a 500ms
-  debounced refresh.
-- **Bulk deck fetch**: `getAllDecks()` fetches every player's decks in
-  one unfiltered query, grouped client-side. Used by `GlobalStatsView`
-  and `NewGameModal` (both need all 4 players' registries) instead of
-  four parallel per-player `getDecks()` calls. `useDecks` still calls
-  the per-player `getDecks(player)` — that one's correctly scoped.
+  and `AllDecksProvider` to `decks` (unfiltered), both with a 500ms
+  debounced refetch and both mounted once in `App.jsx`, so every view
+  reads the same cache instead of fetching and subscribing
+  independently. Requires the tables in the `supabase_realtime`
+  publication (see SUPABASE_SETUP.md).
+- **Bulk deck fetch**: `getDecksByPlayer()` fetches every player's decks
+  in one unfiltered query and groups them, guaranteeing an entry per
+  player in `PLAYERS`. It is called **only** by `AllDecksProvider`;
+  `GlobalStatsView` and `NewGameModal` read the shared cache, so opening
+  the game modal costs no query. `useDecks` still calls the per-player
+  `getDecks(player)` — that one's correctly scoped.
+- **Error handling**: every query in `supabaseClient.js` goes through
+  `unwrap(result, context)`, which logs with that context and rethrows.
+  Add new queries the same way rather than re-inlining the
+  `if (error) { console.error; throw }` block.
 - **Undo on delete**: deck deletion is local + toast with 5s "Rückgängig";
   undo reinserts locally and the debounced sync restores the DB row.
   Game deletion offers the same 5s undo; undo re-inserts the game with a
@@ -163,10 +179,17 @@ Since this is a 4-player Commander pod:
 - **25-50%** = Good 📈 (above the 1-in-4 baseline)
 - **<25%** = Struggling 📉 (below statistical average)
 
-Color coding via `getWinRateTier()` utility:
-- **Dark Green (#1e8449)** for >50% (legendary)
-- **Green (#2ecc71)** for 25-50% (good)
-- **Red (#e74c3c)** for <25% (struggling)
+Color coding via `getWinRateTier()`, which reads `WIN_RATE_TIERS` in
+`utils/stats.js` — the single source of truth for both the colors and the
+thresholds (the thresholds are derived from `POD_BASELINE_WR`, not
+hardcoded, so they follow `PLAYERS.length`):
+- **Gold (#b4923f)** for >50% (legendary 🏆)
+- **Sage green (#3d7a56)** for 25-50% (good 📈)
+- **Crimson (#a8384a)** for <25% (struggling 📉)
+
+These are applied as inline `style` props from JS. They deliberately have
+no `theme.css` counterparts — duplicating them as custom properties
+created a second, unreferenced source of truth that could drift.
 
 ## Features
 
@@ -182,8 +205,18 @@ Color coding via `getWinRateTier()` utility:
    - 2x2 grid of players; tap a cell to crown the winner (border + 👑)
    - Deck select per player (sorted by games played)
    - "＋ Neues Deck" quick-add writes to the deck registry
-   - Participants removable (✕, min. 2) and re-addable via empty slots
+   - Participants removable (✕, min. `MIN_PARTICIPANTS`) and re-addable
+     via empty slots
    - Edit mode (from archive): change date, decks, winner; delete game
+   - **Never discards input by accident**: the backdrop and Escape close
+     the modal only while the form is untouched. Once anything has been
+     entered, both go inert and "Abbrechen" is the only way out. Every
+     field is local state and the modal is unmounted on close, so a
+     stray backdrop tap used to throw away a fully entered game with no
+     undo. Dirtiness is derived by diffing live state against a snapshot
+     of the opening state (`initialFormState`), so a newly added field
+     is covered automatically — do not replace this with a `dirty` flag
+     that each handler has to remember to set.
 
 3. **Games Archive (`#/games`)**
    - All games grouped by day (Heute/Gestern/date), newest first
@@ -269,6 +302,43 @@ import styles from "./TrackerView.module.css";
   properties inline (e.g. `style={{ "--accent": color }}`) and consume
   them in real `:hover`/`:focus` rules — no JS mouse event handlers
 - Only truly computed values (win rate bar widths) stay inline
+- Share rules **across** stylesheets with
+  `composes: x from "../styles/viewChrome.module.css"` rather than
+  copying blocks between views — the three view stylesheets had drifted
+  apart while being character-for-character identical for 80 lines
+
+### Responsive Layout — CSS only
+Breakpoint decisions live in `@media (max-width: 639px)` blocks, one per
+stylesheet. There is **no JS breakpoint hook** — `useIsMobile` was
+deleted, along with every `isMobile ? styles.xMobile : styles.x` ternary
+and its `composes:`-based `*Mobile` twin. Do not reintroduce them: a
+layout expressed in two languages needs two edits per tweak and can
+flash the wrong layout on first paint. `MOBILE_BREAKPOINT` (640) survives
+in `utils/stats.js` for `RollingD20`, which genuinely needs the pixel
+width in JS; the `639px` in the media queries mirrors it.
+
+### Theming — `data-theme`, not props
+`useDarkMode` stamps `data-theme="dark"|"light"` on `<html>` (and
+`index.html` does it again before first paint, hence no flash). Dark
+variants belong in `:global([data-theme="dark"]) .foo` rules. `isDark`
+is still passed down, but **only** to reach `DarkModeToggle`, which
+renders from it — it must not drive styling, and dark-mode colors must
+not appear as rgba literals in JSX.
+
+### Shared UI Components
+Prefer these over re-rendering the same markup:
+- `Toast` — the only toast renderer. `showToast` accepts
+  `{type, message, actionLabel?, onAction?}` with `type` one of
+  `success` / `error` / `undo`. **Never derive the type by sniffing the
+  message text** (two views used to check the leading emoji, so
+  rewording a message silently restyled it); the code that builds the
+  message names the type.
+- `ViewHeader` — back button, icon, title, extra buttons as children,
+  then the toggle.
+- `PlayerAvatar` — player initial on their gradient. Caller passes only
+  a size/radius class; `background` overrides the gradient with a flat
+  color.
+- `StatRow` — one ranked-list row, `variant="player"` or `"deck"`.
 
 ### Naming Conventions
 - **Components**: PascalCase (`TrackerView.jsx`)
@@ -293,20 +363,31 @@ npm test        # Vitest unit tests (src/utils/stats.test.js)
 npm run build   # Production build must succeed
 ```
 
-Manual testing checklist:
+`stats.test.js` covers the pure logic only — win rates, tiers,
+`combineDeckStats`, and the streak/history helpers
+(`playerGameHistory`, `getCurrentStreak`, `getLastPlayed`,
+`streakDisplay`). **There are no component tests**, so anything touching
+the UI has to be verified by hand:
+
 1. Enter a game via "Neues Spiel": pick decks, tap a winner, save
    (check toast + archive entry)
 2. Quick-add a new deck inside the modal ("＋ Neues Deck")
-3. Edit a game in the archive (change winner/date), delete it and undo
+3. Open the modal and tap the backdrop / press Escape — closes while
+   untouched, refuses once anything is entered; "Abbrechen" always closes
+4. Edit a game in the archive (change winner/date), delete it and undo
    via the 5s toast
-4. Delete a registry deck and undo it via the 5s toast
-5. Switch between players (data isolation)
-6. Refresh on `#/tracker/<player>`, `#/global` and `#/games` (view restored)
-7. Open two tabs; enter a game in one, watch the other update (Realtime)
-8. Test Global Stats page loads all players
-9. Test responsive layout on mobile width (<640px)
-10. Test D20 easter egg (triple-click on background, NOT on buttons)
-11. Toggle dark mode and reload (no light flash)
+5. Delete a registry deck and undo it via the 5s toast
+6. Switch between players (data isolation)
+7. Refresh on `#/tracker/<player>`, `#/global` and `#/games` (view restored)
+8. Open two tabs; enter a game in one, watch the other update (Realtime)
+9. Test Global Stats page loads all players
+10. Resize across 640px — the layout now switches via media queries, so
+    check both sides of the breakpoint and that nothing depends on a
+    re-render to reflow
+11. Test D20 easter egg (triple-click on background, NOT on buttons)
+12. Toggle dark mode and reload (no light flash); check the landing
+    page's two gradient buttons and their hover glow in both themes,
+    since those are now styled from `[data-theme="dark"]`
 
 ## Refactoring History
 
@@ -373,6 +454,30 @@ original purple/green/Outfit look app-wide:
   `D20`'s critical-hit/fail colors, `LandingPage`'s button gradients
   and glow shadows, `GlobalStatsView`'s ad-hoc `StatCard` accents, and
   `DeckScatter`'s "good zone" wash.
+
+Completed in 2026-08 (`/simplify` pass over `src/`, branch
+`worktree-simplify-codebase`):
+
+A four-angle review (reuse, simplification, efficiency, altitude) applied
+in two halves — the mechanical half immediately, the structural half one
+commit at a time afterwards, each verified with lint + tests + build.
+
+| Phase | Changes |
+|-------|---------|
+| **Applied first** | Deduped constants into `stats.js` (`POD_BASELINE_WR`, `formatPct`, `streakDisplay`, `MIN_STREAK_GAMES`, `PROVEN_DECK_GAMES`); memoized `DeckScatter`'s layout (it was rebuilt on every touchmove) and `GlobalStatsView`'s stats; `combineDeckStats` called once per player instead of three times; `useIsMobile` switched to `matchMedia`; dead theme tokens and CSS removed |
+| **Tests** | 16 cases for the previously untested `playerGameHistory` / `getCurrentStreak` / `getLastPlayed` / `streakDisplay` |
+| **Bug fix** | New-game modal no longer discards a filled-in game when the backdrop is tapped |
+| **Components** | `Toast`, `ViewHeader`, `PlayerAvatar`, `StatRow` extracted; toast type no longer sniffed from the message's leading emoji |
+| **CSS** | `styles/viewChrome.module.css` for the shell/header/spinner the three views had duplicated; the JS responsive layer replaced by media queries (17 `*Mobile` classes and ~25 ternaries deleted, `useIsMobile` removed); dark mode moved to `[data-theme="dark"]` rules |
+| **Data layer** | `AllDecksProvider` owns the registries' fetch + realtime (was a third hand-rolled subscription in `GlobalStatsView`, and no subscription at all in `NewGameModal`); `unwrap()` replaces 13 copies of the error block in `supabaseClient.js` |
+| **Small** | `RollingD20` reads `window.innerWidth` itself (App was passing a hardcoded 1024 on desktop, so the die aimed at the wrong center); `useDarkMode`'s `loaded` flag dropped; App's two click handlers merged; `TAB_H` moved to CSS; `MIN_PARTICIPANTS` named; `index.html`'s reset folded into `theme.css` |
+
+Deferred items and the reasoning behind each are in `CLEANUP-BACKLOG.md`
+(gitignored, local working note). It also records one **do not do**:
+`ImportPanel`'s `useRef` + `useEffect` focus handling is *not* a
+reimplementation of React's `autoFocus` — the prop flips false→true after
+decks load asynchronously, which built-in `autoFocus` (mount-only) would
+not catch.
 
 See git history for detailed commits:
 ```bash
