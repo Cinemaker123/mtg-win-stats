@@ -1,0 +1,76 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+/* A player's own name is lowercase in the data */
+.playerName {
+  composes: name;
+  text-transform: capitalize;
+}
+
+/* Deck names are user-entered and can be long */
+.deckName {
+  composes: name;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  color: var(--color-text-muted);
+}
+
+.playerMeta {
+  composes: meta;
+  font-size: 11px;
+}
+
+.deckMeta {
+  composes: meta;
+  font-size: 10px;
+  text-transform: capitalize;
+}
+
+.stats {
+  text-align: right;
+}
+
+.winRate {
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.playerWinRate {
+  composes: winRate;
+  font-size: 16px;
+}
+
+.deckWinRate {
+  composes: winRate;
+  font-size: 14px;
+}
+
+.record {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}

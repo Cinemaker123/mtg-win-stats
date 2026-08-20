@@ -51,17 +51,7 @@
   composes: card;
 }
 
-.playerRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border-strong);
-}
-
-.playerRow:last-child {
-  border-bottom: none;
-}
+/* Row layout and typography live in components/StatRow.module.css */
 
 /* Sizing only — the avatar body lives in components/PlayerAvatar.module.css */
 .playerAvatar {
@@ -69,38 +59,6 @@
   height: 32px;
   border-radius: 50%;
   font-size: 14px;
-}
-
-.playerInfo {
-  flex: 1;
-}
-
-.playerName {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--color-text);
-  text-transform: capitalize;
-}
-
-.playerMeta {
-  font-size: 11px;
-  color: var(--color-text-muted);
-}
-
-.playerStats {
-  text-align: right;
-}
-
-.winRate {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 16px;
-}
-
-.record {
-  font-size: 10px;
-  color: var(--color-text-muted);
 }
 
 .winRateBar {
@@ -134,18 +92,6 @@
   composes: card;
 }
 
-.deckRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border-strong);
-}
-
-.deckRow:last-child {
-  border-bottom: none;
-}
-
 .deckAvatar {
   width: 24px;
   height: 24px;
@@ -154,38 +100,3 @@
   font-weight: 700;
 }
 
-.deckInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.deckName {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--color-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.deckPlayer {
-  font-size: 10px;
-  color: var(--color-text-muted);
-  text-transform: capitalize;
-}
-
-.deckStats {
-  text-align: right;
-}
-
-.deckWinRate {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 14px;
-}
-
-.deckRecord {
-  font-size: 10px;
-  color: var(--color-text-muted);
-}

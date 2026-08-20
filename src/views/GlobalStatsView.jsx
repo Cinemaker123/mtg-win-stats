@@ -9,6 +9,7 @@ import { useGames } from "../hooks/useGames.js";
 import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
 import { ViewHeader } from "../components/ViewHeader.jsx";
 import { StatCard } from "../components/StatCard.jsx";
+import { StatRow } from "../components/StatRow.jsx";
 import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
 
@@ -253,23 +254,17 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                 {stats.playerStats.map((p) => {
                   const tier = getWinRateTier(p.winRate);
                   return (
-                    <div key={p.player} className={styles.playerRow}>
-                      <PlayerAvatar player={p.player} className={styles.playerAvatar} />
-                      <div className={styles.playerInfo}>
-                        <div className={styles.playerName}>{p.player}</div>
-                        <div className={styles.playerMeta}>
-                          {p.deckCount} Decks • {p.totalGames} Spiele
-                        </div>
-                      </div>
-                      <div className={styles.playerStats}>
-                        <div className={styles.winRate} style={{ color: tier.color }}>
-                          <span title={tier.label}>{tier.icon}</span>{" "}
-                          {formatPct(p.winRate)}
-                        </div>
-                        <div className={styles.record}>
-                          {p.totalWins}W / {p.totalLosses}L
-                        </div>
-                      </div>
+                    <StatRow
+                      key={p.player}
+                      variant="player"
+                      avatar={<PlayerAvatar player={p.player} className={styles.playerAvatar} />}
+                      name={p.player}
+                      meta={`${p.deckCount} Decks • ${p.totalGames} Spiele`}
+                      tier={tier}
+                      winRate={p.winRate}
+                      wins={p.totalWins}
+                      losses={p.totalLosses}
+                    >
                       {/* Win rate bar */}
                       <div className={styles.winRateBar}>
                         <div
@@ -284,7 +279,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                           }}
                         />
                       </div>
-                    </div>
+                    </StatRow>
                   );
                 })}
               </div>
@@ -298,26 +293,23 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                   {stats.allDecks.map((deck) => {
                     const tier = getWinRateTier(deck.winRate);
                     return (
-                      <div key={`${deck.player}-${deck.name}`} className={styles.deckRow}>
-                        <PlayerAvatar
-                          player={deck.player}
-                          className={styles.deckAvatar}
-                          background={PLAYER_COLORS[deck.player]}
-                        />
-                        <div className={styles.deckInfo}>
-                          <div className={styles.deckName}>{deck.name}</div>
-                          <div className={styles.deckPlayer}>{deck.player}</div>
-                        </div>
-                        <div className={styles.deckStats}>
-                          <div className={styles.deckWinRate} style={{ color: tier.color }}>
-                            <span title={tier.label}>{tier.icon}</span>{" "}
-                            {formatPct(deck.winRate)}
-                          </div>
-                          <div className={styles.deckRecord}>
-                            {deck.wins}W / {deck.losses}L
-                          </div>
-                        </div>
-                      </div>
+                      <StatRow
+                        key={`${deck.player}-${deck.name}`}
+                        variant="deck"
+                        avatar={
+                          <PlayerAvatar
+                            player={deck.player}
+                            className={styles.deckAvatar}
+                            background={PLAYER_COLORS[deck.player]}
+                          />
+                        }
+                        name={deck.name}
+                        meta={deck.player}
+                        tier={tier}
+                        winRate={deck.winRate}
+                        wins={deck.wins}
+                        losses={deck.losses}
+                      />
                     );
                   })}
                 </div>
