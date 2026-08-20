@@ -16,6 +16,33 @@ function toLocalInputValue(iso) {
 }
 
 /**
+ * The form as it looks when the modal opens: every participant in create mode,
+ * the recorded line-up in edit mode.
+ * @param {Object|null} editGame - game being edited (null = create mode)
+ * @returns {{participants: Array, deckByPlayer: Object, winner: string|null, playedAt: string}}
+ */
+function initialFormState(editGame) {
+  const entries = editGame ? editGame.participants : [];
+  return {
+    participants: editGame ? entries.map(p => p.player) : [...PLAYERS],
+    deckByPlayer: Object.fromEntries(entries.map(p => [p.player, p.deck])),
+    winner: entries.find(p => p.isWinner)?.player ?? null,
+    playedAt: toLocalInputValue(editGame ? editGame.playedAt : new Date().toISOString()),
+  };
+}
+
+/**
+ * Shallow equality for the player → deck map.
+ * @param {Object} a - first map
+ * @param {Object} b - second map
+ * @returns {boolean} - true if both hold the same keys and values
+ */
+function sameDeckMap(a, b) {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every(k => a[k] === b[k]);
+}
+
+/**
  * Modal for entering a game (2x2 player grid) — create and edit mode.
  * Tap a player cell to crown the winner (player-colored border + 👑).
  * Participants can be removed (✕, down to 2) and re-added via empty slots.
@@ -29,20 +56,12 @@ function toLocalInputValue(iso) {
 export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = null }) {
   const [playersDecks, setPlayersDecks] = useState({});
   const [loadingDecks, setLoadingDecks] = useState(true);
-  const [participants, setParticipants] = useState(
-    editGame ? editGame.participants.map(p => p.player) : [...PLAYERS]
-  );
-  const [deckByPlayer, setDeckByPlayer] = useState(() => {
-    const map = {};
-    if (editGame) editGame.participants.forEach(p => { map[p.player] = p.deck; });
-    return map;
-  });
-  const [winner, setWinner] = useState(
-    editGame ? (editGame.participants.find(p => p.isWinner)?.player ?? null) : null
-  );
-  const [playedAt, setPlayedAt] = useState(
-    toLocalInputValue(editGame ? editGame.playedAt : new Date().toISOString())
-  );
+  // Snapshot of the opening state, kept for the untouched-form check below
+  const [initial] = useState(() => initialFormState(editGame));
+  const [participants, setParticipants] = useState(initial.participants);
+  const [deckByPlayer, setDeckByPlayer] = useState(initial.deckByPlayer);
+  const [winner, setWinner] = useState(initial.winner);
+  const [playedAt, setPlayedAt] = useState(initial.playedAt);
   const [addingDeckFor, setAddingDeckFor] = useState(null);
   const [newDeckName, setNewDeckName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -60,6 +79,32 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   }, []);
 
   const availablePlayers = PLAYERS.filter(p => !participants.includes(p));
+
+  // Every field lives in local state and the modal is unmounted on close, so
+  // dismissing it discards the entry with no undo. Comparing against the
+  // opening snapshot means no handler has to remember to flag itself dirty.
+  const isDirty =
+    addingDeckFor !== null ||
+    newDeckName !== "" ||
+    winner !== initial.winner ||
+    playedAt !== initial.playedAt ||
+    participants.length !== initial.participants.length ||
+    participants.some((p, i) => p !== initial.participants[i]) ||
+    !sameDeckMap(deckByPlayer, initial.deckByPlayer);
+
+  // Backdrop tap and Escape only close an untouched form; once something has
+  // been entered, "Abbrechen" is the one way out (an explicit, undoable click).
+  const closeIfUntouched = () => {
+    if (!isDirty) onClose();
+  };
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !isDirty) onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isDirty, onClose]);
 
   const removeParticipant = (player) => {
     setParticipants(ps => ps.filter(p => p !== player));
@@ -137,7 +182,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={closeIfUntouched}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.title}>{editGame ? "Spiel bearbeiten" : "Neues Spiel"}</div>
         <div className={styles.hint}>Tippe ein Feld, um den Gewinner zu wählen 👑</div>
