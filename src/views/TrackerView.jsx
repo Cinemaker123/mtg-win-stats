@@ -45,7 +45,6 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   const [tab, setTab] = useState("dashboard");
   const { toast, showToast, dismissToast } = useToast();
   const accentColor = PLAYER_COLORS[player];
-  const TAB_H = 58;
 
   // Surface hook errors (load/save failures) as toasts
   useEffect(() => {
@@ -101,78 +100,74 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   };
 
   return (
-    <>
-      <div className={styles.container}>
-        {toast && <Toast toast={toast} />}
+    <div className={styles.container}>
+      {toast && <Toast toast={toast} />}
 
-        {/* Loading spinner */}
-        {loading && (
-          <div className={styles.loadingContainer}>
-            <div className={styles.spinner} style={{ borderTopColor: accentColor }} />
-          </div>
-        )}
-
-        <ViewHeader
-          icon={<PlayerAvatar player={player} className={styles.playerAvatar} />}
-          title={player}
-          titleClassName={styles.playerName}
-          onBack={onBack}
-          isDark={isDark}
-          onToggleDark={onToggleDark}
-        />
-
-        {/* Scrollable main content */}
-        <div 
-          className={styles.content}
-          style={{ paddingBottom: TAB_H + 16 }}
-        >
-          {!loading && !loaded ? (
-            /* Load failed: saves stay disabled, offer manual retry */
-            <div className={styles.emptyState}>
-              <div className={styles.emptyTitle}>{error || "Fehler beim Laden"}</div>
-              <button
-                onClick={retry}
-                className={styles.importButton}
-                style={{ background: PLAYER_GRADIENTS[player], marginTop: 12 }}
-              >
-                Erneut versuchen
-              </button>
-            </div>
-          ) : (
-            <>
-              {tab === "dashboard" && <DashboardTab decks={combinedDecks} games={games} player={player} />}
-              
-              {tab === "data" && (
-                <>
-                  <DecksTab
-                    decks={combinedDecks}
-                    registryDecks={decks}
-                    deleteDeck={handleDeleteDeck}
-                    renameDeck={handleRenameDeck}
-                  />
-                  <div className={styles.importPanel}>
-                    <ImportPanel 
-                      player={player} 
-                      addDecks={addDecks} 
-                      onImport={showToast}
-                      autoFocus={decks.length === 0}
-                    />
-                  </div>
-                </>
-              )}
-            </>
-          )}
+      {/* Loading spinner */}
+      {loading && (
+        <div className={styles.loadingContainer}>
+          <div className={styles.spinner} style={{ borderTopColor: accentColor }} />
         </div>
+      )}
 
-        {/* Tab Bar */}
-        {loaded && (
+      <ViewHeader
+        icon={<PlayerAvatar player={player} className={styles.playerAvatar} />}
+        title={player}
+        titleClassName={styles.playerName}
+        onBack={onBack}
+        isDark={isDark}
+        onToggleDark={onToggleDark}
+      />
+
+      {/* Scrollable main content */}
+      <div className={styles.content}>
+        {!loading && !loaded ? (
+          /* Load failed: saves stay disabled, offer manual retry */
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>{error || "Fehler beim Laden"}</div>
+            <button
+              onClick={retry}
+              className={styles.importButton}
+              style={{ background: PLAYER_GRADIENTS[player], marginTop: 12 }}
+            >
+              Erneut versuchen
+            </button>
+          </div>
+        ) : (
+          <>
+            {tab === "dashboard" && <DashboardTab decks={combinedDecks} games={games} player={player} />}
+
+            {tab === "data" && (
+              <>
+                <DecksTab
+                  decks={combinedDecks}
+                  registryDecks={decks}
+                  deleteDeck={handleDeleteDeck}
+                  renameDeck={handleRenameDeck}
+                />
+                <div className={styles.importPanel}>
+                  <ImportPanel
+                    player={player}
+                    addDecks={addDecks}
+                    onImport={showToast}
+                    autoFocus={decks.length === 0}
+                  />
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Tab Bar */}
+      {loaded && (
         <div className={styles.tabBar}>
           {[
             { id: "dashboard", label: "Dashboard", icon: "📊" },
             { id: "data", label: "Decks", icon: "🃏" },
           ].map(t => (
             <button
-              key={t.id} 
+              key={t.id}
               onClick={() => setTab(t.id)}
               className={tab === t.id ? styles.tabButtonActive : styles.tabButton}
               style={{
@@ -186,9 +181,8 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
             </button>
           ))}
         </div>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }
 

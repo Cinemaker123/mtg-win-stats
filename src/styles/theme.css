@@ -117,12 +117,18 @@ html {
   box-sizing: inherit;
 }
 
+/* Reset the UA margins and padding the layout assumes are absent. This used
+   to be duplicated in index.html, where `* { margin: 0; padding: 0 }` and the
+   body rule below contradicted each other. */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: var(--font-body);
   background: var(--color-bg);
   color: var(--color-text);
-  margin: 0;
-  padding: 0;
   min-height: 100vh;
   transition: background-color var(--transition-base),
               color var(--transition-base);

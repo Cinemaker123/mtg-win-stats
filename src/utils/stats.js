@@ -123,6 +123,10 @@ export const MIN_GAMES_FOR_BEST_DECK = 2;
 // shared by the per-player dashboard and Global Stats so both agree.
 export const MIN_STREAK_GAMES = 2;
 
+// Smallest pod a recorded game can have. Fewer than two players isn't a
+// game, and the new-game modal blocks saving below it.
+export const MIN_PARTICIPANTS = 2;
+
 // Games a deck needs before the scatter plot treats its win rate as
 // meaningful (the "bewährt" zone). Deliberately stricter than
 // MIN_GAMES_FOR_BEST_DECK, which only gates a headline card.
