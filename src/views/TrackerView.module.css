@@ -1,13 +1,11 @@
+/* Page shell and header — see styles/viewChrome.module.css */
 .container {
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
+  composes: container from "../styles/viewChrome.module.css";
 }
 
 /* Toast styling lives in components/Toast.module.css */
 
-/* Loading spinner */
+/* This view centers its spinner over the content instead of in a block */
 .loadingContainer {
   position: fixed;
   top: 50%;
@@ -21,46 +19,7 @@
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 3px solid var(--color-border-strong);
-  border-top-color: var(--color-accent-primary);
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Header */
-.header {
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 52px;
-  flex-shrink: 0;
-}
-
-.backButton {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  background: var(--color-surface-elevated);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  transition: background var(--transition-fast);
-}
-
-.backButton:hover {
-  filter: brightness(0.9);
+  composes: spinner from "../styles/viewChrome.module.css";
 }
 
 .playerAvatar {
@@ -78,12 +37,8 @@
 }
 
 .playerName {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 16px;
-  color: var(--color-text);
+  composes: title from "../styles/viewChrome.module.css";
   text-transform: capitalize;
-  flex: 1;
 }
 
 /* Main content */

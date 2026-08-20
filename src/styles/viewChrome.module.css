@@ -1,0 +1,102 @@
+/*
+ * Chrome shared by the full-screen views (Tracker, Global Stats, Archive):
+ * the page shell, the top bar rendered by components/ViewHeader.jsx, and the
+ * loading block. Views pull these in with `composes: x from "..."` rather than
+ * keeping their own copies, which had already drifted apart.
+ */
+
+.container {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.header {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.headerIcon {
+  font-size: 20px;
+}
+
+.backButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: background var(--transition-fast);
+}
+
+.backButton:hover {
+  filter: brightness(0.9);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px 24px;
+}
+
+.contentMobile {
+  composes: content;
+  padding: 16px 12px 24px;
+}
+
+.loadingContainer {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-muted);
+}
+
+/* The bare spinner — callers position it themselves */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--color-border-strong);
+  border-top-color: var(--color-accent-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loadingText {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--color-text);
+  margin-bottom: 12px;
+}

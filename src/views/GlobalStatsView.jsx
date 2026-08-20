@@ -7,7 +7,7 @@ import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useGames } from "../hooks/useGames.js";
 
 // Components
-import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
+import { ViewHeader } from "../components/ViewHeader.jsx";
 import { StatCard } from "../components/StatCard.jsx";
 import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
@@ -18,6 +18,7 @@ import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentS
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
+import chrome from "../styles/viewChrome.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   const isMobile = useIsMobile();
@@ -158,22 +159,20 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
 
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <div className={styles.header} style={{ padding: `0 ${px}px` }}>
-        <button
-          onClick={onBack}
-          className={styles.backButton}
-          title="Zurück"
-        >←</button>
-        <span style={{ fontSize: 20 }}>📊</span>
-        <span className={styles.title}>Gesamtübersicht</span>
+      <ViewHeader
+        icon="📊"
+        title="Gesamtübersicht"
+        onBack={onBack}
+        isDark={isDark}
+        onToggleDark={onToggleDark}
+        padding={px}
+      >
         <button
           onClick={() => { window.location.hash = "/games"; }}
-          className={styles.backButton}
+          className={chrome.backButton}
           title="Spielarchiv"
         >📜</button>
-        <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
-      </div>
+      </ViewHeader>
 
       {/* Content */}
       <div className={isMobile ? styles.contentMobile : styles.content}>

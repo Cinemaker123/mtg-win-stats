@@ -8,9 +8,9 @@ import { useGames } from "../hooks/useGames.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
-import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { NewGameModal } from "../components/NewGameModal.jsx";
 import { Toast } from "../components/Toast.jsx";
+import { ViewHeader } from "../components/ViewHeader.jsx";
 
 // Utils / API
 import { addGame, deleteGame } from "../supabaseClient.js";
@@ -109,13 +109,14 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
     <div className={styles.container}>
       {toast && <Toast toast={toast} />}
 
-      {/* Header */}
-      <div className={styles.header} style={{ padding: `0 ${px}px` }}>
-        <button onClick={onBack} className={styles.backButton} title="Zurück">←</button>
-        <span style={{ fontSize: 20 }}>📜</span>
-        <span className={styles.title}>Spielarchiv</span>
-        <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
-      </div>
+      <ViewHeader
+        icon="📜"
+        title="Spielarchiv"
+        onBack={onBack}
+        isDark={isDark}
+        onToggleDark={onToggleDark}
+        padding={px}
+      />
 
       {/* Content */}
       <div className={isMobile ? styles.contentMobile : styles.content}>

@@ -1,93 +1,35 @@
+/* Page shell and header — see styles/viewChrome.module.css */
 .container {
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg);
-}
-
-.header {
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 52px;
-  flex-shrink: 0;
-}
-
-.backButton {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  background: var(--color-surface-elevated);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  transition: background var(--transition-fast);
-}
-
-.backButton:hover {
-  filter: brightness(0.9);
-}
-
-.title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 16px;
-  color: var(--color-text);
-  flex: 1;
+  composes: container from "../styles/viewChrome.module.css";
 }
 
 .content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 24px 24px;
+  composes: content from "../styles/viewChrome.module.css";
 }
 
 .contentMobile {
-  composes: content;
-  padding: 16px 12px 24px;
+  composes: contentMobile from "../styles/viewChrome.module.css";
 }
 
 .loadingContainer {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--color-text-muted);
+  composes: loadingContainer from "../styles/viewChrome.module.css";
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 3px solid var(--color-border-strong);
-  border-top-color: var(--color-accent-primary);
-  animation: spin 1s linear infinite;
+  composes: spinner from "../styles/viewChrome.module.css";
   margin: 0 auto 16px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .loadingText {
-  font-family: var(--font-display);
-  font-weight: 700;
+  composes: loadingText from "../styles/viewChrome.module.css";
 }
 
 .section {
-  margin-bottom: 20px;
+  composes: section from "../styles/viewChrome.module.css";
 }
 
 .sectionTitle {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 18px;
-  color: var(--color-text);
-  margin-bottom: 12px;
+  composes: sectionTitle from "../styles/viewChrome.module.css";
 }
 
 .statsGrid {

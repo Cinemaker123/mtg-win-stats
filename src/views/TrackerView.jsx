@@ -9,8 +9,8 @@ import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
-import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { Toast } from "../components/Toast.jsx";
+import { ViewHeader } from "../components/ViewHeader.jsx";
 
 // Utils
 import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
@@ -114,22 +114,22 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
           </div>
         )}
 
-        {/* Header with back button */}
-        <div className={styles.header} style={{ padding: `0 ${px}px` }}>
-          <button
-            onClick={onBack}
-            className={styles.backButton}
-            title="Zurück"
-          >←</button>
-          <div 
-            className={styles.playerAvatar}
-            style={{ background: PLAYER_GRADIENTS[player] }}
-          >
-            {player[0]}
-          </div>
-          <span className={styles.playerName}>{player}</span>
-          <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
-        </div>
+        <ViewHeader
+          icon={
+            <div
+              className={styles.playerAvatar}
+              style={{ background: PLAYER_GRADIENTS[player] }}
+            >
+              {player[0]}
+            </div>
+          }
+          title={player}
+          titleClassName={styles.playerName}
+          onBack={onBack}
+          isDark={isDark}
+          onToggleDark={onToggleDark}
+          padding={px}
+        />
 
         {/* Scrollable main content */}
         <div 
