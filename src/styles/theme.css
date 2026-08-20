@@ -12,7 +12,6 @@
   --color-text: #2b2013;
   --color-text-secondary: #5c4c34;
   --color-text-muted: #8a7a5c;
-  --color-text-inverse: #f6efdf;
 
   /* Accent Colors */
   --color-accent-primary: #3f5fc9;
@@ -29,7 +28,6 @@
   --color-success-light: #4f9c6d;
   --color-error: #a8384a;
   --color-error-dark: #7c2536;
-  --color-warning: #c97a1f;
 
   /* Win/Loss Gradients */
   --gradient-win: linear-gradient(90deg, var(--color-success), var(--color-success-light));
@@ -37,25 +35,19 @@
 
   /* Button Backgrounds */
   --color-btn-win-bg: #dcead9;
-  --color-btn-win-hover: #c3ddbc;
   --color-btn-loss-bg: #f3dcdc;
-  --color-btn-loss-hover: #e6bcbc;
   --color-btn-neutral-bg: #e7dcc4;
-  --color-btn-neutral-hover: #d9c9a8;
   --color-btn-neutral-text: #6b5c42;
 
   /* Shadows */
   --shadow-sm: 0 1px 8px rgba(43, 32, 19, 0.08);
   --shadow-md: 0 1px 12px rgba(43, 32, 19, 0.1), 0 0 0 1px rgba(43, 32, 19, 0.05);
   --shadow-lg: 0 4px 20px rgba(43, 32, 19, 0.12);
-  --shadow-xl: 0 8px 32px rgba(63, 95, 201, 0.35);
 
   /* Border Radius */
-  --radius-sm: 7px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 16px;
-  --radius-full: 9999px;
 
   /* Typography */
   --font-display: 'Baloo 2', sans-serif;
@@ -65,19 +57,9 @@
      landing page player names, and Spielerstärke's names/percentages */
   --font-display-alt: 'Cinzel', serif;
 
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 20px;
-  --space-2xl: 24px;
-  --space-3xl: 32px;
-
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-base: 0.2s ease;
-  --transition-slow: 0.3s ease;
 }
 
 /* Dark Theme — card stock + foil */
@@ -90,21 +72,16 @@
   --color-text: #f2ece0;
   --color-text-secondary: #b8ab94;
   --color-text-muted: #837a68;
-  --color-text-inverse: #1c1712;
 
   /* Shadows - warmer, with a whisper of foil at the edge */
   --shadow-sm: 0 1px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 1px 12px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(180, 146, 63, 0.12);
   --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.5);
 
   /* Button Backgrounds - Dark Mode */
   --color-btn-win-bg: rgba(61, 122, 86, 0.22);
-  --color-btn-win-hover: rgba(61, 122, 86, 0.35);
   --color-btn-loss-bg: rgba(168, 56, 74, 0.22);
-  --color-btn-loss-hover: rgba(168, 56, 74, 0.35);
   --color-btn-neutral-bg: rgba(255, 255, 255, 0.08);
-  --color-btn-neutral-hover: rgba(255, 255, 255, 0.16);
   --color-btn-neutral-text: #b8ab94;
 }
 
