@@ -62,10 +62,6 @@
   fill: var(--color-text-muted);
 }
 
-.axisLabel {
-  font-size: 8px;
-  fill: var(--color-text-muted);
-}
 
 .refLine {
   stroke: var(--color-text-muted);

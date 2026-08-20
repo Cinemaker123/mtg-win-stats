@@ -1,20 +1,14 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { PLAYER_COLORS } from "../utils/stats.js";
+import { PLAYER_COLORS, POD_BASELINE_WR, PROVEN_DECK_GAMES, WIN_RATE_TIERS } from "../utils/stats.js";
 import styles from "./DeckScatter.module.css";
 
 const W = 320;
 const H = 200;
 const PAD = { l: 30, r: 10, t: 12, b: 24 };
 
-// 4-player pod baseline win rate
-const BASELINE_WR = 0.25;
-
-// Minimum sample size for the positive top-right zone
-const MIN_GAMES = 5;
-
 // Gold wash echoes the "Legendär" tier color, distinct from the emerald/red/violet/yellow player dots
-const GOOD_ZONE_FILL = "#b4923f";
+const GOOD_ZONE_FILL = WIN_RATE_TIERS.LEGENDARY.color;
 const GOOD_ZONE_OPACITY = 0.1;
 
 // Pinch-zoom limits (1 = full chart, aspect ratio stays locked)
@@ -38,6 +32,8 @@ const clampView = (v) => {
 };
 
 const coordinateKey = d => `${d.totalGames}:${d.winRate.toFixed(6)}`;
+
+const keyOf = d => `${d.player}-${d.name}`;
 
 const clusterOffsets = count => {
   if (count === 1) return [[0, 0]];
@@ -199,58 +195,79 @@ export function DeckScatter({ decks }) {
     }
   };
 
-  if (decks.length === 0) return null;
-
-  const playedDecks = decks.filter(d =>
-    d.totalGames > 0 && Number.isFinite(d.winRate)
-  );
-
-  const plotW = W - PAD.l - PAD.r;
-  const plotH = H - PAD.t - PAD.b;
-
-  // Keep x=5 visible even if every deck currently has fewer games.
-  const maxGames = Math.max(
-    1,
-    MIN_GAMES * 1.2,
-    ...playedDecks.map(d => d.totalGames)
-  ) * 1.1;
-
-  const x = g => PAD.l + (g / maxGames) * plotW;
-  const y = wr => PAD.t + (1 - wr) * plotH;
-
-  const keyOf = d => `${d.player}-${d.name}`;
-
-  // Group decks occupying the exact same coordinate
-  const coordinateGroups = new Map();
-
-  playedDecks.forEach(d => {
-    const key = coordinateKey(d);
-
-    if (!coordinateGroups.has(key)) {
-      coordinateGroups.set(key, []);
-    }
-
-    coordinateGroups.get(key).push(d);
-  });
-
-  // Assign every deck a stable position within its coordinate cluster
-  const dotLayout = new Map();
-
-  coordinateGroups.forEach(group => {
-    const sortedGroup = [...group].sort((a, b) =>
-      keyOf(a).localeCompare(keyOf(b))
+  // The whole chart layout depends only on `decks` — not on pan/zoom or
+  // selection. Panning calls setView on every touchmove (~60x/sec), so
+  // without this memo a single gesture rebuilt both Maps, re-ran the
+  // per-cluster sorts and re-allocated every dot on each frame.
+  const layout = useMemo(() => {
+    const playedDecks = decks.filter(d =>
+      d.totalGames > 0 && Number.isFinite(d.winRate)
     );
 
-    const offsets = clusterOffsets(sortedGroup.length);
+    const plotW = W - PAD.l - PAD.r;
+    const plotH = H - PAD.t - PAD.b;
 
-    sortedGroup.forEach((d, i) => {
-      dotLayout.set(keyOf(d), {
-        dx: offsets[i][0],
-        dy: offsets[i][1],
-        clusterSize: sortedGroup.length,
+    // Keep the "proven deck" gridline visible even if every deck
+    // currently has fewer games.
+    const maxGames = Math.max(
+      1,
+      PROVEN_DECK_GAMES * 1.2,
+      ...playedDecks.map(d => d.totalGames)
+    ) * 1.1;
+
+    const x = g => PAD.l + (g / maxGames) * plotW;
+    const y = wr => PAD.t + (1 - wr) * plotH;
+
+    // Group decks occupying the exact same coordinate
+    const coordinateGroups = new Map();
+
+    playedDecks.forEach(d => {
+      const key = coordinateKey(d);
+
+      if (!coordinateGroups.has(key)) {
+        coordinateGroups.set(key, []);
+      }
+
+      coordinateGroups.get(key).push(d);
+    });
+
+    // Assign every deck a stable position within its coordinate cluster
+    const dotLayout = new Map();
+
+    coordinateGroups.forEach(group => {
+      const sortedGroup = [...group].sort((a, b) =>
+        keyOf(a).localeCompare(keyOf(b))
+      );
+
+      const offsets = clusterOffsets(sortedGroup.length);
+
+      sortedGroup.forEach((d, i) => {
+        dotLayout.set(keyOf(d), {
+          dx: offsets[i][0],
+          dy: offsets[i][1],
+          clusterSize: sortedGroup.length,
+        });
       });
     });
-  });
+
+    // Plotted position of every dot (cluster offsets applied), reused for
+    // nearest-point hit testing and for rendering.
+    const plotted = playedDecks.map(d => {
+      const dot = dotLayout.get(keyOf(d));
+      return {
+        deck: d,
+        dot,
+        cx: x(d.totalGames) + dot.dx,
+        cy: y(d.winRate) + dot.dy,
+      };
+    });
+
+    return { playedDecks, x, y, plotted };
+  }, [decks]);
+
+  if (decks.length === 0) return null;
+
+  const { playedDecks, x, y, plotted } = layout;
 
   const selected = playedDecks.find(d => keyOf(d) === selectedKey) || null;
 
@@ -259,12 +276,6 @@ export function DeckScatter({ decks }) {
     const key = keyOf(d);
     setSelectedKey(prev => (prev === key ? null : key));
   };
-
-  // Plotted position of every dot (cluster offsets applied), for nearest-point hit testing
-  const plotted = playedDecks.map(d => {
-    const layout = dotLayout.get(keyOf(d)) || { dx: 0, dy: 0, clusterSize: 1 };
-    return { deck: d, cx: x(d.totalGames) + layout.dx, cy: y(d.winRate) + layout.dy };
-  });
 
   // Tap/click anywhere in the plot: select the nearest dot rather than
   // requiring a precise hit on its own small circle. Individual hit
@@ -300,7 +311,7 @@ export function DeckScatter({ decks }) {
     }
   };
 
-  const goodZoneX = x(MIN_GAMES);
+  const goodZoneX = x(PROVEN_DECK_GAMES);
 
   return (
     <div className={styles.wrapper}>
@@ -322,7 +333,7 @@ export function DeckScatter({ decks }) {
           x={goodZoneX}
           y={PAD.t}
           width={W - PAD.r - goodZoneX}
-          height={y(BASELINE_WR) - PAD.t}
+          height={y(POD_BASELINE_WR) - PAD.t}
           fill={GOOD_ZONE_FILL}
           opacity={GOOD_ZONE_OPACITY}
           pointerEvents="none"
@@ -342,27 +353,27 @@ export function DeckScatter({ decks }) {
         {/* Reference: 25% pod baseline */}
         <line
           x1={PAD.l}
-          y1={y(BASELINE_WR)}
+          y1={y(POD_BASELINE_WR)}
           x2={W - PAD.r}
-          y2={y(BASELINE_WR)}
+          y2={y(POD_BASELINE_WR)}
           className={styles.refLine}
         />
         
         {/* Reference: minimum games played */}
         <line
-          x1={x(MIN_GAMES)}
+          x1={x(PROVEN_DECK_GAMES)}
           y1={PAD.t}
-          x2={x(MIN_GAMES)}
+          x2={x(PROVEN_DECK_GAMES)}
           y2={y(0)}
           className={styles.refLine}
         />
         <text
-          x={x(MIN_GAMES)}
+          x={x(PROVEN_DECK_GAMES)}
           y={H - PAD.b + 11}
           textAnchor="middle"
           className={styles.refLabel}
         >
-          Min. {MIN_GAMES} Spiele →
+          Min. {PROVEN_DECK_GAMES} Spiele →
         </text>
 
         {/* Quadrant labels */}
@@ -370,19 +381,11 @@ export function DeckScatter({ decks }) {
         <text x={W - PAD.r - 5} y={y(0) - 5} textAnchor="end" className={styles.quadrantLabel}>🗑️</text>
 
         {/* Deck dots */}
-        {playedDecks.map(d => {
+        {plotted.map(({ deck: d, dot, cx, cy }) => {
           const key = keyOf(d);
           const isSelected = key === selectedKey;
 
-          const layout = dotLayout.get(key) || {
-            dx: 0,
-            dy: 0,
-            clusterSize: 1,
-          };
-
-          const isClustered = layout.clusterSize > 1;
-          const cx = x(d.totalGames) + layout.dx;
-          const cy = y(d.winRate) + layout.dy;
+          const isClustered = dot.clusterSize > 1;
 
           let dotRadius = isClustered ? 3.8 : 5;
           if (isSelected) {

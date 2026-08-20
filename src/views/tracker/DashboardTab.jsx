@@ -1,9 +1,10 @@
+import { useMemo } from "react";
 import PropTypes from "prop-types";
 import { Logo } from "../../components/Logo.jsx";
 import { StatCard } from "../../components/StatCard.jsx";
 import {
   winRate, adjustedWinRate, getDynamicStats, getWinRateTier,
-  getCurrentStreak, getLastPlayed, WIN_RATE_TIERS,
+  formatPct, POD_BASELINE_WR,
 } from "../../utils/stats.js";
 import { DeckPropType } from "../../hooks/useDecks.js";
 import styles from "../TrackerView.module.css";
@@ -16,29 +17,16 @@ import styles from "../TrackerView.module.css";
  * @param {string} props.player - Player identifier
  */
 export function DashboardTab({ decks, games, player }) {
-  const stats = getDynamicStats(decks);
-
-  const lastPlayed = getLastPlayed(games, player);
-  if (lastPlayed) {
-    stats.push({
-      label: "Zuletzt gespielt",
-      value: lastPlayed.deck,
-      sub: new Date(lastPlayed.playedAt).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }),
-      accent: "#667eea",
-      icon: "🕐",
-    });
-  }
-
-  const streak = getCurrentStreak(games, player);
-  if (streak && streak.count >= 2) {
-    const isWin = streak.type === "win";
-    stats.push({
-      label: "Serie",
-      value: `${streak.count} ${isWin ? "Siege" : "Niederlagen"} in Folge`,
-      accent: isWin ? WIN_RATE_TIERS.GOOD.color : WIN_RATE_TIERS.STRUGGLING.color,
-      icon: isWin ? "🔥" : "🥀",
-    });
-  }
+  // Both derivations walk every deck and every game, so keep them off the
+  // render path — this tab also re-renders for toasts and tab switches.
+  const stats = useMemo(
+    () => getDynamicStats(decks, games, player),
+    [decks, games, player]
+  );
+  const rankedDecks = useMemo(
+    () => [...decks].sort((a, b) => adjustedWinRate(b) - adjustedWinRate(a)),
+    [decks]
+  );
 
   return (
     <>
@@ -70,7 +58,7 @@ export function DashboardTab({ decks, games, player }) {
                 </div>
               ))}
             </div>
-            {[...decks].sort((a,b) => adjustedWinRate(b)-adjustedWinRate(a)).map((d,i,arr) => {
+            {rankedDecks.map((d,i,arr) => {
               const wr = winRate(d);
               return (
                 <div key={i} className={styles.deckBar} style={{ marginBottom: i < arr.length-1 ? 12 : 0 }}>
@@ -88,7 +76,7 @@ export function DashboardTab({ decks, games, player }) {
                     />
                     <div
                       className={styles.deckBarBaseline}
-                      title="Zufalls-Baseline (25%)"
+                      title={`Zufalls-Baseline (${formatPct(POD_BASELINE_WR, 0)})`}
                     />
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { DeckPropType } from "../../hooks/useDecks.js";
+import { winRate } from "../../utils/stats.js";
 import styles from "../TrackerView.module.css";
 
 /**
@@ -16,7 +17,8 @@ export function WinLossBar({ deck, onDelete = null, onRename = null }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(deck.name);
   const total = deck.wins + deck.losses;
-  const winPct = total === 0 ? 50 : (deck.wins / total) * 100;
+  // Only rendered when total > 0, so the zero-games case never shows.
+  const winPct = winRate(deck) * 100;
   const lossPct = 100 - winPct;
 
   const commitRename = () => {

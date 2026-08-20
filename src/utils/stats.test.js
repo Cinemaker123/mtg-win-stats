@@ -5,8 +5,14 @@ import {
   getWinRateTier,
   getDynamicStats,
   combineDeckStats,
+  playerGameHistory,
+  getCurrentStreak,
+  getLastPlayed,
+  streakDisplay,
+  MIN_STREAK_GAMES,
   PRIOR_GAMES,
   PRIOR_WIN_RATE,
+  WIN_RATE_TIERS,
 } from "./stats.js";
 
 describe("winRate", () => {
@@ -148,5 +154,141 @@ describe("combineDeckStats", () => {
     }];
     const result = combineDeckStats(legacy, g, "pascal");
     expect(result.find(d => d.name === "Fallout").wins).toBe(2);
+  });
+});
+
+// A game with one participant per `[player, deck, isWinner]` triple.
+const game = (playedAt, ...entries) => ({
+  id: playedAt,
+  playedAt,
+  participants: entries.map(([player, deck, isWinner]) => ({ player, deck, isWinner })),
+});
+
+describe("playerGameHistory", () => {
+  it("returns an empty list when there are no games", () => {
+    expect(playerGameHistory([], "pascal")).toEqual([]);
+  });
+
+  it("returns an empty list for a player who has not played", () => {
+    const games = [game("2026-07-23T18:00:00Z", ["baum", "Elves", true])];
+    expect(playerGameHistory(games, "pascal")).toEqual([]);
+  });
+
+  it("keeps only the requested player's entry from each game", () => {
+    const games = [game(
+      "2026-07-23T18:00:00Z",
+      ["pascal", "Fallout", true],
+      ["baum", "Elves", false],
+    )];
+    expect(playerGameHistory(games, "pascal")).toEqual([
+      { playedAt: "2026-07-23T18:00:00Z", deck: "Fallout", isWinner: true },
+    ]);
+  });
+
+  it("sorts newest first regardless of input order", () => {
+    const games = [
+      game("2026-07-20T18:00:00Z", ["pascal", "Fallout", true]),
+      game("2026-07-24T18:00:00Z", ["pascal", "Daleks", false]),
+      game("2026-07-22T18:00:00Z", ["pascal", "Elves", true]),
+    ];
+    expect(playerGameHistory(games, "pascal").map(h => h.deck))
+      .toEqual(["Daleks", "Elves", "Fallout"]);
+  });
+});
+
+describe("getCurrentStreak", () => {
+  it("returns null when the player has no games", () => {
+    expect(getCurrentStreak([], "pascal")).toBeNull();
+    expect(getCurrentStreak([game("2026-07-23T18:00:00Z", ["baum", "Elves", true])], "pascal"))
+      .toBeNull();
+  });
+
+  it("counts consecutive wins from the most recent game", () => {
+    const games = [
+      game("2026-07-20T18:00:00Z", ["pascal", "Fallout", false]),
+      game("2026-07-21T18:00:00Z", ["pascal", "Fallout", true]),
+      game("2026-07-22T18:00:00Z", ["pascal", "Elves", true]),
+    ];
+    expect(getCurrentStreak(games, "pascal")).toEqual({ type: "win", count: 2 });
+  });
+
+  it("counts consecutive losses from the most recent game", () => {
+    const games = [
+      game("2026-07-21T18:00:00Z", ["pascal", "Fallout", true]),
+      game("2026-07-22T18:00:00Z", ["pascal", "Elves", false]),
+      game("2026-07-23T18:00:00Z", ["pascal", "Elves", false]),
+    ];
+    expect(getCurrentStreak(games, "pascal")).toEqual({ type: "loss", count: 2 });
+  });
+
+  it("resets to 1 when the latest game breaks the streak", () => {
+    const games = [
+      game("2026-07-20T18:00:00Z", ["pascal", "Fallout", true]),
+      game("2026-07-21T18:00:00Z", ["pascal", "Fallout", true]),
+      game("2026-07-22T18:00:00Z", ["pascal", "Elves", false]),
+    ];
+    expect(getCurrentStreak(games, "pascal")).toEqual({ type: "loss", count: 1 });
+  });
+
+  it("uses recency, not input order", () => {
+    const games = [
+      game("2026-07-22T18:00:00Z", ["pascal", "Elves", true]),
+      game("2026-07-24T18:00:00Z", ["pascal", "Daleks", false]),
+      game("2026-07-23T18:00:00Z", ["pascal", "Fallout", true]),
+    ];
+    expect(getCurrentStreak(games, "pascal")).toEqual({ type: "loss", count: 1 });
+  });
+
+  it("ignores games the player did not take part in", () => {
+    const games = [
+      game("2026-07-22T18:00:00Z", ["pascal", "Fallout", true]),
+      game("2026-07-23T18:00:00Z", ["baum", "Elves", false]),
+      game("2026-07-24T18:00:00Z", ["pascal", "Fallout", true]),
+    ];
+    expect(getCurrentStreak(games, "pascal")).toEqual({ type: "win", count: 2 });
+  });
+});
+
+describe("getLastPlayed", () => {
+  it("returns null when the player has no games", () => {
+    expect(getLastPlayed([], "pascal")).toBeNull();
+    expect(getLastPlayed([game("2026-07-23T18:00:00Z", ["baum", "Elves", true])], "pascal"))
+      .toBeNull();
+  });
+
+  it("returns the deck and date of the most recent game", () => {
+    const games = [
+      game("2026-07-20T18:00:00Z", ["pascal", "Fallout", true]),
+      game("2026-07-24T18:00:00Z", ["pascal", "Daleks", false]),
+      game("2026-07-22T18:00:00Z", ["pascal", "Elves", true]),
+    ];
+    expect(getLastPlayed(games, "pascal"))
+      .toEqual({ deck: "Daleks", playedAt: "2026-07-24T18:00:00Z" });
+  });
+});
+
+describe("streakDisplay", () => {
+  it("returns null without a streak", () => {
+    expect(streakDisplay(null)).toBeNull();
+  });
+
+  it("returns null below the display threshold", () => {
+    expect(streakDisplay({ type: "win", count: MIN_STREAK_GAMES - 1 })).toBeNull();
+  });
+
+  it("describes a win streak", () => {
+    expect(streakDisplay({ type: "win", count: MIN_STREAK_GAMES })).toEqual({
+      icon: "🔥",
+      accent: WIN_RATE_TIERS.GOOD.color,
+      noun: "Siege",
+    });
+  });
+
+  it("describes a loss streak", () => {
+    expect(streakDisplay({ type: "loss", count: 3 })).toEqual({
+      icon: "🥀",
+      accent: WIN_RATE_TIERS.STRUGGLING.color,
+      noun: "Niederlagen",
+    });
   });
 });

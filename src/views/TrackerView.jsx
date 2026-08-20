@@ -5,14 +5,15 @@ import PropTypes from "prop-types";
 // Hooks
 import { useDecks } from "../hooks/useDecks.js";
 import { useGames } from "../hooks/useGames.js";
-import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
-import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
+import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
+import { Toast } from "../components/Toast.jsx";
+import { ViewHeader } from "../components/ViewHeader.jsx";
 
 // Utils
-import { PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
+import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
 
 // Utils / API
 import { renameDeckRegistry } from "../supabaseClient.js";
@@ -43,10 +44,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   );
   const [tab, setTab] = useState("dashboard");
   const { toast, showToast, dismissToast } = useToast();
-  const isMobile = useIsMobile();
-  const px = isMobile ? 12 : 24;
   const accentColor = PLAYER_COLORS[player];
-  const TAB_H = 58;
 
   // Surface hook errors (load/save failures) as toasts
   useEffect(() => {
@@ -60,10 +58,6 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
     }
   }, [loading, loaded, decks.length]);
 
-  const handleImport = (msg) => {
-    showToast({ type: msg.startsWith("✅") ? "success" : "error", message: msg });
-  };
-
   // Delete with 5s undo window (undo reinserts locally, the debounced
   // full sync restores the row in Supabase if it was already deleted)
   const handleDeleteDeck = (name) => {
@@ -73,13 +67,11 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
       type: "undo",
       message: `„${removed.deck.name}" gelöscht`,
       actionLabel: "Rückgängig",
-      onAction: () => restoreDeck(removed.deck, removed.index),
+      onAction: () => {
+        dismissToast();
+        restoreDeck(removed.deck, removed.index);
+      },
     }, 5000);
-  };
-
-  const handleToastAction = () => {
-    if (toast?.onAction) toast.onAction();
-    dismissToast();
   };
 
   // Rename a registry deck locally, then persist by id directly — the
@@ -109,100 +101,74 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   };
 
   return (
-    <>
-      <div className={styles.container}>
-        {/* Toast notification */}
-        {toast && (
-          <div className={
-            toast.type === "success" ? styles.toastSuccess
-            : toast.type === "error" ? styles.toastError
-            : styles.toastUndo
-          }>
-            <span>{toast.message}</span>
-            {toast.actionLabel && (
-              <button className={styles.toastAction} onClick={handleToastAction}>
-                {toast.actionLabel}
-              </button>
-            )}
-          </div>
-        )}
+    <div className={styles.container}>
+      {toast && <Toast toast={toast} />}
 
-        {/* Loading spinner */}
-        {loading && (
-          <div className={styles.loadingContainer}>
-            <div className={styles.spinner} style={{ borderTopColor: accentColor }} />
-          </div>
-        )}
-
-        {/* Header with back button */}
-        <div className={styles.header} style={{ padding: `0 ${px}px` }}>
-          <button
-            onClick={onBack}
-            className={styles.backButton}
-            title="Zurück"
-          >←</button>
-          <div 
-            className={styles.playerAvatar}
-            style={{ background: PLAYER_GRADIENTS[player] }}
-          >
-            {player[0]}
-          </div>
-          <span className={styles.playerName}>{player}</span>
-          <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
+      {/* Loading spinner */}
+      {loading && (
+        <div className={styles.loadingContainer}>
+          <div className={styles.spinner} style={{ borderTopColor: accentColor }} />
         </div>
+      )}
 
-        {/* Scrollable main content */}
-        <div 
-          className={isMobile ? styles.contentMobile : styles.content}
-          style={{ paddingBottom: TAB_H + 16 }}
-        >
-          {!loading && !loaded ? (
-            /* Load failed: saves stay disabled, offer manual retry */
-            <div className={styles.emptyState}>
-              <div className={styles.emptyTitle}>{error || "Fehler beim Laden"}</div>
-              <button
-                onClick={retry}
-                className={styles.importButton}
-                style={{ background: PLAYER_GRADIENTS[player], marginTop: 12 }}
-              >
-                Erneut versuchen
-              </button>
-            </div>
-          ) : (
-            <>
-              {tab === "dashboard" && <DashboardTab decks={combinedDecks} games={games} player={player} />}
-              
-              {tab === "data" && (
-                <>
-                  <DecksTab
-                    decks={combinedDecks}
-                    registryDecks={decks}
-                    deleteDeck={handleDeleteDeck}
-                    renameDeck={handleRenameDeck}
+      <ViewHeader
+        icon={<PlayerAvatar player={player} className={styles.playerAvatar} />}
+        title={player}
+        titleClassName={styles.playerName}
+        onBack={onBack}
+        isDark={isDark}
+        onToggleDark={onToggleDark}
+      />
+
+      {/* Scrollable main content */}
+      <div className={styles.content}>
+        {!loading && !loaded ? (
+          /* Load failed: saves stay disabled, offer manual retry */
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>{error || "Fehler beim Laden"}</div>
+            <button
+              onClick={retry}
+              className={styles.importButton}
+              style={{ background: PLAYER_GRADIENTS[player], marginTop: 12 }}
+            >
+              Erneut versuchen
+            </button>
+          </div>
+        ) : (
+          <>
+            {tab === "dashboard" && <DashboardTab decks={combinedDecks} games={games} player={player} />}
+
+            {tab === "data" && (
+              <>
+                <DecksTab
+                  decks={combinedDecks}
+                  registryDecks={decks}
+                  deleteDeck={handleDeleteDeck}
+                  renameDeck={handleRenameDeck}
+                />
+                <div className={styles.importPanel}>
+                  <ImportPanel
+                    player={player}
+                    addDecks={addDecks}
+                    onImport={showToast}
+                    autoFocus={decks.length === 0}
                   />
-                  <div className={`${styles.importPanel} ${isDark ? styles.importPanelDark : ""}`}>
-                    <ImportPanel 
-                      player={player} 
-                      addDecks={addDecks} 
-                      onImport={handleImport}
-                      autoFocus={decks.length === 0}
-                    />
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </div>
 
-        {/* Tab Bar */}
-        {loaded && (
+      {/* Tab Bar */}
+      {loaded && (
         <div className={styles.tabBar}>
           {[
             { id: "dashboard", label: "Dashboard", icon: "📊" },
             { id: "data", label: "Decks", icon: "🃏" },
           ].map(t => (
             <button
-              key={t.id} 
+              key={t.id}
               onClick={() => setTab(t.id)}
               className={tab === t.id ? styles.tabButtonActive : styles.tabButton}
               style={{
@@ -216,14 +182,13 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
             </button>
           ))}
         </div>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }
 
 TrackerView.propTypes = {
-  player: PropTypes.oneOf(["baum", "mary", "pascal", "wewy"]).isRequired,
+  player: PropTypes.oneOf(PLAYERS).isRequired,
   onBack: PropTypes.func.isRequired,
   isDark: PropTypes.bool.isRequired,
   onToggleDark: PropTypes.func.isRequired,

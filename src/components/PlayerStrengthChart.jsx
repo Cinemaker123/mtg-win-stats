@@ -1,13 +1,10 @@
 import PropTypes from "prop-types";
-import { PLAYER_COLORS } from "../utils/stats.js";
+import { PLAYER_COLORS, POD_BASELINE_WR } from "../utils/stats.js";
 import styles from "./PlayerStrengthChart.module.css";
 
 const W = 320;
 const ROW_H = 34;
 const PAD = { l: 54, r: 40, t: 18, b: 24 };
-
-// 4-player pod baseline win rate
-const BASELINE_WR = 0.25;
 
 /**
  * Player strength ranking: one dot per player, positioned by
@@ -51,13 +48,13 @@ export function PlayerStrengthChart({ playerStats }) {
 
         {/* Reference: 25% pod baseline */}
         <line
-          x1={x(BASELINE_WR)}
+          x1={x(POD_BASELINE_WR)}
           y1={PAD.t - 8}
-          x2={x(BASELINE_WR)}
+          x2={x(POD_BASELINE_WR)}
           y2={H - PAD.b}
           className={styles.refLine}
         />
-        <text x={x(BASELINE_WR)} y={H - PAD.b + 13} textAnchor="middle" className={styles.refLabel}>
+        <text x={x(POD_BASELINE_WR)} y={H - PAD.b + 13} textAnchor="middle" className={styles.refLabel}>
           25%-Baseline
         </text>
 

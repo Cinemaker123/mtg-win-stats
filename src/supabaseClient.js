@@ -2,6 +2,7 @@
 // Players: baum, mary, pascal, wewy
 
 import { createClient } from '@supabase/supabase-js'
+import { PLAYERS } from './utils/stats.js'
 
 // Get these from: https://supabase.com/dashboard → Project Settings → API
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
@@ -22,6 +23,21 @@ export const supabase = createClient(
 // Table name for decks
 const TABLE_NAME = 'decks'
 const PLAYERS_TABLE = 'players'
+
+/**
+ * Unpack a Supabase response: log and rethrow on failure, return the rows
+ * on success. Every query in this module reports failures the same way.
+ * @param {{data: *, error: Object|null}} result - resolved Supabase response
+ * @param {string} context - what was attempted, used as the log prefix
+ * @returns {*} - the response data
+ */
+function unwrap({ data, error }, context) {
+  if (error) {
+    console.error(`${context}:`, error)
+    throw error
+  }
+  return data
+}
 
 /**
  * Fetch and cache the player slug -> id map from the `players` table.
@@ -52,16 +68,14 @@ async function getPlayerIdMap() {
  * @returns {Promise<Array>} - array of deck objects
  */
 export async function getDecks(player) {
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .select('*')
-    .eq('player', player)
-    .order('created_at', { ascending: true })
-
-  if (error) {
-    console.error('Error fetching decks:', error)
-    throw error
-  }
+  const data = unwrap(
+    await supabase
+      .from(TABLE_NAME)
+      .select('*')
+      .eq('player', player)
+      .order('created_at', { ascending: true }),
+    'Error fetching decks'
+  )
 
   // Transform to app format
   return (data || []).map(row => ({
@@ -77,15 +91,13 @@ export async function getDecks(player) {
  * @returns {Promise<Array>} - array of { id, player, name, wins, losses }
  */
 export async function getAllDecks() {
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .select('*')
-    .order('created_at', { ascending: true })
-
-  if (error) {
-    console.error('Error fetching all decks:', error)
-    throw error
-  }
+  const data = unwrap(
+    await supabase
+      .from(TABLE_NAME)
+      .select('*')
+      .order('created_at', { ascending: true }),
+    'Error fetching all decks'
+  )
 
   return (data || []).map(row => ({
     id: row.id,
@@ -94,6 +106,19 @@ export async function getAllDecks() {
     wins: row.wins,
     losses: row.losses,
   }))
+}
+
+/**
+ * Fetch all decks in one call, grouped by player. Every player in PLAYERS
+ * gets an entry (empty array if they have no decks yet); rows belonging to
+ * an unknown player are ignored.
+ * @returns {Promise<Object>} - { [player]: Array<{ id, name, wins, losses }> }
+ */
+export async function getDecksByPlayer() {
+  const decks = await getAllDecks()
+  const byPlayer = Object.fromEntries(PLAYERS.map(p => [p, []]))
+  decks.forEach(d => { byPlayer[d.player]?.push(d) })
+  return byPlayer
 }
 
 /**
@@ -113,10 +138,11 @@ function quoteFilterValue(value) {
  * @param {Array} decks - array of deck objects
  */
 export async function saveDecks(player, decks) {
+  // Bulk upsert all decks in a single API call
+  let upsert = null
   if (decks.length > 0) {
     const playerIdMap = await getPlayerIdMap()
-    // Bulk upsert all decks in a single API call
-    const { error } = await supabase
+    upsert = supabase
       .from(TABLE_NAME)
       .upsert(
         decks.map(deck => ({
@@ -129,30 +155,25 @@ export async function saveDecks(player, decks) {
         })),
         { onConflict: 'player,name' }
       )
-
-    if (error) {
-      console.error('Error upserting decks:', error)
-      throw error
-    }
   }
 
   // Delete rows that are no longer in local state (full sync)
-  let query = supabase
+  let remove = supabase
     .from(TABLE_NAME)
     .delete()
     .eq('player', player)
 
   if (decks.length > 0) {
     const names = decks.map(d => quoteFilterValue(d.name)).join(',')
-    query = query.not('name', 'in', `(${names})`)
+    remove = remove.not('name', 'in', `(${names})`)
   }
 
-  const { error } = await query
+  // Disjoint row sets (the delete excludes everything the upsert writes),
+  // so the two round trips can overlap instead of running back to back.
+  const [upsertResult, removeResult] = await Promise.all([upsert, remove])
 
-  if (error) {
-    console.error('Error deleting removed decks:', error)
-    throw error
-  }
+  if (upsertResult) unwrap(upsertResult, 'Error upserting decks')
+  unwrap(removeResult, 'Error deleting removed decks')
 }
 
 // ============================================================
@@ -167,15 +188,13 @@ const PARTICIPANTS_TABLE = 'game_participants'
  * @returns {Promise<Array>} - [{ id, playedAt, participants: [{ player, deck, isWinner }] }]
  */
 export async function getGames() {
-  const { data, error } = await supabase
-    .from(GAMES_TABLE)
-    .select('id, played_at, game_participants(player, deck, is_winner, decks(name))')
-    .order('played_at', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching games:', error)
-    throw error
-  }
+  const data = unwrap(
+    await supabase
+      .from(GAMES_TABLE)
+      .select('id, played_at, game_participants(player, deck, is_winner, decks(name))')
+      .order('played_at', { ascending: false }),
+    'Error fetching games'
+  )
 
   return (data || []).map(g => ({
     id: g.id,
@@ -192,40 +211,48 @@ export async function getGames() {
 }
 
 /**
+ * Insert a game's participant rows. Shared by addGame and updateGame,
+ * which build the identical payload. Both the id foreign keys and the
+ * original text columns are written — see the note in AGENTS.md on why
+ * the text is kept.
+ * @param {string} gameId - game the participants belong to
+ * @param {Array} participants - [{ player, deck, deckId, isWinner }]
+ */
+async function insertParticipants(gameId, participants) {
+  const playerIdMap = await getPlayerIdMap()
+  unwrap(
+    await supabase
+      .from(PARTICIPANTS_TABLE)
+      .insert(participants.map(p => ({
+        game_id: gameId,
+        player: p.player,
+        player_id: playerIdMap[p.player] ?? null,
+        deck: p.deck,
+        deck_id: p.deckId ?? null,
+        is_winner: p.isWinner,
+      }))),
+    'Error inserting participants'
+  )
+}
+
+/**
  * Insert a game with its participants
  * @param {Object} game
  * @param {string} [game.playedAt] - ISO timestamp (defaults to now)
- * @param {Array} game.participants - [{ player, deck, isWinner }]
+ * @param {Array} game.participants - [{ player, deck, deckId, isWinner }]
  * @returns {Promise<string>} - the new game's id
  */
 export async function addGame({ playedAt, participants }) {
-  const { data: game, error } = await supabase
-    .from(GAMES_TABLE)
-    .insert({ played_at: playedAt || new Date().toISOString() })
-    .select('id')
-    .single()
+  const game = unwrap(
+    await supabase
+      .from(GAMES_TABLE)
+      .insert({ played_at: playedAt || new Date().toISOString() })
+      .select('id')
+      .single(),
+    'Error inserting game'
+  )
 
-  if (error) {
-    console.error('Error inserting game:', error)
-    throw error
-  }
-
-  const playerIdMap = await getPlayerIdMap()
-  const { error: pError } = await supabase
-    .from(PARTICIPANTS_TABLE)
-    .insert(participants.map(p => ({
-      game_id: game.id,
-      player: p.player,
-      player_id: playerIdMap[p.player] ?? null,
-      deck: p.deck,
-      deck_id: p.deckId ?? null,
-      is_winner: p.isWinner,
-    })))
-
-  if (pError) {
-    console.error('Error inserting participants:', pError)
-    throw pError
-  }
+  await insertParticipants(game.id, participants)
 
   return game.id
 }
@@ -236,42 +263,23 @@ export async function addGame({ playedAt, participants }) {
  * @param {Object} game - { playedAt, participants }
  */
 export async function updateGame(id, { playedAt, participants }) {
-  const { error } = await supabase
-    .from(GAMES_TABLE)
-    .update({ played_at: playedAt })
-    .eq('id', id)
+  // Different tables, neither depends on the other's result — overlap them.
+  const [updateResult, deleteResult] = await Promise.all([
+    supabase
+      .from(GAMES_TABLE)
+      .update({ played_at: playedAt })
+      .eq('id', id),
+    supabase
+      .from(PARTICIPANTS_TABLE)
+      .delete()
+      .eq('game_id', id),
+  ])
 
-  if (error) {
-    console.error('Error updating game:', error)
-    throw error
-  }
+  unwrap(updateResult, 'Error updating game')
+  unwrap(deleteResult, 'Error replacing participants')
 
-  const { error: delError } = await supabase
-    .from(PARTICIPANTS_TABLE)
-    .delete()
-    .eq('game_id', id)
-
-  if (delError) {
-    console.error('Error replacing participants:', delError)
-    throw delError
-  }
-
-  const playerIdMap = await getPlayerIdMap()
-  const { error: insError } = await supabase
-    .from(PARTICIPANTS_TABLE)
-    .insert(participants.map(p => ({
-      game_id: id,
-      player: p.player,
-      player_id: playerIdMap[p.player] ?? null,
-      deck: p.deck,
-      deck_id: p.deckId ?? null,
-      is_winner: p.isWinner,
-    })))
-
-  if (insError) {
-    console.error('Error inserting participants:', insError)
-    throw insError
-  }
+  // The insert must follow the delete — it replaces the same rows.
+  await insertParticipants(id, participants)
 }
 
 /**
@@ -279,15 +287,13 @@ export async function updateGame(id, { playedAt, participants }) {
  * @param {string} id - game id
  */
 export async function deleteGame(id) {
-  const { error } = await supabase
-    .from(GAMES_TABLE)
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error('Error deleting game:', error)
-    throw error
-  }
+  unwrap(
+    await supabase
+      .from(GAMES_TABLE)
+      .delete()
+      .eq('id', id),
+    'Error deleting game'
+  )
 }
 
 /**
@@ -300,19 +306,17 @@ export async function deleteGame(id) {
  */
 export async function addDeckToRegistry(player, name) {
   const playerIdMap = await getPlayerIdMap()
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .upsert(
-      { player, player_id: playerIdMap[player] ?? null, name, wins: 0, losses: 0, updated_at: new Date().toISOString() },
-      { onConflict: 'player,name', ignoreDuplicates: true }
-    )
-    .select('id')
-    .maybeSingle()
-
-  if (error) {
-    console.error('Error adding deck to registry:', error)
-    throw error
-  }
+  const data = unwrap(
+    await supabase
+      .from(TABLE_NAME)
+      .upsert(
+        { player, player_id: playerIdMap[player] ?? null, name, wins: 0, losses: 0, updated_at: new Date().toISOString() },
+        { onConflict: 'player,name', ignoreDuplicates: true }
+      )
+      .select('id')
+      .maybeSingle(),
+    'Error adding deck to registry'
+  )
 
   return data?.id ?? null
 }
@@ -325,13 +329,11 @@ export async function addDeckToRegistry(player, name) {
  * @param {string} newName - new deck name
  */
 export async function renameDeckRegistry(id, newName) {
-  const { error } = await supabase
-    .from(TABLE_NAME)
-    .update({ name: newName, updated_at: new Date().toISOString() })
-    .eq('id', id)
-
-  if (error) {
-    console.error('Error renaming deck:', error)
-    throw error
-  }
+  unwrap(
+    await supabase
+      .from(TABLE_NAME)
+      .update({ name: newName, updated_at: new Date().toISOString() })
+      .eq('id', id),
+    'Error renaming deck'
+  )
 }

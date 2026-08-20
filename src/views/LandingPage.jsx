@@ -3,38 +3,35 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
 import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { Logo } from "../components/Logo.jsx";
+import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
 import { NewGameModal } from "../components/NewGameModal.jsx";
+import { Toast } from "../components/Toast.jsx";
 
 // Utils
-import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import { PLAYERS, PLAYER_COLORS } from "../utils/stats.js";
 
 // Styles
 import styles from "./LandingPage.module.css";
 
 export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggleDark }) {
-  const isMobile = useIsMobile();
   const [showNewGame, setShowNewGame] = useState(false);
   const { toast, showToast } = useToast();
 
+  // NewGameModal only reports back once the save succeeded — it surfaces
+  // failures inline, in the modal that is still open.
   const handleGameSaved = (msg) => {
     setShowNewGame(false);
-    showToast(msg);
+    showToast({ type: "success", message: msg });
   };
 
   return (
-    <div className={isMobile ? styles.containerMobile : styles.container}>
-      {/* Toast notification */}
-      {toast && (
-        <div className={toast.startsWith("✅") ? styles.toastSuccess : styles.toastError}>
-          {toast}
-        </div>
-      )}
+    <div className={styles.container}>
+      {toast && <Toast toast={toast} />}
 
       {/* Dark mode toggle */}
       <div className={styles.darkModeToggle}>
@@ -42,31 +39,26 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
       </div>
 
       {/* Logo */}
-      <div className={isMobile ? styles.headerMobile : styles.header}>
+      <div className={styles.header}>
         <div className={styles.logoWrapper}>
-          <Logo size={isMobile ? 80 : 100} />
+          <Logo />
         </div>
       </div>
 
       {/* Player Grid */}
-      <div className={isMobile ? styles.playerGridMobile : styles.playerGrid}>
+      <div className={styles.playerGrid}>
         {PLAYERS.map(player => (
           <button
             key={player}
             onClick={() => onSelectPlayer(player)}
-            className={isMobile ? styles.playerCardMobile : styles.playerCard}
+            className={styles.playerCard}
             style={{
               "--accent": PLAYER_COLORS[player],
               "--accent-soft": `${PLAYER_COLORS[player]}40`,
             }}
           >
-            <div 
-              className={isMobile ? styles.playerAvatarMobile : styles.playerAvatarDesktop}
-              style={{ background: PLAYER_GRADIENTS[player] }}
-            >
-              {player[0]}
-            </div>
-            <span className={isMobile ? styles.playerNameMobile : styles.playerName}>
+            <PlayerAvatar player={player} className={styles.playerAvatar} />
+            <span className={styles.playerName}>
               {player}
             </span>
           </button>
@@ -74,42 +66,26 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
       </div>
 
       {/* Action buttons: new game + global stats */}
-      <div className={isMobile ? styles.globalStatsWrapperMobile : styles.globalStatsWrapper}>
-        <div className={isMobile ? styles.buttonRowMobile : styles.buttonRow}>
+      <div className={styles.globalStatsWrapper}>
+        <div className={styles.buttonRow}>
           <button
             onClick={() => setShowNewGame(true)}
-            className={`
-              ${isMobile ? styles.newGameButtonMobile : styles.newGameButton}
-              ${isDark ? styles.newGameButtonDark : ""}
-            `}
-            style={isDark ? {
-              "--glow": "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-            } : {
-              "--glow": "0 8px 32px rgba(201, 122, 31, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
-            }}
+            className={styles.newGameButton}
           >
-            <div className={isMobile ? styles.globalStatsContentMobile : styles.globalStatsContent}>
-              <span className={isMobile ? styles.globalStatsIconMobile : styles.globalStatsIcon}>⚔️</span>
-              <span className={isMobile ? styles.globalStatsTextMobile : styles.globalStatsText}>
+            <div className={styles.globalStatsContent}>
+              <span className={styles.globalStatsIcon}>⚔️</span>
+              <span className={styles.globalStatsText}>
                 Neues Spiel
               </span>
             </div>
           </button>
           <button
             onClick={onShowGlobalStats}
-            className={`
-              ${isMobile ? styles.globalStatsButtonMobile : styles.globalStatsButton}
-              ${isDark ? styles.globalStatsButtonDark : ""}
-            `}
-            style={isDark ? {
-              "--glow": "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-            } : {
-              "--glow": "0 8px 32px rgba(63, 95, 201, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3)",
-            }}
+            className={styles.globalStatsButton}
           >
-            <div className={isMobile ? styles.globalStatsContentMobile : styles.globalStatsContent}>
-              <span className={isMobile ? styles.globalStatsIconMobile : styles.globalStatsIcon}>📊</span>
-              <span className={isMobile ? styles.globalStatsTextMobile : styles.globalStatsText}>
+            <div className={styles.globalStatsContent}>
+              <span className={styles.globalStatsIcon}>📊</span>
+              <span className={styles.globalStatsText}>
                 Gesamtübersicht
               </span>
             </div>

@@ -40,3 +40,6 @@ Screenshot*.png
 # Supabase data exports must never land in this (public) repo — the backup
 # workflow pushes them to a separate private repo instead
 backups/
+
+# Local working notes (deferred cleanup / refactor backlog)
+CLEANUP-BACKLOG.md

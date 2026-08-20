@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 
 // Hooks
-import { useIsMobile } from "./hooks/useIsMobile.js";
 import { useDarkMode } from "./hooks/useDarkMode.js";
 import { GamesProvider } from "./hooks/GamesProvider.jsx";
+import { AllDecksProvider } from "./hooks/AllDecksProvider.jsx";
 
 // Components
 import { RollingD20 } from "./components/RollingD20.jsx";
@@ -43,11 +43,9 @@ function parseHash() {
 
 export default function App() {
   const [route, setRoute] = useState(parseHash);
-  const [isDark, setIsDark, darkLoaded] = useDarkMode();
+  const [isDark, setIsDark] = useDarkMode();
   const [showDie, setShowDie] = useState(false);
   const [dieLanded, setDieLanded] = useState(false);
-  const isMobile = useIsMobile();
-  const screenWidth = isMobile ? window.innerWidth : 1024;
 
   // Sync route with location hash (refresh persistence, back/forward)
   useEffect(() => {
@@ -64,22 +62,16 @@ export default function App() {
     }
   }, [route]);
 
-  // D20 triple-click easter egg (ignored on interactive elements,
-  // so rapid clicking of +1/-1 buttons doesn't trigger it)
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (e.detail !== 3) return;
+  // Both halves of the die gesture, in one handler on the root element:
+  // a triple-click summons it, a single click dismisses it once it lands.
+  // Rapid clicking of buttons and inputs is ignored so the +1/-1 controls
+  // don't trigger it.
+  const handleClick = (e) => {
+    if (e.detail === 3) {
       if (e.target.closest('button, a, input, textarea, select, [role="button"]')) return;
       setShowDie(true);
       setDieLanded(false);
-    };
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, []);
-
-  const handleClick = (e) => {
-    // Single click dismisses the die after it lands
-    if (e.detail === 1 && showDie && dieLanded) {
+    } else if (e.detail === 1 && showDie && dieLanded) {
       setShowDie(false);
       setDieLanded(false);
     }
@@ -101,51 +93,35 @@ export default function App() {
     window.location.hash = "/";
   };
 
-  if (!darkLoaded) {
-    return null;
-  }
+  // One stable toggle instead of a fresh `() => setIsDark(!isDark)` closure
+  // per route branch (the updater form also can't read a stale `isDark`).
+  const toggleDark = () => setIsDark(d => !d);
+  const themeProps = { isDark, onToggleDark: toggleDark };
 
   return (
     <div onClick={handleClick} className={styles.root}>
       <GamesProvider>
-        {route.view === 'landing' && (
-          <LandingPage
-            onSelectPlayer={handleSelectPlayer}
-            onShowGlobalStats={handleShowGlobalStats}
-            isDark={isDark}
-            onToggleDark={() => setIsDark(!isDark)}
-          />
-        )}
-        {route.view === 'tracker' && route.player && (
-          <TrackerView
-            player={route.player}
-            onBack={handleBack}
-            isDark={isDark}
-            onToggleDark={() => setIsDark(!isDark)}
-          />
-        )}
-        {route.view === 'global' && (
-          <GlobalStatsView
-            onBack={handleBack}
-            isDark={isDark}
-            onToggleDark={() => setIsDark(!isDark)}
-          />
-        )}
-        {route.view === 'games' && (
-          <GamesArchiveView
-            onBack={handleBack}
-            isDark={isDark}
-            onToggleDark={() => setIsDark(!isDark)}
-          />
-        )}
+        <AllDecksProvider>
+          {route.view === 'landing' && (
+            <LandingPage
+              onSelectPlayer={handleSelectPlayer}
+              onShowGlobalStats={handleShowGlobalStats}
+              {...themeProps}
+            />
+          )}
+          {route.view === 'tracker' && route.player && (
+            <TrackerView player={route.player} onBack={handleBack} {...themeProps} />
+          )}
+          {route.view === 'global' && (
+            <GlobalStatsView onBack={handleBack} {...themeProps} />
+          )}
+          {route.view === 'games' && (
+            <GamesArchiveView onBack={handleBack} {...themeProps} />
+          )}
+        </AllDecksProvider>
       </GamesProvider>
 
-      {showDie && (
-        <RollingD20 
-          onLanded={handleDieLanded}
-          screenWidth={screenWidth}
-        />
-      )}
+      {showDie && <RollingD20 onLanded={handleDieLanded} />}
     </div>
   );
 }

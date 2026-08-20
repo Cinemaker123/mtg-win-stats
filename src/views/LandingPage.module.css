@@ -6,11 +6,6 @@
   padding: 60px 40px;
 }
 
-.containerMobile {
-  composes: container;
-  padding: 40px 20px;
-}
-
 .darkModeToggle {
   position: absolute;
   top: 16px;
@@ -23,15 +18,15 @@
   margin-bottom: 60px;
 }
 
-.headerMobile {
-  composes: header;
-  margin-bottom: 40px;
-}
-
 .logoWrapper {
   margin-bottom: 16px;
   display: flex;
   justify-content: center;
+}
+
+.logoWrapper img {
+  width: 100px;
+  height: 100px;
 }
 
 .playerGrid {
@@ -41,13 +36,6 @@
   max-width: 1000px;
   margin: 0 auto;
   width: 100%;
-}
-
-.playerGridMobile {
-  composes: playerGrid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  max-width: 400px;
 }
 
 .playerCard {
@@ -71,34 +59,12 @@
   box-shadow: 0 8px 24px var(--accent-soft);
 }
 
-.playerCardMobile {
-  composes: playerCard;
-  padding: 30px 20px;
-}
-
+/* Sizing only — the avatar body lives in components/PlayerAvatar.module.css */
 .playerAvatar {
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  color: #fff;
-  font-family: var(--font-display);
-  text-transform: uppercase;
-}
-
-.playerAvatarDesktop {
-  composes: playerAvatar;
   width: 80px;
   height: 80px;
   font-size: 36px;
-}
-
-.playerAvatarMobile {
-  composes: playerAvatar;
-  width: 60px;
-  height: 60px;
-  font-size: 28px;
+  border-radius: 50%;
 }
 
 .playerName {
@@ -109,21 +75,10 @@
   text-transform: capitalize;
 }
 
-.playerNameMobile {
-  composes: playerName;
-  font-size: 16px;
-}
-
 .globalStatsWrapper {
   max-width: 1000px;
   margin: 32px auto 0;
   width: 100%;
-}
-
-.globalStatsWrapperMobile {
-  composes: globalStatsWrapper;
-  max-width: 400px;
-  padding: 0 20px;
 }
 
 .globalStatsButton {
@@ -142,19 +97,13 @@
   box-shadow: 0 4px 20px rgba(63, 95, 201, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
+.globalStatsButton {
+  --glow: 0 8px 32px rgba(63, 95, 201, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
 .globalStatsButton:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: var(--glow);
-}
-
-.globalStatsButtonMobile {
-  composes: globalStatsButton;
-  padding: 24px 20px;
-}
-
-.globalStatsButtonDark {
-  background: linear-gradient(135deg, #2a3563, #1e2547);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
 }
 
 .globalStatsContent {
@@ -165,20 +114,9 @@
   min-width: 0;
 }
 
-.globalStatsContentMobile {
-  composes: globalStatsContent;
-  flex-direction: column;
-  gap: 6px;
-}
-
 .globalStatsIcon {
   font-size: 36px;
   flex-shrink: 0;
-}
-
-.globalStatsIconMobile {
-  composes: globalStatsIcon;
-  font-size: 28px;
 }
 
 .globalStatsText {
@@ -189,11 +127,6 @@
   text-align: center;
   hyphens: auto;
   overflow-wrap: break-word;
-}
-
-.globalStatsTextMobile {
-  composes: globalStatsText;
-  font-size: 15px;
 }
 
 .buttonRow {
@@ -207,50 +140,28 @@
   min-width: 0;
 }
 
-.buttonRowMobile {
-  composes: buttonRow;
-  gap: 10px;
-}
-
 .newGameButton {
   composes: globalStatsButton;
   background: linear-gradient(135deg, #c97a1f, #e6a13f);
   box-shadow: 0 4px 20px rgba(201, 122, 31, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  --glow: 0 8px 32px rgba(201, 122, 31, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
-.newGameButtonMobile {
-  composes: newGameButton;
-  padding: 24px 20px;
+/* Dark theme. useDarkMode already stamps data-theme on <html>, so the theme
+   does not also have to travel down as a prop. The .newGameButton rule must
+   follow the .globalStatsButton one — it composes it, so both match. */
+:global([data-theme="dark"]) .globalStatsButton {
+  background: linear-gradient(135deg, #2a3563, #1e2547);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
+  --glow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-.newGameButtonDark {
+:global([data-theme="dark"]) .newGameButton {
   background: linear-gradient(135deg, #6b4a1a, #4a3212);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
 }
 
-.toast {
-  position: fixed;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  z-index: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.toastSuccess {
-  composes: toast;
-  background: var(--color-success);
-}
-
-.toastError {
-  composes: toast;
-  background: var(--color-error);
-}
+/* Toast styling lives in components/Toast.module.css */
 
 .archiveLink {
   display: block;
@@ -267,4 +178,67 @@
 
 .archiveLink:hover {
   color: var(--color-text);
+}
+
+/* Mobile — the breakpoint mirrors MOBILE_BREAKPOINT in utils/stats.js.
+   .newGameButton composes .globalStatsButton, so it inherits that override. */
+@media (max-width: 639px) {
+  .container {
+    padding: 40px 20px;
+  }
+
+  .header {
+    margin-bottom: 40px;
+  }
+
+  .logoWrapper img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .playerGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 400px;
+  }
+
+  .playerCard {
+    padding: 30px 20px;
+  }
+
+  .playerAvatar {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+
+  .playerName {
+    font-size: 16px;
+  }
+
+  .globalStatsWrapper {
+    max-width: 400px;
+    padding: 0 20px;
+  }
+
+  .globalStatsButton {
+    padding: 24px 20px;
+  }
+
+  .globalStatsContent {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .globalStatsIcon {
+    font-size: 28px;
+  }
+
+  .globalStatsText {
+    font-size: 15px;
+  }
+
+  .buttonRow {
+    gap: 10px;
+  }
 }

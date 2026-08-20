@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { getAllDecks, addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
-import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import { addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
+import { useAllDecks } from "../hooks/useAllDecks.js";
+import { PLAYERS, PLAYER_COLORS, MIN_PARTICIPANTS } from "../utils/stats.js";
+import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import styles from "./NewGameModal.module.css";
 
 /**
@@ -16,6 +18,33 @@ function toLocalInputValue(iso) {
 }
 
 /**
+ * The form as it looks when the modal opens: every participant in create mode,
+ * the recorded line-up in edit mode.
+ * @param {Object|null} editGame - game being edited (null = create mode)
+ * @returns {{participants: Array, deckByPlayer: Object, winner: string|null, playedAt: string}}
+ */
+function initialFormState(editGame) {
+  const entries = editGame ? editGame.participants : [];
+  return {
+    participants: editGame ? entries.map(p => p.player) : [...PLAYERS],
+    deckByPlayer: Object.fromEntries(entries.map(p => [p.player, p.deck])),
+    winner: entries.find(p => p.isWinner)?.player ?? null,
+    playedAt: toLocalInputValue(editGame ? editGame.playedAt : new Date().toISOString()),
+  };
+}
+
+/**
+ * Shallow equality for the player → deck map.
+ * @param {Object} a - first map
+ * @param {Object} b - second map
+ * @returns {boolean} - true if both hold the same keys and values
+ */
+function sameDeckMap(a, b) {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every(k => a[k] === b[k]);
+}
+
+/**
  * Modal for entering a game (2x2 player grid) — create and edit mode.
  * Tap a player cell to crown the winner (player-colored border + 👑).
  * Participants can be removed (✕, down to 2) and re-added via empty slots.
@@ -27,43 +56,52 @@ function toLocalInputValue(iso) {
  * @param {Function|null} props.onDelete - Edit mode: delete handler for the game
  */
 export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = null }) {
-  const [playersDecks, setPlayersDecks] = useState({});
-  const [loadingDecks, setLoadingDecks] = useState(true);
-  const [participants, setParticipants] = useState(
-    editGame ? editGame.participants.map(p => p.player) : [...PLAYERS]
-  );
-  const [deckByPlayer, setDeckByPlayer] = useState(() => {
-    const map = {};
-    if (editGame) editGame.participants.forEach(p => { map[p.player] = p.deck; });
-    return map;
-  });
-  const [winner, setWinner] = useState(
-    editGame ? (editGame.participants.find(p => p.isWinner)?.player ?? null) : null
-  );
-  const [playedAt, setPlayedAt] = useState(
-    toLocalInputValue(editGame ? editGame.playedAt : new Date().toISOString())
-  );
+  // Shared with Global Stats and kept live by AllDecksProvider, so opening
+  // the modal costs no query at all.
+  const {
+    decksByPlayer: playersDecks,
+    loading: loadingDecks,
+    error: decksError,
+    addDeckLocally,
+  } = useAllDecks();
+  // Snapshot of the opening state, kept for the untouched-form check below
+  const [initial] = useState(() => initialFormState(editGame));
+  const [participants, setParticipants] = useState(initial.participants);
+  const [deckByPlayer, setDeckByPlayer] = useState(initial.deckByPlayer);
+  const [winner, setWinner] = useState(initial.winner);
+  const [playedAt, setPlayedAt] = useState(initial.playedAt);
   const [addingDeckFor, setAddingDeckFor] = useState(null);
   const [newDeckName, setNewDeckName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load all players' deck registries on mount (one query, grouped locally)
-  useEffect(() => {
-    getAllDecks()
-      .then(decks => {
-        const byPlayer = Object.fromEntries(PLAYERS.map(p => [p, []]));
-        decks.forEach(d => { byPlayer[d.player]?.push(d); });
-        setPlayersDecks(byPlayer);
-      })
-      .catch(e => {
-        console.error("Failed to load decks for game modal:", e);
-        setError("Decks konnten nicht geladen werden.");
-      })
-      .finally(() => setLoadingDecks(false));
-  }, []);
-
   const availablePlayers = PLAYERS.filter(p => !participants.includes(p));
+
+  // Every field lives in local state and the modal is unmounted on close, so
+  // dismissing it discards the entry with no undo. Comparing against the
+  // opening snapshot means no handler has to remember to flag itself dirty.
+  const isDirty =
+    addingDeckFor !== null ||
+    newDeckName !== "" ||
+    winner !== initial.winner ||
+    playedAt !== initial.playedAt ||
+    participants.length !== initial.participants.length ||
+    participants.some((p, i) => p !== initial.participants[i]) ||
+    !sameDeckMap(deckByPlayer, initial.deckByPlayer);
+
+  // Backdrop tap and Escape only close an untouched form; once something has
+  // been entered, "Abbrechen" is the one way out (an explicit, undoable click).
+  const closeIfUntouched = () => {
+    if (!isDirty) onClose();
+  };
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !isDirty) onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isDirty, onClose]);
 
   const removeParticipant = (player) => {
     setParticipants(ps => ps.filter(p => p !== player));
@@ -94,11 +132,11 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
       return;
     }
     try {
+      // The id matters: `save` below resolves each participant's deck_id
+      // out of this cache, so an entry without one would record the game
+      // with a null deck_id and lose the link to the registry row.
       const id = await addDeckToRegistry(player, name);
-      setPlayersDecks(pd => ({
-        ...pd,
-        [player]: [...(pd[player] || []), { id, name, wins: 0, losses: 0 }],
-      }));
+      addDeckLocally(player, { id, name, wins: 0, losses: 0 });
       setDeckByPlayer(d => ({ ...d, [player]: name }));
       setAddingDeckFor(null);
       setNewDeckName("");
@@ -109,7 +147,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   };
 
   const isValid =
-    participants.length >= 2 &&
+    participants.length >= MIN_PARTICIPANTS &&
     winner !== null &&
     participants.every(p => deckByPlayer[p]);
 
@@ -146,12 +184,14 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={closeIfUntouched}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.title}>{editGame ? "Spiel bearbeiten" : "Neues Spiel"}</div>
         <div className={styles.hint}>Tippe ein Feld, um den Gewinner zu wählen 👑</div>
 
-        {error && <div className={styles.error}>{error}</div>}
+        {(error || decksError) && (
+          <div className={styles.error}>{error || decksError}</div>
+        )}
 
         {loadingDecks ? (
           <div className={styles.loading}>Lade Decks...</div>
@@ -193,9 +233,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
                     {isWinner && <span className={styles.crown}>👑</span>}
 
                     <div className={styles.playerRow}>
-                      <div className={styles.avatar} style={{ background: PLAYER_GRADIENTS[player] }}>
-                        {player[0]}
-                      </div>
+                      <PlayerAvatar player={player} className={styles.avatar} />
                       <span className={styles.playerName}>{player}</span>
                     </div>
 
@@ -242,8 +280,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
               })}
 
               {/* Empty slots to re-add removed players */}
-              {availablePlayers.length > 0 &&
-                [...Array(4 - participants.length)].map((_, i) => (
+              {availablePlayers.map((_, i) => (
                   <div key={`empty-${i}`} className={styles.emptyCell}>
                     <select
                       className={styles.deckSelect}
@@ -256,7 +293,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
                       ))}
                     </select>
                   </div>
-                ))}
+              ))}
             </div>
 
             <div className={styles.actions}>

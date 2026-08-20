@@ -21,8 +21,6 @@ export function useDarkMode() {
     }
     return getInitialTheme();
   });
-  const [loaded, setLoaded] = useState(false);
-
   useEffect(() => {
     // Apply theme to document root for CSS Modules theming
     document.documentElement.setAttribute(
@@ -31,7 +29,6 @@ export function useDarkMode() {
     );
     // Persist to localStorage
     localStorage.setItem(STORAGE_KEY, isDark ? DARK_CLASS : "light");
-    setLoaded(true);
   }, [isDark]);
 
   // Listen for system preference changes (only when no stored preference)
@@ -48,5 +45,8 @@ export function useDarkMode() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  return [isDark, setIsDark, loaded];
+  // No "loaded" flag: index.html stamps data-theme before first paint and the
+  // initial value above is computed synchronously, so there is nothing to wait
+  // for — gating the first render on it only cost one blank commit.
+  return [isDark, setIsDark];
 }

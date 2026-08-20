@@ -1,0 +1,15 @@
+/*
+ * Everything the six avatars have in common. Size, radius and font size stay
+ * with the caller — they are layout, and after the media-query pass they
+ * belong in the calling view's stylesheet.
+ */
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}

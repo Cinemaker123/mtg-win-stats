@@ -1,104 +1,60 @@
 // React
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useGames } from "../hooks/useGames.js";
+import { useAllDecks } from "../hooks/useAllDecks.js";
 
 // Components
-import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
+import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
+import { ViewHeader } from "../components/ViewHeader.jsx";
 import { StatCard } from "../components/StatCard.jsx";
+import { StatRow } from "../components/StatRow.jsx";
 import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
 
-// Utils / API
-import { supabase, getAllDecks } from "../supabaseClient.js";
-import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, capitalize, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+// Utils
+import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, streakDisplay, capitalize, formatPct, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, MIN_STREAK_GAMES, ACCENT_INFO, POD_BASELINE_WR, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
+import chrome from "../styles/viewChrome.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
-  const isMobile = useIsMobile();
   const { games } = useGames();
-  const [allData, setAllData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const px = isMobile ? 12 : 24;
-  const refreshTimeoutRef = useRef(null);
-
-  const loadAll = useCallback(() => {
-    setError(null);
-    return getAllDecks()
-    .then(decks => {
-      const data = {};
-      PLAYERS.forEach(player => { data[player] = []; });
-      decks.forEach(deck => { data[deck.player]?.push(deck); });
-      setAllData(data);
-    })
-    .catch(e => {
-      console.error("Failed to load global stats:", e);
-      setError("Fehler beim Laden. Bitte erneut versuchen.");
-    })
-    .finally(() => setLoading(false));
-  }, []);
-
-  // Load data for all players on mount
-  useEffect(() => {
-    loadAll();
-  }, [loadAll]);
-
-  // Realtime: refresh when any player's decks change (debounced)
-  useEffect(() => {
-    const channel = supabase
-      .channel("decks-global")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "decks" },
-        () => {
-          if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
-          refreshTimeoutRef.current = setTimeout(loadAll, 500);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
-      supabase.removeChannel(channel);
-    };
-  }, [loadAll]);
+  const { decksByPlayer: allData, loading, error } = useAllDecks();
 
   // Calculate statistics
   // Win rates are kept as 0-1 numbers throughout; formatted only at render time
   const stats = useMemo(() => {
-    const playerStats = PLAYERS.map(player => {
-      const decks = combineDeckStats(allData[player] || [], games, player);
-      const totalGames = decks.reduce((s, d) => s + d.wins + d.losses, 0);
+    // Combined legacy + game counts, built once per player and reused by
+    // every derivation below (it walks the whole games archive each time).
+    const decksByPlayer = PLAYERS.map(player => ({
+      player,
+      decks: combineDeckStats(allData[player] || [], games, player),
+    }));
+
+    const playerStats = decksByPlayer.map(({ player, decks }) => {
       const totalWins = decks.reduce((s, d) => s + d.wins, 0);
       const totalLosses = decks.reduce((s, d) => s + d.losses, 0);
-      const rate = winRate({ wins: totalWins, losses: totalLosses });
-      const adjusted = adjustedWinRate({ wins: totalWins, losses: totalLosses });
-      const deckCount = decks.length;
+      const record = { wins: totalWins, losses: totalLosses };
 
       return {
         player,
-        totalGames,
+        totalGames: totalWins + totalLosses,
         totalWins,
         totalLosses,
-        winRate: rate,
-        adjusted,
-        deckCount,
-        color: PLAYER_COLORS[player],
+        winRate: winRate(record),
+        adjusted: adjustedWinRate(record),
+        deckCount: decks.length,
         gradient: PLAYER_GRADIENTS[player],
       };
     });
     // Sorted once here, not during render
     playerStats.sort((a, b) => b.winRate - a.winRate);
 
-    const totalGamesAll = playerStats.reduce((s, p) => s + p.totalGames, 0);
     const totalWinsAll = playerStats.reduce((s, p) => s + p.totalWins, 0);
-    const totalLossesAll = playerStats.reduce((s, p) => s + p.totalLosses, 0);
 
     // "Games played" headline: the games table only covers Data Model v2 —
     // legacy pre-migration games only survive as frozen win/loss counters
@@ -111,17 +67,14 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     // (shown separately, each only if at least one player currently has one)
     const streaks = PLAYERS
       .map(player => ({ player, streak: getCurrentStreak(games, player) }))
-      .filter(s => s.streak && s.streak.count >= 2);
-    const winStreaks = streaks.filter(s => s.streak.type === "win").sort((a, b) => b.streak.count - a.streak.count);
-    const lossStreaks = streaks.filter(s => s.streak.type === "loss").sort((a, b) => b.streak.count - a.streak.count);
-    const topWinStreak = winStreaks[0] || null;
-    const topLossStreak = lossStreaks[0] || null;
+      .filter(s => s.streak && s.streak.count >= MIN_STREAK_GAMES);
+    const topStreak = type => streaks
+      .filter(s => s.streak.type === type)
+      .sort((a, b) => b.streak.count - a.streak.count)[0] || null;
 
-    // All played decks, ranked by bayesian-adjusted win rate so small
-    // samples regress toward the 25% pod baseline
+    // Every played deck, in pod order for now — ranked further down.
     const allDecks = [];
-    PLAYERS.forEach(player => {
-      const decks = combineDeckStats(allData[player] || [], games, player);
+    decksByPlayer.forEach(({ player, decks }) => {
       decks.forEach(deck => {
         const total = deck.wins + deck.losses;
         if (total > 0) {
@@ -135,34 +88,28 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         }
       });
     });
+
+    // Most played deck — resolved before the sort below, so ties still
+    // break in pod order rather than by adjusted win rate.
+    const mostPlayed = allDecks.reduce(
+      (top, deck) => (!top || deck.totalGames > top.totalGames ? deck : top),
+      null
+    );
+
+    // Rank by bayesian-adjusted win rate so small samples regress toward
+    // the pod baseline
     allDecks.sort((a, b) => b.adjusted - a.adjusted);
 
     // Best deck across all players (adjusted ranking, same minimum-games
     // threshold as the per-player dashboard so both agree)
     const bestDeck = allDecks.find(d => d.totalGames >= MIN_GAMES_FOR_BEST_DECK) || null;
 
-    // Most played deck
-    let mostPlayed = null;
-    let maxGames = 0;
-    PLAYERS.forEach(player => {
-      const decks = combineDeckStats(allData[player] || [], games, player);
-      decks.forEach(deck => {
-        const total = deck.wins + deck.losses;
-        if (total > maxGames) {
-          maxGames = total;
-          mostPlayed = { ...deck, player, totalGames: total };
-        }
-      });
-    });
-
     return {
       playerStats,
-      totalGamesAll,
       totalWinsAll,
-      totalLossesAll,
       maxPlayerGames,
-      topWinStreak,
-      topLossStreak,
+      topWinStreak: topStreak("win"),
+      topLossStreak: topStreak("loss"),
       bestDeck,
       mostPlayed,
       // All played decks, sorted by Bayesian-adjusted win rate
@@ -172,25 +119,22 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
 
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <div className={styles.header} style={{ padding: `0 ${px}px` }}>
-        <button
-          onClick={onBack}
-          className={styles.backButton}
-          title="Zurück"
-        >←</button>
-        <span style={{ fontSize: 20 }}>📊</span>
-        <span className={styles.title}>Gesamtübersicht</span>
+      <ViewHeader
+        icon="📊"
+        title="Gesamtübersicht"
+        onBack={onBack}
+        isDark={isDark}
+        onToggleDark={onToggleDark}
+      >
         <button
           onClick={() => { window.location.hash = "/games"; }}
-          className={styles.backButton}
+          className={chrome.backButton}
           title="Spielarchiv"
         >📜</button>
-        <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
-      </div>
+      </ViewHeader>
 
       {/* Content */}
-      <div className={isMobile ? styles.contentMobile : styles.content}>
+      <div className={styles.content}>
         {loading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />
@@ -204,19 +148,19 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
           <>
             {/* Overall Stats */}
             <div className={styles.section}>
-              <div className={isMobile ? styles.statsGridMobile : styles.statsGrid}>
+              <div className={styles.statsGrid}>
                 <StatCard
                   label="Spiele insgesamt"
                   value={stats.maxPlayerGames}
                   sub={stats.maxPlayerGames === 0 ? "Noch keine Spiele" : undefined}
-                  accent="#667eea"
+                  accent={ACCENT_INFO}
                   icon="🎲"
                 />
                 <StatCard
                   label="Bestes Deck"
                   value={stats.bestDeck ? stats.bestDeck.name : "-"}
-                  sub={stats.bestDeck ? `${(stats.bestDeck.winRate * 100).toFixed(1)}% von ${capitalize(stats.bestDeck.player)}` : "Noch keine Daten"}
-                  accent="#b4923f"
+                  sub={stats.bestDeck ? `${formatPct(stats.bestDeck.winRate)} von ${capitalize(stats.bestDeck.player)}` : "Noch keine Daten"}
+                  accent={WIN_RATE_TIERS.LEGENDARY.color}
                   icon="🏆"
                 />
                 <StatCard
@@ -226,26 +170,20 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                   accent="#b0399e"
                   icon="🎯"
                 />
-                {stats.topWinStreak && (
-                  <StatCard
-                    label="Serie"
-                    value={capitalize(stats.topWinStreak.player)}
-                    sub={`${stats.topWinStreak.streak.count} Siege in Folge`}
-                    accent={WIN_RATE_TIERS.GOOD.color}
-                    icon="🔥"
-                    wide
-                  />
-                )}
-                {stats.topLossStreak && (
-                  <StatCard
-                    label="Serie"
-                    value={capitalize(stats.topLossStreak.player)}
-                    sub={`${stats.topLossStreak.streak.count} Niederlagen in Folge`}
-                    accent={WIN_RATE_TIERS.STRUGGLING.color}
-                    icon="🥀"
-                    wide
-                  />
-                )}
+                {[stats.topWinStreak, stats.topLossStreak].filter(Boolean).map(({ player, streak }) => {
+                  const display = streakDisplay(streak);
+                  return (
+                    <StatCard
+                      key={streak.type}
+                      label="Serie"
+                      value={capitalize(player)}
+                      sub={`${streak.count} ${display.noun} in Folge`}
+                      accent={display.accent}
+                      icon={display.icon}
+                      wide
+                    />
+                  );
+                })}
               </div>
             </div>
 
@@ -273,50 +211,37 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Spieler-Vergleich</div>
               <div className={styles.playerList}>
-                {stats.playerStats.map((p) => (
-                  <div key={p.player} className={styles.playerRow}>
-                    <div
-                      className={styles.playerAvatar}
-                      style={{ background: p.gradient }}
+                {stats.playerStats.map((p) => {
+                  const tier = getWinRateTier(p.winRate);
+                  return (
+                    <StatRow
+                      key={p.player}
+                      variant="player"
+                      avatar={<PlayerAvatar player={p.player} className={styles.playerAvatar} />}
+                      name={p.player}
+                      meta={`${p.deckCount} Decks • ${p.totalGames} Spiele`}
+                      tier={tier}
+                      winRate={p.winRate}
+                      wins={p.totalWins}
+                      losses={p.totalLosses}
                     >
-                      {p.player[0].toUpperCase()}
-                    </div>
-                    <div className={styles.playerInfo}>
-                      <div className={styles.playerName}>{p.player}</div>
-                      <div className={styles.playerMeta}>
-                        {p.deckCount} Decks • {p.totalGames} Spiele
+                      {/* Win rate bar */}
+                      <div className={styles.winRateBar}>
+                        <div
+                          className={styles.winRateBaseline}
+                          title={`Zufalls-Baseline (${formatPct(POD_BASELINE_WR, 0)})`}
+                        />
+                        <div
+                          className={styles.winRateBarFill}
+                          style={{
+                            width: `${Math.max(0, Math.min(100, p.winRate * 100))}%`,
+                            background: p.gradient,
+                          }}
+                        />
                       </div>
-                    </div>
-                    <div className={styles.playerStats}>
-                      <div
-                        className={styles.winRate}
-                        style={{ color: getWinRateTier(p.winRate).color }}
-                      >
-                        <span title={getWinRateTier(p.winRate).label}>
-                          {getWinRateTier(p.winRate).icon}
-                        </span>{" "}
-                        {(p.winRate * 100).toFixed(1)}%
-                      </div>
-                      <div className={styles.record}>
-                        {p.totalWins}W / {p.totalLosses}L
-                      </div>
-                    </div>
-                    {/* Win rate bar */}
-                    <div className={styles.winRateBar}>
-                      <div
-                        className={styles.winRateBaseline}
-                        title="Zufalls-Baseline (25%)"
-                      />
-                      <div
-                        className={styles.winRateBarFill}
-                        style={{
-                          width: `${Math.max(0, Math.min(100, p.winRate * 100))}%`,
-                          background: p.gradient,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                    </StatRow>
+                  );
+                })}
               </div>
             </div>
 
@@ -325,34 +250,28 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               <div className={styles.section}>
                 <div className={styles.sectionTitle}>Alle Decks</div>
                 <div className={styles.deckList}>
-                  {stats.allDecks.map((deck) => (
-                    <div key={`${deck.player}-${deck.name}`} className={styles.deckRow}>
-                      <div 
-                        className={styles.deckAvatar}
-                        style={{ background: PLAYER_COLORS[deck.player] }}
-                      >
-                        {deck.player[0].toUpperCase()}
-                      </div>
-                      <div className={styles.deckInfo}>
-                        <div className={styles.deckName}>{deck.name}</div>
-                        <div className={styles.deckPlayer}>{deck.player}</div>
-                      </div>
-                      <div className={styles.deckStats}>
-                        <div 
-                          className={styles.deckWinRate}
-                          style={{ color: getWinRateTier(deck.winRate).color }}
-                        >
-                          <span title={getWinRateTier(deck.winRate).label}>
-                            {getWinRateTier(deck.winRate).icon}
-                          </span>{" "}
-                          {(deck.winRate * 100).toFixed(1)}%
-                        </div>
-                        <div className={styles.deckRecord}>
-                          {deck.wins}W / {deck.losses}L
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  {stats.allDecks.map((deck) => {
+                    const tier = getWinRateTier(deck.winRate);
+                    return (
+                      <StatRow
+                        key={`${deck.player}-${deck.name}`}
+                        variant="deck"
+                        avatar={
+                          <PlayerAvatar
+                            player={deck.player}
+                            className={styles.deckAvatar}
+                            background={PLAYER_COLORS[deck.player]}
+                          />
+                        }
+                        name={deck.name}
+                        meta={deck.player}
+                        tier={tier}
+                        winRate={deck.winRate}
+                        wins={deck.wins}
+                        losses={deck.losses}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}

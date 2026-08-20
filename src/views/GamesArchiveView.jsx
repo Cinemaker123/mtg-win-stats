@@ -1,27 +1,33 @@
 // React
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useGames } from "../hooks/useGames.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
-import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
 import { NewGameModal } from "../components/NewGameModal.jsx";
+import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
+import { Toast } from "../components/Toast.jsx";
+import { ViewHeader } from "../components/ViewHeader.jsx";
 
 // Utils / API
 import { addGame, deleteGame } from "../supabaseClient.js";
-import { PLAYER_COLORS, PLAYER_GRADIENTS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GamesArchiveView.module.css";
 
 const UNDO_WINDOW_MS = 5000;
 
+// Built once instead of per game per render — constructing an Intl
+// formatter is by far the most expensive thing this view does.
+const TIME_FORMAT = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
+
 /**
  * Group games (already newest-first) by calendar day, preserving order.
+ * Each game is decorated with the presentation-ready values the card
+ * needs, so rendering stays free of per-row formatting and sorting.
  * @param {Array} games
  * @returns {Array<{key: string, label: string, games: Array}>}
  */
@@ -43,7 +49,14 @@ function groupByDay(games) {
       byKey.set(key, group);
       groups.push(group);
     }
-    byKey.get(key).games.push(game);
+    byKey.get(key).games.push({
+      game,
+      time: TIME_FORMAT.format(d),
+      // Winner first
+      participants: [...game.participants].sort(
+        (a, b) => Number(b.isWinner) - Number(a.isWinner)
+      ),
+    });
   });
 
   return groups;
@@ -54,70 +67,55 @@ function groupByDay(games) {
  * Tap a game to edit it; delete offers a 5s undo window (re-insert).
  */
 export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
-  const isMobile = useIsMobile();
   const { games, loading, error, retry } = useGames();
   const [editGame, setEditGame] = useState(null);
   const { toast, showToast, dismissToast } = useToast();
-  const [pendingDelete, setPendingDelete] = useState(null);
-  const px = isMobile ? 12 : 24;
-
-  // The undo offer only makes sense while its toast is visible
-  useEffect(() => {
-    if (!toast) setPendingDelete(null);
-  }, [toast]);
 
   const groups = useMemo(() => groupByDay(games), [games]);
 
-  const handleDelete = async (game) => {
-    setEditGame(null);
-    try {
-      await deleteGame(game.id);
-      setPendingDelete(game);
-      showToast("Spiel gelöscht", UNDO_WINDOW_MS);
-    } catch (e) {
-      console.error("Delete game failed:", e);
-      showToast("⚠️ Löschen fehlgeschlagen");
-    }
-  };
-
-  const handleUndo = async () => {
-    if (!pendingDelete) return;
+  // The deleted game rides along on the toast's own action handler, so the
+  // undo offer can't outlive the toast that carries it.
+  const handleUndo = async (game) => {
     dismissToast();
-    const game = pendingDelete;
-    setPendingDelete(null);
     try {
       // Re-insert restores the game with a new id (acceptable for undo)
       await addGame({ playedAt: game.playedAt, participants: game.participants });
     } catch (e) {
       console.error("Undo delete failed:", e);
-      showToast("⚠️ Wiederherstellen fehlgeschlagen");
+      showToast({ type: "error", message: "⚠️ Wiederherstellen fehlgeschlagen" });
+    }
+  };
+
+  const handleDelete = async (game) => {
+    setEditGame(null);
+    try {
+      await deleteGame(game.id);
+      showToast({
+        type: "undo",
+        message: "Spiel gelöscht",
+        actionLabel: "Rückgängig",
+        onAction: () => handleUndo(game),
+      }, UNDO_WINDOW_MS);
+    } catch (e) {
+      console.error("Delete game failed:", e);
+      showToast({ type: "error", message: "⚠️ Löschen fehlgeschlagen" });
     }
   };
 
   return (
     <div className={styles.container}>
-      {/* Toast notification */}
-      {toast && (
-        <div className={toast.startsWith("⚠️") ? styles.toastError : styles.toastSuccess}>
-          {toast}
-          {pendingDelete && (
-            <button className={styles.undoButton} onClick={handleUndo}>
-              Rückgängig
-            </button>
-          )}
-        </div>
-      )}
+      {toast && <Toast toast={toast} />}
 
-      {/* Header */}
-      <div className={styles.header} style={{ padding: `0 ${px}px` }}>
-        <button onClick={onBack} className={styles.backButton} title="Zurück">←</button>
-        <span style={{ fontSize: 20 }}>📜</span>
-        <span className={styles.title}>Spielarchiv</span>
-        <DarkModeToggle isDark={isDark} onToggle={onToggleDark} />
-      </div>
+      <ViewHeader
+        icon="📜"
+        title="Spielarchiv"
+        onBack={onBack}
+        isDark={isDark}
+        onToggleDark={onToggleDark}
+      />
 
       {/* Content */}
-      <div className={isMobile ? styles.contentMobile : styles.content}>
+      <div className={styles.content}>
         {loading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />
@@ -136,29 +134,16 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
           groups.map(group => (
             <div key={group.key} className={styles.section}>
               <div className={styles.sectionTitle}>{group.label}</div>
-              {group.games.map(game => {
-                const time = new Date(game.playedAt).toLocaleTimeString("de-DE", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-                const sorted = [...game.participants].sort(
-                  (a, b) => Number(b.isWinner) - Number(a.isWinner)
-                );
-                return (
+              {group.games.map(({ game, time, participants }) => (
                   <button
                     key={game.id}
                     className={styles.gameCard}
                     onClick={() => setEditGame(game)}
                   >
                     <div className={styles.participantList}>
-                      {sorted.map(p => (
+                      {participants.map(p => (
                         <div key={p.player} className={styles.participant}>
-                          <div
-                            className={styles.avatar}
-                            style={{ background: PLAYER_GRADIENTS[p.player] || PLAYER_COLORS[p.player] }}
-                          >
-                            {p.player[0].toUpperCase()}
-                          </div>
+                          <PlayerAvatar player={p.player} className={styles.avatar} />
                           <div className={styles.participantInfo}>
                             <div className={styles.participantName}>
                               {p.isWinner && <span className={styles.crown}>👑</span>}
@@ -171,8 +156,7 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
                     </div>
                     <span className={styles.time}>{time}</span>
                   </button>
-                );
-              })}
+              ))}
             </div>
           ))
         )}
@@ -185,7 +169,7 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
           onClose={() => setEditGame(null)}
           onSaved={(msg) => {
             setEditGame(null);
-            showToast(msg);
+            showToast({ type: "success", message: msg });
           }}
           onDelete={handleDelete}
         />
