@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { getDecksByPlayer, addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
+import { addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
+import { useAllDecks } from "../hooks/useAllDecks.js";
 import { PLAYERS, PLAYER_COLORS } from "../utils/stats.js";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import styles from "./NewGameModal.module.css";
@@ -55,8 +56,14 @@ function sameDeckMap(a, b) {
  * @param {Function|null} props.onDelete - Edit mode: delete handler for the game
  */
 export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = null }) {
-  const [playersDecks, setPlayersDecks] = useState({});
-  const [loadingDecks, setLoadingDecks] = useState(true);
+  // Shared with Global Stats and kept live by AllDecksProvider, so opening
+  // the modal costs no query at all.
+  const {
+    decksByPlayer: playersDecks,
+    loading: loadingDecks,
+    error: decksError,
+    addDeckLocally,
+  } = useAllDecks();
   // Snapshot of the opening state, kept for the untouched-form check below
   const [initial] = useState(() => initialFormState(editGame));
   const [participants, setParticipants] = useState(initial.participants);
@@ -67,17 +74,6 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   const [newDeckName, setNewDeckName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-
-  // Load all players' deck registries on mount (one query, grouped locally)
-  useEffect(() => {
-    getDecksByPlayer()
-      .then(setPlayersDecks)
-      .catch(e => {
-        console.error("Failed to load decks for game modal:", e);
-        setError("Decks konnten nicht geladen werden.");
-      })
-      .finally(() => setLoadingDecks(false));
-  }, []);
 
   const availablePlayers = PLAYERS.filter(p => !participants.includes(p));
 
@@ -137,10 +133,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     }
     try {
       await addDeckToRegistry(player, name);
-      setPlayersDecks(pd => ({
-        ...pd,
-        [player]: [...(pd[player] || []), { name, wins: 0, losses: 0 }],
-      }));
+      addDeckLocally(player, name);
       setDeckByPlayer(d => ({ ...d, [player]: name }));
       setAddingDeckFor(null);
       setNewDeckName("");
@@ -188,7 +181,9 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
         <div className={styles.title}>{editGame ? "Spiel bearbeiten" : "Neues Spiel"}</div>
         <div className={styles.hint}>Tippe ein Feld, um den Gewinner zu wählen 👑</div>
 
-        {error && <div className={styles.error}>{error}</div>}
+        {(error || decksError) && (
+          <div className={styles.error}>{error || decksError}</div>
+        )}
 
         {loadingDecks ? (
           <div className={styles.loading}>Lade Decks...</div>

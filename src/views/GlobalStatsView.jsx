@@ -1,9 +1,10 @@
 // React
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
 import { useGames } from "../hooks/useGames.js";
+import { useAllDecks } from "../hooks/useAllDecks.js";
 
 // Components
 import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
@@ -13,8 +14,7 @@ import { StatRow } from "../components/StatRow.jsx";
 import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
 
-// Utils / API
-import { supabase, getDecksByPlayer } from "../supabaseClient.js";
+// Utils
 import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, streakDisplay, capitalize, formatPct, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, MIN_STREAK_GAMES, ACCENT_INFO, POD_BASELINE_WR, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
@@ -23,46 +23,7 @@ import chrome from "../styles/viewChrome.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   const { games } = useGames();
-  const [allData, setAllData] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const refreshTimeoutRef = useRef(null);
-
-  const loadAll = useCallback(() => {
-    setError(null);
-    return getDecksByPlayer()
-    .then(setAllData)
-    .catch(e => {
-      console.error("Failed to load global stats:", e);
-      setError("Fehler beim Laden. Bitte erneut versuchen.");
-    })
-    .finally(() => setLoading(false));
-  }, []);
-
-  // Load data for all players on mount
-  useEffect(() => {
-    loadAll();
-  }, [loadAll]);
-
-  // Realtime: refresh when any player's decks change (debounced)
-  useEffect(() => {
-    const channel = supabase
-      .channel("decks-global")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "decks" },
-        () => {
-          if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
-          refreshTimeoutRef.current = setTimeout(loadAll, 500);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
-      supabase.removeChannel(channel);
-    };
-  }, [loadAll]);
+  const { decksByPlayer: allData, loading, error } = useAllDecks();
 
   // Calculate statistics
   // Win rates are kept as 0-1 numbers throughout; formatted only at render time

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useIsMobile } from "./hooks/useIsMobile.js";
 import { useDarkMode } from "./hooks/useDarkMode.js";
 import { GamesProvider } from "./hooks/GamesProvider.jsx";
+import { AllDecksProvider } from "./hooks/AllDecksProvider.jsx";
 
 // Components
 import { RollingD20 } from "./components/RollingD20.jsx";
@@ -113,22 +114,24 @@ export default function App() {
   return (
     <div onClick={handleClick} className={styles.root}>
       <GamesProvider>
-        {route.view === 'landing' && (
-          <LandingPage
-            onSelectPlayer={handleSelectPlayer}
-            onShowGlobalStats={handleShowGlobalStats}
-            {...themeProps}
-          />
-        )}
-        {route.view === 'tracker' && route.player && (
-          <TrackerView player={route.player} onBack={handleBack} {...themeProps} />
-        )}
-        {route.view === 'global' && (
-          <GlobalStatsView onBack={handleBack} {...themeProps} />
-        )}
-        {route.view === 'games' && (
-          <GamesArchiveView onBack={handleBack} {...themeProps} />
-        )}
+        <AllDecksProvider>
+          {route.view === 'landing' && (
+            <LandingPage
+              onSelectPlayer={handleSelectPlayer}
+              onShowGlobalStats={handleShowGlobalStats}
+              {...themeProps}
+            />
+          )}
+          {route.view === 'tracker' && route.player && (
+            <TrackerView player={route.player} onBack={handleBack} {...themeProps} />
+          )}
+          {route.view === 'global' && (
+            <GlobalStatsView onBack={handleBack} {...themeProps} />
+          )}
+          {route.view === 'games' && (
+            <GamesArchiveView onBack={handleBack} {...themeProps} />
+          )}
+        </AllDecksProvider>
       </GamesProvider>
 
       {showDie && (
