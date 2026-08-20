@@ -7,10 +7,6 @@
   composes: content from "../styles/viewChrome.module.css";
 }
 
-.contentMobile {
-  composes: contentMobile from "../styles/viewChrome.module.css";
-}
-
 .loadingContainer {
   composes: loadingContainer from "../styles/viewChrome.module.css";
 }

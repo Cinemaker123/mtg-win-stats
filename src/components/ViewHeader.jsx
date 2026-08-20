@@ -12,7 +12,6 @@ import styles from "../styles/viewChrome.module.css";
  * @param {Function} props.onBack - Back-button handler
  * @param {boolean} props.isDark - Current theme
  * @param {Function} props.onToggleDark - Theme toggle handler
- * @param {number} props.padding - Horizontal padding in px
  * @param {string} [props.titleClassName] - Overrides the default title styling
  */
 export function ViewHeader({
@@ -21,12 +20,11 @@ export function ViewHeader({
   onBack,
   isDark,
   onToggleDark,
-  padding,
   titleClassName = styles.title,
   children = null,
 }) {
   return (
-    <div className={styles.header} style={{ padding: `0 ${padding}px` }}>
+    <div className={styles.header}>
       <button onClick={onBack} className={styles.backButton} title="Zurück">←</button>
       {typeof icon === "string"
         ? <span className={styles.headerIcon}>{icon}</span>
@@ -44,7 +42,6 @@ ViewHeader.propTypes = {
   onBack: PropTypes.func.isRequired,
   isDark: PropTypes.bool.isRequired,
   onToggleDark: PropTypes.func.isRequired,
-  padding: PropTypes.number.isRequired,
   titleClassName: PropTypes.string,
   children: PropTypes.node,
 };

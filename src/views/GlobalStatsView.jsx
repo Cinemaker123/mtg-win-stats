@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useGames } from "../hooks/useGames.js";
 
 // Components
@@ -21,12 +20,10 @@ import styles from "./GlobalStatsView.module.css";
 import chrome from "../styles/viewChrome.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
-  const isMobile = useIsMobile();
   const { games } = useGames();
   const [allData, setAllData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const px = isMobile ? 12 : 24;
   const refreshTimeoutRef = useRef(null);
 
   const loadAll = useCallback(() => {
@@ -165,7 +162,6 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         onBack={onBack}
         isDark={isDark}
         onToggleDark={onToggleDark}
-        padding={px}
       >
         <button
           onClick={() => { window.location.hash = "/games"; }}
@@ -175,7 +171,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       </ViewHeader>
 
       {/* Content */}
-      <div className={isMobile ? styles.contentMobile : styles.content}>
+      <div className={styles.content}>
         {loading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />
@@ -190,7 +186,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
             {/* Overall Stats */}
             <div className={styles.section}>
               <div className={styles.sectionTitle}>Gesamtübersicht</div>
-              <div className={isMobile ? styles.statsGridMobile : styles.statsGrid}>
+              <div className={styles.statsGrid}>
                 <StatCard
                   label="Spiele insgesamt"
                   value={stats.maxPlayerGames}

@@ -7,10 +7,6 @@
   composes: content from "../styles/viewChrome.module.css";
 }
 
-.contentMobile {
-  composes: contentMobile from "../styles/viewChrome.module.css";
-}
-
 .loadingContainer {
   composes: loadingContainer from "../styles/viewChrome.module.css";
 }
@@ -38,9 +34,10 @@
   gap: 10px;
 }
 
-.statsGridMobile {
-  composes: statsGrid;
-  grid-template-columns: 1fr 1fr;
+@media (max-width: 639px) {
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .card {

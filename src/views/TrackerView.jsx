@@ -5,7 +5,6 @@ import PropTypes from "prop-types";
 // Hooks
 import { useDecks } from "../hooks/useDecks.js";
 import { useGames } from "../hooks/useGames.js";
-import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
@@ -44,8 +43,6 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   );
   const [tab, setTab] = useState("dashboard");
   const { toast, showToast, dismissToast } = useToast();
-  const isMobile = useIsMobile();
-  const px = isMobile ? 12 : 24;
   const accentColor = PLAYER_COLORS[player];
   const TAB_H = 58;
 
@@ -128,12 +125,11 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
           onBack={onBack}
           isDark={isDark}
           onToggleDark={onToggleDark}
-          padding={px}
         />
 
         {/* Scrollable main content */}
         <div 
-          className={isMobile ? styles.contentMobile : styles.content}
+          className={styles.content}
           style={{ paddingBottom: TAB_H + 16 }}
         >
           {!loading && !loaded ? (

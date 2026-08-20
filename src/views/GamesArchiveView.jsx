@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useGames } from "../hooks/useGames.js";
 import { useToast } from "../hooks/useToast.js";
 
@@ -68,11 +67,9 @@ function groupByDay(games) {
  * Tap a game to edit it; delete offers a 5s undo window (re-insert).
  */
 export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
-  const isMobile = useIsMobile();
   const { games, loading, error, retry } = useGames();
   const [editGame, setEditGame] = useState(null);
   const { toast, showToast, dismissToast } = useToast();
-  const px = isMobile ? 12 : 24;
 
   const groups = useMemo(() => groupByDay(games), [games]);
 
@@ -115,11 +112,10 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
         onBack={onBack}
         isDark={isDark}
         onToggleDark={onToggleDark}
-        padding={px}
       />
 
       {/* Content */}
-      <div className={isMobile ? styles.contentMobile : styles.content}>
+      <div className={styles.content}>
         {loading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />

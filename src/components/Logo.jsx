@@ -5,15 +5,15 @@ import styles from './Logo.module.css';
 /**
  * MTG logo component
  * @param {Object} props
- * @param {number} props.size - Logo size in pixels
+ * @param {number} [props.size] - Size in pixels; omit to size it from CSS
  */
-export function Logo({ size = 80 }) {
+export function Logo({ size = null }) {
   return (
-    <img 
-      src={logoImage} 
-      alt="MTG Logo" 
+    <img
+      src={logoImage}
+      alt="MTG Logo"
       className={styles.logo}
-      style={{ width: size, height: size }}
+      style={size === null ? undefined : { width: size, height: size }}
     />
   );
 }

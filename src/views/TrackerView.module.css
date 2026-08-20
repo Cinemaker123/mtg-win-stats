@@ -48,9 +48,10 @@
   padding: 16px 24px;
 }
 
-.contentMobile {
-  composes: content;
-  padding: 16px 12px;
+@media (max-width: 639px) {
+  .content {
+    padding: 16px 12px;
+  }
 }
 
 /* Dashboard */

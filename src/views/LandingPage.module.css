@@ -6,11 +6,6 @@
   padding: 60px 40px;
 }
 
-.containerMobile {
-  composes: container;
-  padding: 40px 20px;
-}
-
 .darkModeToggle {
   position: absolute;
   top: 16px;
@@ -23,15 +18,15 @@
   margin-bottom: 60px;
 }
 
-.headerMobile {
-  composes: header;
-  margin-bottom: 40px;
-}
-
 .logoWrapper {
   margin-bottom: 16px;
   display: flex;
   justify-content: center;
+}
+
+.logoWrapper img {
+  width: 100px;
+  height: 100px;
 }
 
 .playerGrid {
@@ -41,13 +36,6 @@
   max-width: 1000px;
   margin: 0 auto;
   width: 100%;
-}
-
-.playerGridMobile {
-  composes: playerGrid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  max-width: 400px;
 }
 
 .playerCard {
@@ -71,12 +59,10 @@
   box-shadow: 0 8px 24px var(--accent-soft);
 }
 
-.playerCardMobile {
-  composes: playerCard;
-  padding: 30px 20px;
-}
-
 .playerAvatar {
+  width: 80px;
+  height: 80px;
+  font-size: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -87,20 +73,6 @@
   text-transform: uppercase;
 }
 
-.playerAvatarDesktop {
-  composes: playerAvatar;
-  width: 80px;
-  height: 80px;
-  font-size: 36px;
-}
-
-.playerAvatarMobile {
-  composes: playerAvatar;
-  width: 60px;
-  height: 60px;
-  font-size: 28px;
-}
-
 .playerName {
   font-family: var(--font-display-alt);
   font-weight: 700;
@@ -109,21 +81,10 @@
   text-transform: capitalize;
 }
 
-.playerNameMobile {
-  composes: playerName;
-  font-size: 16px;
-}
-
 .globalStatsWrapper {
   max-width: 1000px;
   margin: 32px auto 0;
   width: 100%;
-}
-
-.globalStatsWrapperMobile {
-  composes: globalStatsWrapper;
-  max-width: 400px;
-  padding: 0 20px;
 }
 
 .globalStatsButton {
@@ -147,11 +108,6 @@
   box-shadow: var(--glow);
 }
 
-.globalStatsButtonMobile {
-  composes: globalStatsButton;
-  padding: 24px 20px;
-}
-
 .globalStatsButtonDark {
   background: linear-gradient(135deg, #2a3563, #1e2547);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(180, 146, 63, 0.15);
@@ -165,20 +121,9 @@
   min-width: 0;
 }
 
-.globalStatsContentMobile {
-  composes: globalStatsContent;
-  flex-direction: column;
-  gap: 6px;
-}
-
 .globalStatsIcon {
   font-size: 36px;
   flex-shrink: 0;
-}
-
-.globalStatsIconMobile {
-  composes: globalStatsIcon;
-  font-size: 28px;
 }
 
 .globalStatsText {
@@ -189,11 +134,6 @@
   text-align: center;
   hyphens: auto;
   overflow-wrap: break-word;
-}
-
-.globalStatsTextMobile {
-  composes: globalStatsText;
-  font-size: 15px;
 }
 
 .buttonRow {
@@ -207,20 +147,10 @@
   min-width: 0;
 }
 
-.buttonRowMobile {
-  composes: buttonRow;
-  gap: 10px;
-}
-
 .newGameButton {
   composes: globalStatsButton;
   background: linear-gradient(135deg, #c97a1f, #e6a13f);
   box-shadow: 0 4px 20px rgba(201, 122, 31, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-
-.newGameButtonMobile {
-  composes: newGameButton;
-  padding: 24px 20px;
 }
 
 .newGameButtonDark {
@@ -245,4 +175,67 @@
 
 .archiveLink:hover {
   color: var(--color-text);
+}
+
+/* Mobile — the breakpoint mirrors MOBILE_BREAKPOINT in utils/stats.js.
+   .newGameButton composes .globalStatsButton, so it inherits that override. */
+@media (max-width: 639px) {
+  .container {
+    padding: 40px 20px;
+  }
+
+  .header {
+    margin-bottom: 40px;
+  }
+
+  .logoWrapper img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .playerGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 400px;
+  }
+
+  .playerCard {
+    padding: 30px 20px;
+  }
+
+  .playerAvatar {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+
+  .playerName {
+    font-size: 16px;
+  }
+
+  .globalStatsWrapper {
+    max-width: 400px;
+    padding: 0 20px;
+  }
+
+  .globalStatsButton {
+    padding: 24px 20px;
+  }
+
+  .globalStatsContent {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .globalStatsIcon {
+    font-size: 28px;
+  }
+
+  .globalStatsText {
+    font-size: 15px;
+  }
+
+  .buttonRow {
+    gap: 10px;
+  }
 }
