@@ -18,7 +18,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
           mkdir -p export
-          for table in decks games game_participants; do
+          for table in players decks games game_participants; do
             curl -sf "$SUPABASE_URL/rest/v1/$table?select=*" \
               -H "apikey: $SUPABASE_KEY" \
               -H "Authorization: Bearer $SUPABASE_KEY" \
