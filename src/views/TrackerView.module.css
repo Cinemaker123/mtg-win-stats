@@ -190,7 +190,9 @@
 .deckHeader {
   display: flex;
   align-items: center;
-  gap: 8px;
+  /* 16px, not 8: the edit/delete 44x44 tap overlays each bleed 8px sideways
+     and would otherwise overlap, making a gap tap delete instead of edit. */
+  gap: 16px;
   margin-bottom: 8px;
 }
 
@@ -206,6 +208,8 @@
 }
 
 .deleteButton {
+  composes: tapTarget from "../styles/viewChrome.module.css";
+  position: relative;
   width: 28px;
   height: 28px;
   border-radius: 8px;
