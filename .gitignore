@@ -43,3 +43,11 @@ backups/
 
 # Local working notes (deferred cleanup / refactor backlog)
 CLEANUP-BACKLOG.md
+
+# Knowledge graph: track graph.json (the queryable artifact), ignore the rest —
+# cache/ and manifest.json are local extraction state, .graphify_python holds an
+# absolute interpreter path, graph.html/GRAPH_REPORT.md regenerate from graph.json.
+# .claude/ is local hook wiring.
+graphify-out/*
+!graphify-out/graph.json
+.claude/
