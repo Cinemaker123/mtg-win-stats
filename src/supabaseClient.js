@@ -177,7 +177,7 @@ export async function saveDecks(player, decks) {
 }
 
 // ============================================================
-// Data Model v2: match-based game entry (see plan2.md)
+// Data Model v2: match-based game entry
 // ============================================================
 
 const GAMES_TABLE = 'games'

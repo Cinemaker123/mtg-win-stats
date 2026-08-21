@@ -426,7 +426,7 @@ Completed in 2026-02:
 | **Polish** | Standardized imports, added PropTypes/JSDoc, optimized Supabase bulk operations |
 | **Cleanup** | Removed duplicate `supabase.js` file, added PropTypes to all components, created `App.module.css` |
 
-Completed in 2026-07 (see `plan.md`):
+Completed in 2026-07:
 
 | Phase | Changes |
 |-------|---------|
@@ -439,7 +439,7 @@ Completed in 2026-07 (see `plan.md`):
 | **Cleanup** | Removed unused primitives library, images, CSS classes, `100MB` file; assets moved to `src/assets/` |
 | **Features** | Pod-share donut, activity/winrate scatter (hand-rolled SVG), PWA manifest + icons |
 
-Completed in 2026-07 (Data Model v2, see `plan2.md`):
+Completed in 2026-07 (Data Model v2):
 
 | Phase | Changes |
 |-------|---------|
