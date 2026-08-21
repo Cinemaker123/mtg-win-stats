@@ -15,7 +15,7 @@ import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils
-import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, streakDisplay, capitalize, formatPct, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, MIN_STREAK_GAMES, ACCENT_INFO, POD_BASELINE_WR, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, streakDisplay, capitalize, formatPct, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, MIN_STREAK_GAMES, ACCENT_INFO, ACCENT_ACTIVITY, POD_BASELINE_WR, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
@@ -169,7 +169,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                   label="Meistgespielt"
                   value={stats.mostPlayed ? stats.mostPlayed.name : "-"}
                   sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${capitalize(stats.mostPlayed.player)}` : "Noch keine Daten"}
-                  accent="#b0399e"
+                  accent={ACCENT_ACTIVITY}
                   icon="🎯"
                 />
                 {[stats.topWinStreak, stats.topLossStreak].filter(Boolean).map(({ player, streak }) => {

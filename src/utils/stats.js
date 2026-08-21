@@ -27,6 +27,9 @@ export const POD_BASELINE_WR = 1 / PLAYERS.length;
 // Neutral accent for informational stat cards (no win/loss meaning).
 export const ACCENT_INFO = "#667eea";
 
+// Accent for activity/volume stat cards (games played, not games won).
+export const ACCENT_ACTIVITY = "#b0399e";
+
 /**
  * Format a 0-1 win rate as a percentage string.
  * @param {number} wr - Win rate between 0 and 1
