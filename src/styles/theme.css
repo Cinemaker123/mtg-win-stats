@@ -9,6 +9,10 @@
   --color-surface-elevated: #faf4e8;
   --color-border: rgba(90, 60, 20, 0.16);
   --color-border-strong: #d4c197;
+  /* Baseline marker drawn on top of --color-border-strong bar tracks. It has
+     to darken the light track but LIGHTEN the dark one: the fixed black
+     overlay this replaced scored 1.19:1 on the dark track, i.e. invisible. */
+  --color-baseline: rgba(0, 0, 0, 0.35);
   --color-text: #2b2013;
   --color-text-secondary: #5c4c34;
   --color-text-muted: #8a7a5c;
@@ -69,6 +73,7 @@
   --color-surface-elevated: #2a2118;
   --color-border: rgba(180, 146, 63, 0.28);
   --color-border-strong: #3a2f22;
+  --color-baseline: rgba(255, 255, 255, 0.38);
   --color-text: #f2ece0;
   --color-text-secondary: #b8ab94;
   --color-text-muted: #837a68;
