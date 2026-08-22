@@ -14,6 +14,7 @@ import { ViewHeader } from "../components/ViewHeader.jsx";
 
 // Utils / API
 import { addGame, deleteGame } from "../supabaseClient.js";
+import { capitalize } from "../utils/stats.js";
 
 // Styles
 import styles from "./GamesArchiveView.module.css";
@@ -147,7 +148,7 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
                           <div className={styles.participantInfo}>
                             <div className={styles.participantName}>
                               {p.isWinner && <span className={styles.crown}>👑</span>}
-                              {p.player}
+                              {capitalize(p.player)}
                             </div>
                             <div className={styles.participantDeck}>{p.deck}</div>
                           </div>

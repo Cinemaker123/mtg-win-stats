@@ -13,7 +13,7 @@ import { Toast } from "../components/Toast.jsx";
 import { ViewHeader } from "../components/ViewHeader.jsx";
 
 // Utils
-import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats } from "../utils/stats.js";
+import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats, capitalize } from "../utils/stats.js";
 
 // Utils / API
 import { renameDeckRegistry } from "../supabaseClient.js";
@@ -113,7 +113,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
 
       <ViewHeader
         icon={<PlayerAvatar player={player} className={styles.playerAvatar} />}
-        title={player}
+        title={capitalize(player)}
         titleClassName={styles.playerName}
         onBack={onBack}
         isDark={isDark}

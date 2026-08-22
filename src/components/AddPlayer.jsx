@@ -6,8 +6,7 @@ import styles from "./AddPlayer.module.css";
 
 /**
  * "Neuer Spieler": a button that opens an inline name field and writes one
- * row to the players table. Shared by the new-game modal and the games
- * archive so both offer the same flow.
+ * row to the players table. Used in the new-game modal's empty seats.
  *
  * An added player is recorded like anyone else — games, decks, archive entry —
  * but the statistics only ever count the pod (PLAYERS in utils/stats.js), so

@@ -191,3 +191,65 @@ Database → API → "Reload schema"), damit der `decks(name)`-Embed in
 `getGames()` sofort funktioniert, statt auf den automatischen Reload zu
 warten.
 
+## Atomare Spiel-Writes: `save_game` / `update_game`
+
+Ein Spiel besteht aus einer `games`-Zeile plus mehreren
+`game_participants`-Zeilen. Würde die App diese in getrennten Requests
+schreiben, könnte ein Fehler zwischen den beiden Schritten ein Spiel ohne
+Teilnehmer hinterlassen (bzw. beim Bearbeiten die alte Aufstellung löschen,
+bevor die neue gespeichert ist). Die beiden folgenden Funktionen kapseln das
+in **je einer Transaktion** — `addGame` / `updateGame` in `supabaseClient.js`
+rufen nur noch `supabase.rpc(...)` auf. Einmalig im **SQL Editor** ausführen:
+
+```sql
+create or replace function public.save_game(p_played_at timestamptz, p_participants jsonb)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_game_id uuid;
+begin
+  insert into public.games (played_at)
+  values (coalesce(p_played_at, now()))
+  returning id into v_game_id;
+
+  insert into public.game_participants (game_id, player, player_id, deck, deck_id, is_winner)
+  select
+    v_game_id,
+    e->>'player',
+    (select id from public.players where slug = e->>'player'),
+    e->>'deck',
+    nullif(e->>'deckId', '')::uuid,
+    coalesce((e->>'isWinner')::boolean, false)
+  from jsonb_array_elements(p_participants) as e;
+
+  return v_game_id;
+end;
+$$;
+
+create or replace function public.update_game(p_id uuid, p_played_at timestamptz, p_participants jsonb)
+returns void
+language plpgsql
+as $$
+begin
+  update public.games set played_at = p_played_at where id = p_id;
+  delete from public.game_participants where game_id = p_id;
+
+  insert into public.game_participants (game_id, player, player_id, deck, deck_id, is_winner)
+  select
+    p_id,
+    e->>'player',
+    (select id from public.players where slug = e->>'player'),
+    e->>'deck',
+    nullif(e->>'deckId', '')::uuid,
+    coalesce((e->>'isWinner')::boolean, false)
+  from jsonb_array_elements(p_participants) as e;
+end;
+$$;
+```
+
+`p_participants` ist das JSON-Array, das der New-Game-Modal baut:
+`[{ player, deck, deckId, isWinner }]`. `player_id` wird serverseitig über den
+Slug aufgelöst (unabhängig vom Client-Cache), `deck_id` kommt aus dem `deckId`,
+das der Client im AllDecks-Cache nachgeschlagen hat.
+

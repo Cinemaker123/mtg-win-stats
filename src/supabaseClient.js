@@ -223,7 +223,6 @@ export async function saveDecks(player, decks) {
 // ============================================================
 
 const GAMES_TABLE = 'games'
-const PARTICIPANTS_TABLE = 'game_participants'
 
 /**
  * Fetch all games with their participants, newest first
@@ -253,75 +252,44 @@ export async function getGames() {
 }
 
 /**
- * Insert a game's participant rows. Shared by addGame and updateGame,
- * which build the identical payload. Both the id foreign keys and the
- * original text columns are written — see the note in AGENTS.md on why
- * the text is kept.
- * @param {string} gameId - game the participants belong to
- * @param {Array} participants - [{ player, deck, deckId, isWinner }]
- */
-async function insertParticipants(gameId, participants) {
-  const playerIdMap = await getPlayerIdMap()
-  unwrap(
-    await supabase
-      .from(PARTICIPANTS_TABLE)
-      .insert(participants.map(p => ({
-        game_id: gameId,
-        player: p.player,
-        player_id: playerIdMap[p.player] ?? null,
-        deck: p.deck,
-        deck_id: p.deckId ?? null,
-        is_winner: p.isWinner,
-      }))),
-    'Error inserting participants'
-  )
-}
-
-/**
- * Insert a game with its participants
+ * Insert a game with its participants, atomically.
+ * The `save_game` Postgres function inserts the game row and all participant
+ * rows in one transaction, so a mid-write failure can no longer leave a game
+ * with no participants (see SUPABASE_SETUP.md for the function definition).
+ * `player_id` is resolved server-side by slug; `deck_id` comes from the
+ * `deckId` the caller looked up in the AllDecks cache.
  * @param {Object} game
  * @param {string} [game.playedAt] - ISO timestamp (defaults to now)
  * @param {Array} game.participants - [{ player, deck, deckId, isWinner }]
  * @returns {Promise<string>} - the new game's id
  */
 export async function addGame({ playedAt, participants }) {
-  const game = unwrap(
-    await supabase
-      .from(GAMES_TABLE)
-      .insert({ played_at: playedAt || new Date().toISOString() })
-      .select('id')
-      .single(),
+  return unwrap(
+    await supabase.rpc('save_game', {
+      p_played_at: playedAt || new Date().toISOString(),
+      p_participants: participants,
+    }),
     'Error inserting game'
   )
-
-  await insertParticipants(game.id, participants)
-
-  return game.id
 }
 
 /**
- * Update a game: new played_at, participants replaced wholesale
+ * Update a game: new played_at, participants replaced wholesale — atomically.
+ * The `update_game` Postgres function updates the game, deletes the old
+ * participants and inserts the new ones in one transaction, so a failed insert
+ * can no longer wipe the original line-up.
  * @param {string} id - game id
  * @param {Object} game - { playedAt, participants }
  */
 export async function updateGame(id, { playedAt, participants }) {
-  // Different tables, neither depends on the other's result — overlap them.
-  const [updateResult, deleteResult] = await Promise.all([
-    supabase
-      .from(GAMES_TABLE)
-      .update({ played_at: playedAt })
-      .eq('id', id),
-    supabase
-      .from(PARTICIPANTS_TABLE)
-      .delete()
-      .eq('game_id', id),
-  ])
-
-  unwrap(updateResult, 'Error updating game')
-  unwrap(deleteResult, 'Error replacing participants')
-
-  // The insert must follow the delete — it replaces the same rows.
-  await insertParticipants(id, participants)
+  unwrap(
+    await supabase.rpc('update_game', {
+      p_id: id,
+      p_played_at: playedAt,
+      p_participants: participants,
+    }),
+    'Error updating game'
+  )
 }
 
 /**

@@ -220,7 +220,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       key={p.player}
                       variant="player"
                       avatar={<PlayerAvatar player={p.player} className={styles.playerAvatar} />}
-                      name={p.player}
+                      name={capitalize(p.player)}
                       meta={`${p.deckCount} Decks • ${p.totalGames} Spiele`}
                       tier={tier}
                       winRate={p.winRate}

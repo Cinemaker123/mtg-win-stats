@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { PLAYER_COLORS, POD_BASELINE_WR } from "../utils/stats.js";
+import { PLAYER_COLORS, POD_BASELINE_WR, capitalize } from "../utils/stats.js";
 import styles from "./PlayerStrengthChart.module.css";
 
 const W = 320;
@@ -62,11 +62,11 @@ export function PlayerStrengthChart({ playerStats }) {
           const y = rowY(i);
           const cx = x(p.adjusted);
           const color = PLAYER_COLORS[p.player];
-          const label = `${p.player}: ${(p.adjusted * 100).toFixed(1)}% adjustiert (${p.totalGames} Spiele)`;
+          const label = `${capitalize(p.player)}: ${(p.adjusted * 100).toFixed(1)}% adjustiert (${p.totalGames} Spiele)`;
           return (
             <g key={p.player}>
               <text x={0} y={y + 4} className={styles.rowLabel} fill={color}>
-                {p.player}
+                {capitalize(p.player)}
               </text>
               <circle cx={cx} cy={y} r={6} fill={color} className={styles.dot}>
                 <title>{label}</title>

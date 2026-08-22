@@ -69,7 +69,6 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     loading: loadingDecks,
     error: decksError,
     addDeckLocally,
-    retry: reloadPlayers,
   } = useAllDecks();
   // Snapshot of the opening state, kept for the untouched-form check below
   const [initial] = useState(() => initialFormState(editGame));
@@ -153,10 +152,9 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   };
 
   // A player added mid-entry is almost always meant for this game, so take a
-  // free slot straight away; with a full grid they are only registered and the
-  // hint below the grid explains why nothing moved.
+  // free slot straight away. The AllDecksProvider players-table subscription
+  // refetches the registry on its own, so no manual reload is needed here.
   const handlePlayerAdded = (slug) => {
-    reloadPlayers();
     addParticipant(slug);
   };
 
@@ -300,7 +298,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
 
                     <div className={styles.playerRow}>
                       <PlayerAvatar player={player} className={styles.avatar} />
-                      <span className={styles.playerName}>{player}</span>
+                      <span className={styles.playerName}>{capitalize(player)}</span>
                     </div>
 
                     {addingDeckFor === player ? (

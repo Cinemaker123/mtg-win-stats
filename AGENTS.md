@@ -115,7 +115,13 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
   deletes rows missing from the list — local state is authoritative.
   Used only for registry changes (add/delete deck).
 - **Game CRUD**: `addGame` / `updateGame` / `deleteGame` write directly
-  (no dirty flag); `updateGame` replaces participants wholesale.
+  (no dirty flag). `addGame` and `updateGame` call the `save_game` /
+  `update_game` Postgres functions (`supabase.rpc(...)`) so the game row
+  and its participants are written in **one transaction** — a mid-write
+  failure can no longer leave a game with zero participants or wipe the
+  original line-up on edit. `update_game` replaces participants wholesale.
+  The function definitions live in SUPABASE_SETUP.md and must be applied
+  once in the SQL editor.
 - **IDs alongside names**: `decks` and `game_participants` carry
   `player_id`/`deck_id` foreign keys (into `players`/`decks`) next to
   their original `player`/`deck` text columns — the text columns are
@@ -125,8 +131,10 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
   returns null and the stored text becomes a permanent historical
   snapshot instead of a dangling reference. `getPlayerIdMap()` caches
   the player slug→id lookup for the page lifetime and is used whenever
-  a row is written (`saveDecks`, `addDeckToRegistry`, `addGame`,
-  `updateGame`) so `player_id` stays populated on new rows.
+  a deck row is written (`saveDecks`, `addDeckToRegistry`) so `player_id`
+  stays populated. For games, `save_game` / `update_game` resolve
+  `player_id` server-side from the slug, so participant rows never depend
+  on the client cache being fresh.
 - **Realtime**: `useDecks` subscribes to `postgres_changes` filtered by
   player and refetches on remote writes (echoes of own saves suppressed
   for 1s). `GamesProvider` subscribes to `games` + `game_participants`
