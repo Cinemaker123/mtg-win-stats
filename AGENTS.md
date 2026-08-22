@@ -575,6 +575,22 @@ The committer identity (and the default `git log` view) stays pascal müller eit
 
 > Note: neither Kimi nor Claude Code should push commits to the remote by default. Keep commits local and let the user push when they're ready.
 
+### Branch Naming
+
+Feature branches use `<type>/<short-kebab-description>`, following Conventional
+Commits types:
+
+| Type | For |
+|------|-----|
+| `feat/` | new capability or user-facing feature |
+| `fix/` | bug fix |
+| `chore/` | tooling, deps, config, DB ops with no app-behavior change |
+| `docs/` | documentation only |
+| `refactor/` | code change that neither fixes a bug nor adds a feature |
+
+Description is lowercase kebab-case, no trailing ticket noise. Example:
+`feat/level1-rls-hardening`, `fix/deck-rename-race`, `docs/auth-hardening-notes`.
+
 ## Deployment
 
 **Vercel setup:**
