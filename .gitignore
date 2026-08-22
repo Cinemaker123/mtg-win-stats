@@ -53,3 +53,6 @@ graphify-out/
 
 # Local MCP server wiring (personal, and the Supabase entry pins a project ref)
 .mcp.json
+
+# Playwright MCP session artifacts (throwaway page-state snapshots)
+.playwright-mcp/
