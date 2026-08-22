@@ -57,6 +57,19 @@ beforeEach(async () => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
+
+describe("missing credentials", () => {
+  it("warns at import time when the Supabase env vars are unset", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubEnv("VITE_SUPABASE_URL", "");
+    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
+    vi.resetModules();
+    await import("./supabaseClient.js");
+
+    expect(err).toHaveBeenCalledWith(expect.stringContaining("credentials missing"));
+  });
 });
 
 describe("atomic game writes", () => {
@@ -223,6 +236,27 @@ describe("saveDecks", () => {
     expect(h.state.builderCalls.some((c) => c.method === "upsert")).toBe(false);
     expect(h.state.builderCalls.some((c) => c.method === "not")).toBe(false);
     expect(h.state.builderCalls.some((c) => c.table === "decks" && c.method === "delete")).toBe(true);
+  });
+});
+
+describe("deleteGame", () => {
+  it("deletes the games row by id", async () => {
+    await mod.deleteGame("g5");
+    const del = h.state.builderCalls.find((c) => c.table === "games" && c.method === "delete");
+    const eq = h.state.builderCalls.find((c) => c.table === "games" && c.method === "eq");
+    expect(del).toBeTruthy();
+    expect(eq.args).toEqual(["id", "g5"]);
+  });
+});
+
+describe("renameDeckRegistry", () => {
+  it("updates the deck name by id (and touches updated_at)", async () => {
+    await mod.renameDeckRegistry("d3", "New Name");
+    const update = h.state.builderCalls.find((c) => c.table === "decks" && c.method === "update");
+    const eq = h.state.builderCalls.find((c) => c.table === "decks" && c.method === "eq");
+    expect(update.args[0]).toEqual(expect.objectContaining({ name: "New Name" }));
+    expect(update.args[0].updated_at).toBeTruthy();
+    expect(eq.args).toEqual(["id", "d3"]);
   });
 });
 
