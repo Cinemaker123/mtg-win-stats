@@ -28,6 +28,7 @@ mtg-win-stats/
 │   │   ├── D20_icon.png           # D20 die image
 │   │   └── logo.png               # MTG logo
 │   ├── components/
+│   │   ├── AddPlayer.jsx         # "Neuer Spieler": inline add-player field (new-game modal seats)
 │   │   ├── D20.jsx               # D20 die display component
 │   │   ├── DarkModeToggle.jsx    # Dark mode toggle button
 │   │   ├── DeckScatter.jsx       # Activity vs. win rate scatter (SVG)
@@ -64,12 +65,14 @@ mtg-win-stats/
 │   ├── styles/
 │   │   ├── theme.css             # CSS custom properties (light/dark) + reset
 │   │   └── viewChrome.module.css # Shell/header/spinner shared by the 3 full views
-│   ├── supabaseClient.js         # Supabase API client (decks + games CRUD)
+│   ├── supabaseClient.js         # Supabase API client (decks + games + players CRUD)
 │   └── main.jsx                  # Vite entry point
 ├── public/
 │   ├── manifest.webmanifest      # PWA manifest
 │   ├── apple-touch-icon.png
 │   └── icons/                    # PWA launcher icons (192, 512)
+├── db/
+│   └── level1_rls.sql           # Level 1 RLS hardening SQL (run once in SQL editor; see auth.md)
 ├── eslint.config.js              # ESLint flat config
 ├── index.html
 ├── package.json
@@ -152,6 +155,15 @@ Hash-based routing in `App.jsx` (survives page refresh, back/forward works):
   `GlobalStatsView` and `NewGameModal` read the shared cache, so opening
   the game modal costs no query. `useDecks` still calls the per-player
   `getDecks(player)` — that one's correctly scoped.
+- **Added players**: `addPlayer(name)` (from the `AddPlayer` component in
+  the new-game modal's empty seats) upserts one row into the `players`
+  table — slug from `playerSlug`, the table's unique constraint being the
+  real dedupe guard — then busts the `getPlayerIdMap` cache so the new
+  slug resolves immediately. An added player is recorded like anyone else
+  (games, decks, archive), but every statistic keys off `PLAYERS` in
+  `stats.js`, so they stay out of all rankings until added there
+  deliberately. `getDecksByPlayer()` unions `PLAYERS` with the live slugs,
+  which is what lets an added player own decks at all.
 - **Deck ids in the cache**: entries in the `AllDecksProvider` cache
   carry their `id`, and `NewGameModal` resolves each participant's
   `deck_id` out of it by name. A deck added optimistically via
@@ -238,6 +250,9 @@ created a second, unreferenced source of truth that could drift.
    - "＋ Neues Deck" quick-add writes to the deck registry
    - Participants removable (✕, min. `MIN_PARTICIPANTS`) and re-addable
      via empty slots
+   - "＋ Neuer Spieler" in an empty seat adds a brand-new player
+     (`AddPlayer` → `players` table); they can play immediately but stay
+     out of pod stats (see Data Layer → Added players)
    - Edit mode (from archive): change date, decks, winner; delete game
    - **Never discards input by accident**: the backdrop and Escape close
      the modal only while the form is untouched. Once anything has been
@@ -626,4 +641,7 @@ repo only.
 - Win/loss streak tracking
 - Head-to-head matchup records (possible with v2 game data)
 - Seasonal statistics reset
-- Auth + row level security (see `auth.md`)
+- **Auth — Level 2/3 in `auth.md`.** Level 1 (RLS enabled + allow-all
+  policies, `decks_counts_check`, pinned RPC `search_path`) is **applied**
+  via `db/level1_rls.sql` and verified live; net anon access is unchanged.
+  A PIN gate (Level 2) or real per-player auth (Level 3) remain optional.
