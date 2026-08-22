@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
 import { useAllDecks } from "../hooks/useAllDecks.js";
-import { PLAYERS, PLAYER_COLORS, MIN_PARTICIPANTS } from "../utils/stats.js";
+import { PLAYERS, MIN_PARTICIPANTS, MAX_PARTICIPANTS, capitalize, playerColor } from "../utils/stats.js";
+import { AddPlayer } from "./AddPlayer.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import styles from "./NewGameModal.module.css";
 
@@ -26,7 +27,12 @@ function toLocalInputValue(iso) {
 function initialFormState(editGame) {
   const entries = editGame ? editGame.participants : [];
   return {
-    participants: editGame ? entries.map(p => p.player) : [...PLAYERS],
+    // Fixed-length seats (null = empty) so removing a player leaves a hole in
+    // place instead of shifting everyone toward the last cell.
+    participants: Array.from(
+      { length: MAX_PARTICIPANTS },
+      (_, i) => (editGame ? entries.map(p => p.player) : PLAYERS)[i] ?? null
+    ),
     deckByPlayer: Object.fromEntries(entries.map(p => [p.player, p.deck])),
     winner: entries.find(p => p.isWinner)?.player ?? null,
     playedAt: toLocalInputValue(editGame ? editGame.playedAt : new Date().toISOString()),
@@ -63,6 +69,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     loading: loadingDecks,
     error: decksError,
     addDeckLocally,
+    retry: reloadPlayers,
   } = useAllDecks();
   // Snapshot of the opening state, kept for the untouched-form check below
   const [initial] = useState(() => initialFormState(editGame));
@@ -75,7 +82,17 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const availablePlayers = PLAYERS.filter(p => !participants.includes(p));
+  // Keyed on the players table via AllDecksProvider, so anyone added through
+  // "Neuer Spieler" can be picked here; the pod is listed first.
+  const knownPlayers = Object.keys(playersDecks);
+  const availablePlayers = [
+    ...PLAYERS.filter(p => knownPlayers.includes(p)),
+    ...knownPlayers.filter(p => !PLAYERS.includes(p)),
+  ].filter(p => !participants.includes(p));
+  const seatedPlayers = participants.filter(Boolean);
+  // The one empty seat that carries the "Neuer Spieler" button, so it shows
+  // once and always in the topmost free cell.
+  const firstEmptyIndex = participants.indexOf(null);
 
   // Every field lives in local state and the modal is unmounted on close, so
   // dismissing it discards the entry with no undo. Comparing against the
@@ -85,7 +102,6 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     newDeckName !== "" ||
     winner !== initial.winner ||
     playedAt !== initial.playedAt ||
-    participants.length !== initial.participants.length ||
     participants.some((p, i) => p !== initial.participants[i]) ||
     !sameDeckMap(deckByPlayer, initial.deckByPlayer);
 
@@ -104,7 +120,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   }, [isDirty, onClose]);
 
   const removeParticipant = (player) => {
-    setParticipants(ps => ps.filter(p => p !== player));
+    setParticipants(ps => ps.map(p => (p === player ? null : p)));
     setDeckByPlayer(d => {
       const next = { ...d };
       delete next[player];
@@ -113,9 +129,35 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     setWinner(w => (w === player ? null : w));
   };
 
+  // Seat a player in a specific cell — the ＋ Spieler select fills its own
+  // slot so a pick never jumps to a different empty seat.
+  const seatPlayer = (slot, player) => {
+    if (!player) return;
+    setParticipants(ps => {
+      if (ps.includes(player)) return ps;
+      const next = [...ps];
+      next[slot] = player;
+      return next;
+    });
+  };
+
+  // Seat a player in the topmost free cell — used for a just-created player,
+  // whose button lives in that same cell.
   const addParticipant = (player) => {
     if (!player) return;
-    setParticipants(ps => [...ps, player]);
+    setParticipants(ps => {
+      if (ps.includes(player)) return ps;
+      const i = ps.indexOf(null);
+      return i === -1 ? ps : ps.map((p, idx) => (idx === i ? player : p));
+    });
+  };
+
+  // A player added mid-entry is almost always meant for this game, so take a
+  // free slot straight away; with a full grid they are only registered and the
+  // hint below the grid explains why nothing moved.
+  const handlePlayerAdded = (slug) => {
+    reloadPlayers();
+    addParticipant(slug);
   };
 
   const quickAddDeck = async (player) => {
@@ -147,9 +189,9 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   };
 
   const isValid =
-    participants.length >= MIN_PARTICIPANTS &&
+    seatedPlayers.length >= MIN_PARTICIPANTS &&
     winner !== null &&
-    participants.every(p => deckByPlayer[p]);
+    seatedPlayers.every(p => deckByPlayer[p]);
 
   const save = async () => {
     if (!isValid || saving) return;
@@ -157,7 +199,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     setError(null);
     const payload = {
       playedAt: new Date(playedAt).toISOString(),
-      participants: participants.map(p => {
+      participants: seatedPlayers.map(p => {
         const deckName = deckByPlayer[p];
         const deckId = (playersDecks[p] || []).find(d => d.name === deckName)?.id ?? null;
         return {
@@ -207,7 +249,31 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
             )}
 
             <div className={styles.grid}>
-              {participants.map(player => {
+              {participants.map((player, slot) => {
+                if (!player) {
+                  return (
+                    <div key={`empty-${slot}`} className={styles.emptyCell}>
+                      {availablePlayers.length > 0 && (
+                        <select
+                          className={styles.deckSelect}
+                          value=""
+                          onChange={e => seatPlayer(slot, e.target.value)}
+                        >
+                          <option value="">＋ Spieler</option>
+                          {availablePlayers.map(p => (
+                            <option key={p} value={p}>{capitalize(p)}</option>
+                          ))}
+                        </select>
+                      )}
+                      {/* One button, in the topmost free cell, and never when
+                          the grid is full — a new player would have nowhere to
+                          go. */}
+                      {slot === firstEmptyIndex && (
+                        <AddPlayer knownPlayers={knownPlayers} onAdded={handlePlayerAdded} />
+                      )}
+                    </div>
+                  );
+                }
                 const isWinner = winner === player;
                 const decks = [...(playersDecks[player] || [])].sort(
                   (a, b) => (b.wins + b.losses) - (a.wins + a.losses)
@@ -218,13 +284,13 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
                   <div
                     key={player}
                     className={`${styles.cell} ${isWinner ? styles.cellWinner : ""}`}
-                    style={{ "--accent": PLAYER_COLORS[player] }}
+                    style={{ "--accent": playerColor(player) }}
                     onClick={() => setWinner(isWinner ? null : player)}
                   >
                     <button
                       className={styles.removeBtn}
                       title="Teilnehmer entfernen"
-                      aria-label={`${player} entfernen`}
+                      aria-label={`${capitalize(player)} entfernen`}
                       onClick={e => {
                         e.stopPropagation();
                         removeParticipant(player);
@@ -278,22 +344,6 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
                   </div>
                 );
               })}
-
-              {/* Empty slots to re-add removed players */}
-              {availablePlayers.map((_, i) => (
-                  <div key={`empty-${i}`} className={styles.emptyCell}>
-                    <select
-                      className={styles.deckSelect}
-                      value=""
-                      onChange={e => addParticipant(e.target.value)}
-                    >
-                      <option value="">＋ Spieler</option>
-                      {availablePlayers.map(p => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-              ))}
             </div>
 
             <div className={styles.actions}>

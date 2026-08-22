@@ -1,0 +1,70 @@
+.openButton {
+  composes: tapTarget from "../styles/viewChrome.module.css";
+  position: relative;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1.5px dashed var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.openButton:hover {
+  border-color: var(--color-accent-primary);
+  color: var(--color-text);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+}
+
+.input {
+  /* Fill the row so the field + tick span the same width as the ＋ Spieler
+     select and the closed button above/beside them. */
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  /* 16px so iOS does not zoom (and visually enlarge) the field on focus. */
+  font-size: 16px;
+  font-family: var(--font-body);
+}
+
+.saveButton {
+  composes: tapTarget from "../styles/viewChrome.module.css";
+  position: relative;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-btn-win-bg);
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.error {
+  font-size: 11px;
+  color: var(--color-error);
+}

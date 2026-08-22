@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { PLAYERS, PLAYER_GRADIENTS } from "../utils/stats.js";
+import { playerGradient } from "../utils/stats.js";
 import styles from "./PlayerAvatar.module.css";
 
 /**
@@ -7,7 +7,8 @@ import styles from "./PlayerAvatar.module.css";
  * the caller's class, so the same component covers the 80px landing-page
  * circle and the 24px badge in a deck row.
  * @param {Object} props
- * @param {string} props.player - Player identifier
+ * @param {string} props.player - Player slug; anyone outside the pod gets the
+ *   neutral fallback gradient rather than no background at all
  * @param {string} [props.className] - Caller's size/radius class
  * @param {string} [props.background] - Overrides the player's gradient
  */
@@ -15,7 +16,7 @@ export function PlayerAvatar({ player, className = "", background = null }) {
   return (
     <div
       className={`${styles.avatar} ${className}`}
-      style={{ background: background ?? PLAYER_GRADIENTS[player] }}
+      style={{ background: background ?? playerGradient(player) }}
     >
       {player[0]}
     </div>
@@ -23,7 +24,8 @@ export function PlayerAvatar({ player, className = "", background = null }) {
 }
 
 PlayerAvatar.propTypes = {
-  player: PropTypes.oneOf(PLAYERS).isRequired,
+  // Any slug, not just the pod: the games archive renders added players too.
+  player: PropTypes.string.isRequired,
   className: PropTypes.string,
   background: PropTypes.string,
 };

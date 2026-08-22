@@ -16,6 +16,31 @@ export const PLAYER_GRADIENTS = {
   wewy: "linear-gradient(135deg, #d9a521, #e8c34a)",
 };
 
+// Anyone outside the pod (added through "Neuer Spieler") has no colour of
+// their own: they appear in the games archive but not in any statistic, so a
+// distinct colour would imply a standing they do not have. This neutral stone
+// keeps white initials legible in both themes.
+export const FALLBACK_PLAYER_COLOR = "#6f6658";
+export const FALLBACK_PLAYER_GRADIENT = "linear-gradient(135deg, #6f6658, #948a79)";
+
+/**
+ * A player's accent colour, falling back to neutral for non-pod players.
+ * @param {string} player - player slug
+ * @returns {string} - hex colour
+ */
+export function playerColor(player) {
+  return PLAYER_COLORS[player] ?? FALLBACK_PLAYER_COLOR;
+}
+
+/**
+ * A player's avatar background, falling back to neutral for non-pod players.
+ * @param {string} player - player slug
+ * @returns {string} - CSS gradient
+ */
+export function playerGradient(player) {
+  return PLAYER_GRADIENTS[player] ?? FALLBACK_PLAYER_GRADIENT;
+}
+
 // Viewport width below which the mobile layout is used
 export const MOBILE_BREAKPOINT = 640;
 
@@ -48,6 +73,17 @@ export function formatPct(wr, digits = 1) {
  */
 export function capitalize(name) {
   return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/**
+ * The canonical slug for a player name: trimmed, inner whitespace collapsed,
+ * lowercased. Both the duplicate check and the DB write go through this so
+ * "Mary  Jane" and "mary jane" resolve to the same player.
+ * @param {string} name - display name as typed
+ * @returns {string} - slug
+ */
+export function playerSlug(name) {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 /**
@@ -129,6 +165,11 @@ export const MIN_STREAK_GAMES = 2;
 // Smallest pod a recorded game can have. Fewer than two players isn't a
 // game, and the new-game modal blocks saving below it.
 export const MIN_PARTICIPANTS = 2;
+
+// Largest pod a recorded game can have. The new-game modal lays participants
+// out in a fixed 2x2 grid, so a fifth would break the layout — the cap is why
+// adding a non-pod player means freeing a slot first.
+export const MAX_PARTICIPANTS = 4;
 
 // Games a deck needs before the scatter plot treats its win rate as
 // meaningful (the "bewährt" zone). Deliberately stricter than

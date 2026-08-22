@@ -10,6 +10,15 @@ import {
   getLastPlayed,
   streakDisplay,
   MIN_STREAK_GAMES,
+  MIN_PARTICIPANTS,
+  MAX_PARTICIPANTS,
+  playerColor,
+  playerSlug,
+  playerGradient,
+  PLAYER_COLORS,
+  PLAYER_GRADIENTS,
+  FALLBACK_PLAYER_COLOR,
+  FALLBACK_PLAYER_GRADIENT,
   PRIOR_GAMES,
   PRIOR_WIN_RATE,
   WIN_RATE_TIERS,
@@ -290,5 +299,38 @@ describe("streakDisplay", () => {
       accent: WIN_RATE_TIERS.STRUGGLING.color,
       noun: "Niederlagen",
     });
+  });
+});
+
+describe("player colours", () => {
+  it("keeps each pod member's own colour and gradient", () => {
+    expect(playerColor("pascal")).toBe(PLAYER_COLORS.pascal);
+    expect(playerGradient("baum")).toBe(PLAYER_GRADIENTS.baum);
+  });
+
+  it("falls back to neutral for a player outside the pod", () => {
+    expect(playerColor("gast")).toBe(FALLBACK_PLAYER_COLOR);
+    expect(playerGradient("gast")).toBe(FALLBACK_PLAYER_GRADIENT);
+  });
+
+  it("never returns undefined, whatever it is handed", () => {
+    expect(playerColor(undefined)).toBe(FALLBACK_PLAYER_COLOR);
+    expect(playerGradient("")).toBe(FALLBACK_PLAYER_GRADIENT);
+  });
+});
+
+describe("pod size bounds", () => {
+  it("allows between two and four participants", () => {
+    expect(MIN_PARTICIPANTS).toBe(2);
+    // The modal's 2x2 grid depends on this; raising it breaks the layout.
+    expect(MAX_PARTICIPANTS).toBe(4);
+  });
+});
+
+describe("playerSlug", () => {
+  it("collapses inner whitespace and lowercases so variants match", () => {
+    expect(playerSlug("Mary  Jane")).toBe("mary jane");
+    expect(playerSlug("  mary jane ")).toBe("mary jane");
+    expect(playerSlug("Mary\tJane")).toBe("mary jane");
   });
 });

@@ -30,7 +30,9 @@ export function AllDecksProvider({ children }) {
     load();
   }, [load]);
 
-  // Realtime: refetch when any player's decks change (debounced)
+  // Realtime: refetch when any player's decks change, or when a player is
+  // added on another device — the grouping is keyed on the players table, so
+  // a new row changes the result of this fetch (debounced, one channel)
   useEffect(() => {
     let timeout = null;
     const schedule = () => {
@@ -41,6 +43,7 @@ export function AllDecksProvider({ children }) {
     const channel = supabase
       .channel("decks-all")
       .on("postgres_changes", { event: "*", schema: "public", table: "decks" }, schedule)
+      .on("postgres_changes", { event: "*", schema: "public", table: "players" }, schedule)
       .subscribe();
 
     return () => {

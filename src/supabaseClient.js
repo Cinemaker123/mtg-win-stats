@@ -2,7 +2,7 @@
 // Players: baum, mary, pascal, wewy
 
 import { createClient } from '@supabase/supabase-js'
-import { PLAYERS } from './utils/stats.js'
+import { PLAYERS, playerSlug } from './utils/stats.js'
 
 // Get these from: https://supabase.com/dashboard → Project Settings → API
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
@@ -41,7 +41,8 @@ function unwrap({ data, error }, context) {
 
 /**
  * Fetch and cache the player slug -> id map from the `players` table.
- * Cached for the lifetime of the page since the 4 players never change.
+ * Cached for the page's lifetime; `addPlayer` clears the cache so a newly
+ * added player is resolvable straight away.
  * @returns {Promise<Object>} - { [slug]: id }
  */
 let playerIdMapPromise = null
@@ -60,6 +61,36 @@ async function getPlayerIdMap() {
       })
   }
   return playerIdMapPromise
+}
+
+/**
+ * Every player slug known to the database, pod members included.
+ * @returns {Promise<string[]>} - slugs
+ */
+export async function getPlayerSlugs() {
+  return Object.keys(await getPlayerIdMap())
+}
+
+/**
+ * Add a player. Their games and decks are recorded like anyone else's, but
+ * only the pod (PLAYERS in utils/stats.js) is counted in the statistics, so a
+ * new player shows up in the games archive and nowhere else.
+ * @param {string} name - display name as typed
+ * @returns {Promise<string>} - the player's slug (existing row reused as-is)
+ */
+export async function addPlayer(name) {
+  const trimmed = name.trim().replace(/\s+/g, ' ')
+  const slug = playerSlug(name)
+  unwrap(
+    await supabase
+      .from(PLAYERS_TABLE)
+      .upsert({ slug, name: trimmed }, { onConflict: 'slug', ignoreDuplicates: true }),
+    'Error adding player'
+  )
+  // The cached map predates this row, so every later player_id lookup would
+  // resolve to null without this.
+  playerIdMapPromise = null
+  return slug
 }
 
 /**
@@ -109,15 +140,26 @@ export async function getAllDecks() {
 }
 
 /**
- * Fetch all decks in one call, grouped by player. Every player in PLAYERS
- * gets an entry (empty array if they have no decks yet); rows belonging to
- * an unknown player are ignored.
+ * Fetch all decks in one call, grouped by player. Every player known to the
+ * database gets an entry (empty array if they have no decks yet), the pod
+ * included even when the players table cannot be read. Grouping by the table
+ * rather than by PLAYERS is what lets an added player own decks at all — the
+ * old version silently dropped their rows.
  * @returns {Promise<Object>} - { [player]: Array<{ id, name, wins, losses }> }
  */
 export async function getDecksByPlayer() {
-  const decks = await getAllDecks()
-  const byPlayer = Object.fromEntries(PLAYERS.map(p => [p, []]))
-  decks.forEach(d => { byPlayer[d.player]?.push(d) })
+  // The pod (PLAYERS) must survive a players-table read failure, so a failed
+  // slug fetch degrades to "no extra players" rather than rejecting the whole
+  // registry load.
+  const [decks, slugs] = await Promise.all([
+    getAllDecks(),
+    getPlayerSlugs().catch(() => []),
+  ])
+  const byPlayer = Object.fromEntries([...new Set([...PLAYERS, ...slugs])].map(p => [p, []]))
+  decks.forEach(d => {
+    byPlayer[d.player] = byPlayer[d.player] || []
+    byPlayer[d.player].push(d)
+  })
   return byPlayer
 }
 
