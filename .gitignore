@@ -50,3 +50,6 @@ CLEANUP-BACKLOG.md
 # state anyway. .claude/ is local hook wiring.
 graphify-out/
 .claude/
+
+# Local MCP server wiring (personal, and the Supabase entry pins a project ref)
+.mcp.json
