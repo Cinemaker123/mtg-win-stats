@@ -497,7 +497,10 @@ permanent historical snapshot for deleted decks), but `decks` and
 SQL Editor (see SUPABASE_SETUP.md); this phase is the code side:
 - `getPlayerIdMap()` in `supabaseClient.js` caches the player slug→id
   lookup, used by every write path (`saveDecks`, `addDeckToRegistry`,
-  `addGame`, `updateGame`) to populate `player_id`
+  `addGame`, `updateGame`) to populate `player_id` (later superseded for
+  games: the atomic `save_game`/`update_game` RPC resolves `player_id`
+  server-side, so only the deck writes still use `getPlayerIdMap()` —
+  see the current-state Data Layer section above)
 - `getGames()` embeds `decks(name)` via `deck_id` and prefers the live
   name over the stored text, so renames show up everywhere instantly
 - `renameDeckInGames` (propagation write into every game row) removed

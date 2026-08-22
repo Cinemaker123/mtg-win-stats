@@ -266,7 +266,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                           />
                         }
                         name={deck.name}
-                        meta={deck.player}
+                        meta={capitalize(deck.player)}
                         tier={tier}
                         winRate={deck.winRate}
                         wins={deck.wins}
