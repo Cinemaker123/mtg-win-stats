@@ -21,21 +21,19 @@ Enable RLS with policies that allow exactly what the app does, plus CHECK
 constraints so garbage rows are impossible even with the key. Protection
 against people: zero change. Protection against nonsense data: real.
 
-```sql
-alter table public.decks enable row level security;
-alter table public.decks add constraint decks_player_check
-  check (player in ('baum','mary','pascal','wewy'));
-alter table public.decks add constraint decks_counts_check
-  check (wins >= 0 and losses >= 0);
+**Status: applied — see `db/level1_rls.sql` (run in the Supabase SQL Editor).**
+Covers `decks`, `games`, `game_participants`, and `players` (the last
+postdates this doc but is core to the model). Two deviations from the original
+draft below:
 
-create policy "anon read"   on public.decks for select using (true);
-create policy "anon write"  on public.decks for insert with check (true);
-create policy "anon update" on public.decks for update using (true) with check (true);
-create policy "anon delete" on public.decks for delete using (true);
-```
+- **No player-name CHECK.** Players are added dynamically via the `players`
+  table, so a hardcoded `player in ('baum','mary',...)` would block new
+  inserts. Player validity is enforced by the `player_id` FK instead.
+- **`players` table included** in the RLS pass.
 
-Same pattern for `games` / `game_participants`. Gotcha: enabling RLS without
-policies makes the app silently return empty data — test immediately after.
+Gotcha: enabling RLS without policies makes the app silently return empty
+data — the SQL adds the allow-all policies in the same transaction, so test
+immediately after regardless.
 
 ## Level 2 — PIN gate + RPC-only access (~half a day, real casual protection)
 
