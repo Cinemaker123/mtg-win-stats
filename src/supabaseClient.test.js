@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
     rpcResults: {}, // function name -> { data, error }
     fromCalls: [], // table names passed to .from(), in call order
     rpcCalls: [], // { fn, params } passed to .rpc()
+    builderCalls: [], // { table, method, args } for every builder method call
   },
 }));
 
@@ -18,7 +19,10 @@ vi.mock("@supabase/supabase-js", () => {
   const makeBuilder = (table) => {
     const b = {};
     for (const m of ["select", "eq", "order", "upsert", "insert", "delete", "not", "update", "single", "maybeSingle"]) {
-      b[m] = () => b;
+      b[m] = (...args) => {
+        state.builderCalls.push({ table, method: m, args });
+        return b;
+      };
     }
     b.then = (resolve, reject) =>
       Promise.resolve(state.tableResults[table] ?? { data: [], error: null }).then(resolve, reject);
@@ -44,6 +48,7 @@ beforeEach(async () => {
   h.state.rpcResults = {};
   h.state.fromCalls = [];
   h.state.rpcCalls = [];
+  h.state.builderCalls = [];
   vi.spyOn(console, "error").mockImplementation(() => {});
   // Fresh import so the module-level player-id cache resets between tests.
   vi.resetModules();
@@ -129,5 +134,106 @@ describe("addPlayer", () => {
     const playersCalls = h.state.fromCalls.filter((t) => t === "players");
     // fetch + upsert + refetch === 3; without the cache clear it would be 2.
     expect(playersCalls).toHaveLength(3);
+  });
+});
+
+describe("getGames", () => {
+  it("prefers the live joined deck name and falls back to the frozen snapshot", async () => {
+    h.state.tableResults.games = {
+      data: [
+        {
+          id: "g1",
+          played_at: "2026-05-01T00:00:00Z",
+          game_participants: [
+            // deck_id still points at a registry row -> live name wins over the snapshot
+            { player: "baum", deck: "Old Name", is_winner: true, decks: { name: "Renamed" } },
+            // deck was deleted from the registry (decks -> null) -> snapshot text is used
+            { player: "mary", deck: "Frozen Snapshot", is_winner: false, decks: null },
+          ],
+        },
+      ],
+      error: null,
+    };
+
+    const games = await mod.getGames();
+
+    expect(games).toEqual([
+      {
+        id: "g1",
+        playedAt: "2026-05-01T00:00:00Z",
+        participants: [
+          { player: "baum", deck: "Renamed", isWinner: true },
+          { player: "mary", deck: "Frozen Snapshot", isWinner: false },
+        ],
+      },
+    ]);
+  });
+});
+
+describe("deck reads", () => {
+  it("getDecks maps rows to the app shape for one player", async () => {
+    h.state.tableResults.decks = {
+      data: [{ id: "1", player: "baum", name: "Zombies", wins: 3, losses: 1, created_at: "x" }],
+      error: null,
+    };
+    expect(await mod.getDecks("baum")).toEqual([
+      { id: "1", name: "Zombies", wins: 3, losses: 1 },
+    ]);
+  });
+
+  it("getAllDecks keeps the player field for the cross-player registry", async () => {
+    h.state.tableResults.decks = {
+      data: [{ id: "1", player: "baum", name: "Zombies", wins: 3, losses: 1, created_at: "x" }],
+      error: null,
+    };
+    expect(await mod.getAllDecks()).toEqual([
+      { id: "1", player: "baum", name: "Zombies", wins: 3, losses: 1 },
+    ]);
+  });
+});
+
+describe("saveDecks", () => {
+  it("upserts local decks and deletes only rows whose name is no longer present", async () => {
+    h.state.tableResults.players = { data: [{ slug: "baum", id: "p1" }], error: null };
+    await mod.saveDecks("baum", [
+      { name: "Zombies", wins: 2, losses: 1 },
+      { name: "Elves", wins: 0, losses: 0 },
+    ]);
+
+    const upsert = h.state.builderCalls.find((c) => c.table === "decks" && c.method === "upsert");
+    expect(upsert.args[0]).toEqual([
+      expect.objectContaining({ player: "baum", player_id: "p1", name: "Zombies", wins: 2, losses: 1 }),
+      expect.objectContaining({ player: "baum", player_id: "p1", name: "Elves", wins: 0, losses: 0 }),
+    ]);
+    expect(upsert.args[1]).toEqual({ onConflict: "player,name" });
+
+    // The delete keeps every current deck by excluding their names from the purge.
+    const notFilter = h.state.builderCalls.find((c) => c.method === "not");
+    expect(notFilter.args).toEqual(["name", "in", '("Zombies","Elves")']);
+  });
+
+  it("escapes embedded quotes in deck names so the in-filter can't be broken out of", async () => {
+    await mod.saveDecks("baum", [{ name: 'De"ck', wins: 0, losses: 0 }]);
+    const notFilter = h.state.builderCalls.find((c) => c.method === "not");
+    expect(notFilter.args[2]).toBe('("De\\"ck")');
+  });
+
+  it("purges every deck when local state is empty (no in-filter)", async () => {
+    await mod.saveDecks("baum", []);
+    expect(h.state.builderCalls.some((c) => c.method === "upsert")).toBe(false);
+    expect(h.state.builderCalls.some((c) => c.method === "not")).toBe(false);
+    expect(h.state.builderCalls.some((c) => c.table === "decks" && c.method === "delete")).toBe(true);
+  });
+});
+
+describe("addDeckToRegistry", () => {
+  it("returns the new deck's id", async () => {
+    h.state.tableResults.decks = { data: { id: "d42" }, error: null };
+    expect(await mod.addDeckToRegistry("baum", "Goblins")).toBe("d42");
+  });
+
+  it("returns null when the deck already existed (ignoreDuplicates skips the row)", async () => {
+    h.state.tableResults.decks = { data: null, error: null };
+    expect(await mod.addDeckToRegistry("baum", "Goblins")).toBeNull();
   });
 });

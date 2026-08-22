@@ -22,6 +22,8 @@ import {
   PRIOR_GAMES,
   PRIOR_WIN_RATE,
   WIN_RATE_TIERS,
+  formatPct,
+  capitalize,
 } from "./stats.js";
 
 describe("winRate", () => {
@@ -332,5 +334,56 @@ describe("playerSlug", () => {
     expect(playerSlug("Mary  Jane")).toBe("mary jane");
     expect(playerSlug("  mary jane ")).toBe("mary jane");
     expect(playerSlug("Mary\tJane")).toBe("mary jane");
+  });
+});
+
+describe("formatPct", () => {
+  it("renders a 0-1 rate as a percentage with one decimal by default", () => {
+    expect(formatPct(0.429)).toBe("42.9%");
+    expect(formatPct(1)).toBe("100.0%");
+    expect(formatPct(0)).toBe("0.0%");
+  });
+
+  it("honours a custom digit count", () => {
+    expect(formatPct(0.5, 0)).toBe("50%");
+    expect(formatPct(0.12345, 2)).toBe("12.35%");
+  });
+});
+
+describe("capitalize", () => {
+  it("upper-cases the first letter of a lowercase slug", () => {
+    expect(capitalize("baum")).toBe("Baum");
+    expect(capitalize("mary")).toBe("Mary");
+  });
+
+  it("leaves an already-capitalized name unchanged", () => {
+    expect(capitalize("Pascal")).toBe("Pascal");
+  });
+
+  it("does not choke on an empty string", () => {
+    expect(capitalize("")).toBe("");
+  });
+});
+
+describe("getDynamicStats — player game cards", () => {
+  it("appends last-played and streak cards for a player's recent games", () => {
+    const games = [
+      game("2026-07-23T18:00:00Z", ["pascal", "Fallout", true]),
+      game("2026-07-24T18:00:00Z", ["pascal", "Daleks", true]),
+    ];
+    const cards = getDynamicStats([], games, "pascal");
+
+    const lastPlayed = cards.find((c) => c.label === "Zuletzt gespielt");
+    expect(lastPlayed?.value).toBe("Daleks"); // newest game wins
+
+    const streak = cards.find((c) => c.label === "Serie");
+    expect(streak?.value).toBe("2 Siege in Folge");
+  });
+
+  it("omits the game cards when no player is given", () => {
+    const games = [game("2026-07-23T18:00:00Z", ["pascal", "Fallout", true])];
+    const cards = getDynamicStats([], games);
+    expect(cards.find((c) => c.label === "Zuletzt gespielt")).toBeUndefined();
+    expect(cards.find((c) => c.label === "Serie")).toBeUndefined();
   });
 });
