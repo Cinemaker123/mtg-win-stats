@@ -31,3 +31,8 @@ begin
     execute format('create policy "anon delete" on public.%I for delete using (true)', t);
   end loop;
 end $$;
+
+-- Pin the RPC functions' search_path so they can't be hijacked via a mutable
+-- one (Supabase advisor: function_search_path_mutable). Idempotent.
+alter function public.save_game(timestamptz, jsonb)          set search_path = public;
+alter function public.update_game(uuid, timestamptz, jsonb)  set search_path = public;
