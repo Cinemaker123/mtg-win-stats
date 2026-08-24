@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
-import { useAllDecks } from "../hooks/useAllDecks.js";
+import { useAppData } from "../hooks/AppData.jsx";
 import { PLAYERS, MIN_PARTICIPANTS, MAX_PARTICIPANTS, capitalize, playerColor } from "../utils/stats.js";
 import { AddPlayer } from "./AddPlayer.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
@@ -62,14 +62,14 @@ function sameDeckMap(a, b) {
  * @param {Function|null} props.onDelete - Edit mode: delete handler for the game
  */
 export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = null }) {
-  // Shared with Global Stats and kept live by AllDecksProvider, so opening
+  // Shared with Global Stats and kept live by AppDataProvider, so opening
   // the modal costs no query at all.
   const {
-    decksByPlayer: playersDecks,
-    loading: loadingDecks,
-    error: decksError,
+    decksByPlayer,
+    decksLoading,
+    decksError,
     addDeckLocally,
-  } = useAllDecks();
+  } = useAppData();
   // Snapshot of the opening state, kept for the untouched-form check below
   const [initial] = useState(() => initialFormState(editGame));
   const [participants, setParticipants] = useState(initial.participants);
@@ -81,9 +81,9 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Keyed on the players table via AllDecksProvider, so anyone added through
+  // Keyed on the players table via AppDataProvider, so anyone added through
   // "Neuer Spieler" can be picked here; the pod is listed first.
-  const knownPlayers = Object.keys(playersDecks);
+  const knownPlayers = Object.keys(decksByPlayer);
   const availablePlayers = [
     ...PLAYERS.filter(p => knownPlayers.includes(p)),
     ...knownPlayers.filter(p => !PLAYERS.includes(p)),
@@ -152,7 +152,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   };
 
   // A player added mid-entry is almost always meant for this game, so take a
-  // free slot straight away. The AllDecksProvider players-table subscription
+  // free slot straight away. The AppDataProvider players-table subscription
   // refetches the registry on its own, so no manual reload is needed here.
   const handlePlayerAdded = (slug) => {
     addParticipant(slug);
@@ -162,7 +162,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
     const name = newDeckName.trim();
     if (!name) return;
     // Already in registry (any casing): just select it
-    const existing = (playersDecks[player] || []).find(
+    const existing = (decksByPlayer[player] || []).find(
       d => d.name.toLowerCase() === name.toLowerCase()
     );
     if (existing) {
@@ -199,7 +199,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
       playedAt: new Date(playedAt).toISOString(),
       participants: seatedPlayers.map(p => {
         const deckName = deckByPlayer[p];
-        const deckId = (playersDecks[p] || []).find(d => d.name === deckName)?.id ?? null;
+        const deckId = (decksByPlayer[p] || []).find(d => d.name === deckName)?.id ?? null;
         return {
           player: p,
           deck: deckName,
@@ -233,7 +233,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
           <div className={styles.error}>{error || decksError}</div>
         )}
 
-        {loadingDecks ? (
+        {decksLoading ? (
           <div className={styles.loading}>Lade Decks...</div>
         ) : (
           <>
@@ -273,7 +273,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
                   );
                 }
                 const isWinner = winner === player;
-                const decks = [...(playersDecks[player] || [])].sort(
+                const decks = [...(decksByPlayer[player] || [])].sort(
                   (a, b) => (b.wins + b.losses) - (a.wins + a.losses)
                 );
                 const currentDeck = deckByPlayer[player];

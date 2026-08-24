@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useGames } from "../hooks/useGames.js";
+import { useAppData } from "../hooks/AppData.jsx";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
@@ -68,7 +68,7 @@ function groupByDay(games) {
  * Tap a game to edit it; delete offers a 5s undo window (re-insert).
  */
 export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
-  const { games, loading, error, retry } = useGames();
+  const { games, gamesLoading, gamesError, gamesRetry } = useAppData();
   const [editGame, setEditGame] = useState(null);
   const { toast, showToast, dismissToast } = useToast();
 
@@ -117,15 +117,15 @@ export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
 
       {/* Content */}
       <div className={styles.content}>
-        {loading ? (
+        {gamesLoading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />
             <div className={styles.loadingText}>Lade Spiele...</div>
           </div>
-        ) : error ? (
+        ) : gamesError ? (
           <div className={styles.loadingContainer}>
-            <div className={styles.loadingText}>{error}</div>
-            <button className={styles.retryButton} onClick={retry}>Erneut versuchen</button>
+            <div className={styles.loadingText}>{gamesError}</div>
+            <button className={styles.retryButton} onClick={gamesRetry}>Erneut versuchen</button>
           </div>
         ) : groups.length === 0 ? (
           <div className={styles.loadingContainer}>

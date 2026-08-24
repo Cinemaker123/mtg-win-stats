@@ -44,12 +44,10 @@ mtg-win-stats/
 │   │   ├── Toast.jsx             # The only toast renderer ({type, message, action})
 │   │   └── ViewHeader.jsx        # Back button + icon + title + DarkModeToggle
 │   ├── hooks/
-│   │   ├── useAllDecks.js        # All players' registries: context + hook (read side)
-│   │   ├── AllDecksProvider.jsx  # All registries: fetch + realtime, mounted once in App.jsx
+│   │   ├── AppData.jsx           # AppDataProvider + useAppData, mounted once in App.jsx
 │   │   ├── useDarkMode.js        # Dark mode state management
 │   │   ├── useDecks.js           # Deck registry: dirty-flag saves, full sync, realtime
-│   │   ├── useGames.js           # Games archive context + hook (read side)
-│   │   ├── GamesProvider.jsx     # Games archive: fetch + realtime, mounted once in App.jsx
+│   │   ├── useLiveResource.js    # One fetch + debounced realtime channel per resource
 │   │   └── useToast.js           # Shared toast state (show/dismiss/auto-timeout)
 │   ├── utils/
 │   │   ├── stats.js              # Constants, winRate, adjustedWinRate, tiers, combineDeckStats
@@ -90,11 +88,13 @@ mtg-win-stats/
 - **Local React state** through `useState` hooks.
 - **Custom hooks**: `useDecks` holds the registry of the player who edits.
   `useDarkMode` holds the theme.
-- **Two providers, mounted once in `App.jsx`**: `GamesProvider` holds the games
-  archive. `AllDecksProvider` holds the registry of every player. Each provider
-  owns one fetch and one debounced realtime subscription. Every view reads them
-  through `useGames()` and `useAllDecks()`. If a feature needs a third copy of
-  this machinery, extend a provider instead.
+- **One provider, mounted once in `App.jsx`**: `AppDataProvider` holds the games
+  archive and the deck registry of every player. It calls `useLiveResource()`
+  once per resource, which owns the fetch, the debounced realtime channel, and
+  the cleanup. Views read everything through the single `useAppData()` hook.
+  **`AppDataProvider` must stay mounted exactly once, at the app root.** `useLiveResource` is a hook and holds per-instance state, so a
+  call from a view opens a second fetch and a second realtime channel. A new
+  shared resource needs a fetcher and a table list, not a new subscription.
 - **Persistence**: a Supabase PostgreSQL database.
 - **Per-player data isolation**: each deck row stores a player identifier.
 
@@ -109,7 +109,7 @@ forward buttons work:
 - `#/games` → `GamesArchiveView` (games archive)
 - An invalid hash normalizes to `#/`.
 
-### Data Layer (`useDecks` + `useGames` + `supabaseClient`)
+### Data Layer (`useDecks` + `useAppData` + `supabaseClient`)
 
 - **Data Model v2**: the app records results as *games* (the `games` and
   `game_participants` tables), not as manual per-deck counters. The `decks`
@@ -148,17 +148,18 @@ forward buttons work:
   result, participant rows do not depend on a fresh client cache.
 - **Realtime**: `useDecks` subscribes to `postgres_changes` filtered by player
   and refetches on remote writes. It suppresses the echoes of its own saves for
-  1 second. `GamesProvider` subscribes to `games`, `game_participants`, and
-  `decks`. `AllDecksProvider` subscribes to `decks`. Both use a 500 ms debounced
-  refetch, and both are mounted once in `App.jsx`. As a result, every view
-  reads the same cache instead of a separate fetch and subscription.
-  `GamesProvider` includes `decks` because a deck rename now touches only the
+  1 second. In `AppDataProvider`, the games resource subscribes to `games`,
+  `game_participants`, and `decks`. The decks resource subscribes to `decks` and
+  `players`. Both get the 500 ms debounced refetch from `useLiveResource()`, and
+  the provider is mounted once in `App.jsx`. As a result, every view reads the
+  same cache instead of a separate fetch and subscription.
+  The games list includes `decks` because a deck rename now touches only the
   `decks` table (see above). Without it, the cached `games` join would keep the
   old name until a reload. This needs the tables in the `supabase_realtime`
   publication (see SUPABASE_SETUP.md).
 - **Bulk deck fetch**: `getDecksByPlayer()` fetches the decks of every player in
   one unfiltered query and groups them. It guarantees one entry per player in
-  `PLAYERS`. **Only** `AllDecksProvider` calls it. `GlobalStatsView` and
+  `PLAYERS`. **Only** `AppDataProvider` calls it. `GlobalStatsView` and
   `NewGameModal` read the shared cache, so opening the game modal costs no
   query. `useDecks` still calls the per-player `getDecks(player)`. That call is
   correctly scoped.
@@ -171,7 +172,7 @@ forward buttons work:
   `stats.js`. As a result, an added player stays out of all rankings until you
   add them there on purpose. `getDecksByPlayer()` unions `PLAYERS` with the live
   slugs. This is what lets an added player own decks at all.
-- **Deck ids in the cache**: each entry in the `AllDecksProvider` cache carries
+- **Deck ids in the cache**: each entry in the `decksByPlayer` cache carries
   its `id`. `NewGameModal` resolves the `deck_id` of each participant out of the
   cache by name. A deck that is added optimistically through `addDeckLocally`
   must include the id that `addDeckToRegistry` returns. If it does not, a game

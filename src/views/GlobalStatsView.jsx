@@ -3,8 +3,7 @@ import { useMemo } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useGames } from "../hooks/useGames.js";
-import { useAllDecks } from "../hooks/useAllDecks.js";
+import { useAppData } from "../hooks/AppData.jsx";
 
 // Components
 import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
@@ -22,8 +21,8 @@ import styles from "./GlobalStatsView.module.css";
 import chrome from "../styles/viewChrome.module.css";
 
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
-  const { games, loading: gamesLoading, error: gamesError } = useGames();
-  const { decksByPlayer: allData, loading: decksLoading, error: decksError } = useAllDecks();
+  const { games, gamesLoading, gamesError,
+          decksByPlayer, decksLoading, decksError } = useAppData();
   const loading = gamesLoading || decksLoading;
   const error = gamesError || decksError;
 
@@ -32,12 +31,12 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   const stats = useMemo(() => {
     // Combined legacy + game counts, built once per player and reused by
     // every derivation below (it walks the whole games archive each time).
-    const decksByPlayer = PLAYERS.map(player => ({
+    const combinedDecks = PLAYERS.map(player => ({
       player,
-      decks: combineDeckStats(allData[player] || [], games, player),
+      decks: combineDeckStats(decksByPlayer[player] || [], games, player),
     }));
 
-    const playerStats = decksByPlayer.map(({ player, decks }) => {
+    const playerStats = combinedDecks.map(({ player, decks }) => {
       const totalWins = decks.reduce((s, d) => s + d.wins, 0);
       const totalLosses = decks.reduce((s, d) => s + d.losses, 0);
       const record = { wins: totalWins, losses: totalLosses };
@@ -76,7 +75,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
 
     // Every played deck, in pod order for now — ranked further down.
     const allDecks = [];
-    decksByPlayer.forEach(({ player, decks }) => {
+    combinedDecks.forEach(({ player, decks }) => {
       decks.forEach(deck => {
         const total = deck.wins + deck.losses;
         if (total > 0) {
@@ -117,7 +116,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
       // All played decks, sorted by Bayesian-adjusted win rate
       allDecks,
     };
-  }, [allData, games]);
+  }, [decksByPlayer, games]);
 
   return (
     <div className={styles.container}>
