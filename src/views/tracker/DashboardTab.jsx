@@ -67,12 +67,10 @@ export function DashboardTab({ decks, games, player }) {
                     <span className={styles.deckBarRecord}>{d.wins}W – {d.losses}L</span>
                   </div>
                   <div className={styles.deckBarTrack}>
-                    <div 
+                    <div
                       className={styles.deckBarFill}
-                      style={{
-                        width: `${wr*100}%`,
-                        background: getWinRateTier(wr).gradient,
-                      }}
+                      data-tier={getWinRateTier(wr).tier}
+                      style={{ width: `${wr*100}%` }}
                     />
                     <div
                       className={styles.deckBarBaseline}

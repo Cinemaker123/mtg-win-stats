@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { PLAYER_COLORS, POD_BASELINE_WR, capitalize } from "../utils/stats.js";
+import { POD_BASELINE_WR, capitalize } from "../utils/stats.js";
 import styles from "./PlayerStrengthChart.module.css";
 
 const W = 320;
@@ -61,17 +61,16 @@ export function PlayerStrengthChart({ playerStats }) {
         {sorted.map((p, i) => {
           const y = rowY(i);
           const cx = x(p.adjusted);
-          const color = PLAYER_COLORS[p.player];
           const label = `${capitalize(p.player)}: ${(p.adjusted * 100).toFixed(1)}% adjustiert (${p.totalGames} Spiele)`;
           return (
-            <g key={p.player}>
-              <text x={0} y={y + 4} className={styles.rowLabel} fill={color}>
+            <g key={p.player} data-player={p.player}>
+              <text x={0} y={y + 4} className={styles.rowLabel} fill="var(--player-accent)">
                 {capitalize(p.player)}
               </text>
-              <circle cx={cx} cy={y} r={6} fill={color} className={styles.dot}>
+              <circle cx={cx} cy={y} r={6} fill="var(--player-accent)" className={styles.dot}>
                 <title>{label}</title>
               </circle>
-              <text x={W} y={y + 4} textAnchor="end" className={styles.valueLabel} fill={color}>
+              <text x={W} y={y + 4} textAnchor="end" className={styles.valueLabel} fill="var(--player-accent)">
                 {(p.adjusted * 100).toFixed(1)}%
               </text>
             </g>

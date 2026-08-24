@@ -17,21 +17,33 @@
   --color-text-secondary: #5c4c34;
   --color-text-muted: #8a7a5c;
 
+  /* Win-rate tier palette. Every hex in the app appears exactly once, here.
+     JS never holds a colour: components set data-tier / data-player and read
+     the custom property back out. */
+  --tier-legendary: #b4923f;
+  --tier-legendary-dark: #8a6d2c;
+  --tier-legendary-light: #d1ab55;
+  --tier-good: #3d7a56;
+  --tier-good-dark: #2f5f43;
+  --tier-good-light: #4f9c6d;
+  --tier-struggling: #a8384a;
+  --tier-struggling-dark: #7c2536;
+  --tier-struggling-light: #c24f63;
+
+  /* Stat-card accents with no win/loss meaning */
+  --accent-info: #667eea;
+  --accent-activity: #b0399e;
+
   /* Accent Colors */
   --color-accent-primary: #3f5fc9;
-  --color-accent-secondary: #b4923f;
+  --color-accent-secondary: var(--tier-legendary);
 
-  /* Win-rate tier and per-player colors deliberately live only in
-     src/utils/stats.js (WIN_RATE_TIERS / PLAYER_COLORS). They are applied
-     as inline style props, so duplicating them here as custom properties
-     created a second, unreferenced source of truth that could silently
-     drift from the real one. */
-
-  /* Semantic Colors */
-  --color-success: #3d7a56;
-  --color-success-light: #4f9c6d;
-  --color-error: #a8384a;
-  --color-error-dark: #7c2536;
+  /* Semantic Colors. A successful toast and a winning deck share one green on
+     purpose, so they reference the same token instead of repeating the hex. */
+  --color-success: var(--tier-good);
+  --color-success-light: var(--tier-good-light);
+  --color-error: var(--tier-struggling);
+  --color-error-dark: var(--tier-struggling-dark);
 
   /* Win/Loss Gradients */
   --gradient-win: linear-gradient(90deg, var(--color-success), var(--color-success-light));
@@ -114,4 +126,52 @@ body {
   min-height: 100vh;
   transition: background-color var(--transition-base),
               color var(--transition-base);
+}
+
+/* ---------------------------------------------------------------------------
+ * Win-rate tier resolution. A component sets data-tier and reads
+ * --tier-color / --tier-gradient. The bare rule is the "struggling" default.
+ */
+[data-tier] {
+  --tier-color: var(--tier-struggling);
+  --tier-gradient: linear-gradient(90deg, var(--tier-struggling-dark), var(--tier-struggling-light));
+}
+[data-tier="good"] {
+  --tier-color: var(--tier-good);
+  --tier-gradient: linear-gradient(90deg, var(--tier-good-dark), var(--tier-good-light));
+}
+[data-tier="legendary"] {
+  --tier-color: var(--tier-legendary);
+  --tier-gradient: linear-gradient(90deg, var(--tier-legendary-dark), var(--tier-legendary-light));
+}
+
+/* ---------------------------------------------------------------------------
+ * Player palette. A component sets data-player and reads --player-accent /
+ * --player-gradient.
+ *
+ * The bare rule is the fallback for anyone added through "Neuer Spieler".
+ * They appear in the games archive but not in any statistic, so a distinct
+ * colour would imply a standing they do not have. This neutral stone keeps
+ * white initials legible in both themes. Every player past the pod shares it,
+ * no matter how many there are.
+ */
+[data-player] {
+  --player-accent: #6f6658;
+  --player-gradient: linear-gradient(135deg, #6f6658, #948a79);
+}
+[data-player="baum"] {
+  --player-accent: #1f9670;
+  --player-gradient: linear-gradient(135deg, #1f9670, #35c194);
+}
+[data-player="mary"] {
+  --player-accent: #e74c3c;
+  --player-gradient: linear-gradient(135deg, #e74c3c, #f1948a);
+}
+[data-player="pascal"] {
+  --player-accent: #b0399e;
+  --player-gradient: linear-gradient(135deg, #b0399e, #d15fc0);
+}
+[data-player="wewy"] {
+  --player-accent: #d9a521;
+  --player-gradient: linear-gradient(135deg, #d9a521, #e8c34a);
 }

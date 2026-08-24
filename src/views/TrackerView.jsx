@@ -13,7 +13,7 @@ import { Toast } from "../components/Toast.jsx";
 import { ViewHeader } from "../components/ViewHeader.jsx";
 
 // Utils
-import { PLAYERS, PLAYER_COLORS, PLAYER_GRADIENTS, combineDeckStats, capitalize } from "../utils/stats.js";
+import { PLAYERS, combineDeckStats, capitalize } from "../utils/stats.js";
 
 // Utils / API
 import { renameDeckRegistry } from "../supabaseClient.js";
@@ -44,7 +44,6 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   );
   const [tab, setTab] = useState("dashboard");
   const { toast, showToast, dismissToast } = useToast();
-  const accentColor = PLAYER_COLORS[player];
 
   // Surface hook errors (load/save failures) as toasts
   useEffect(() => {
@@ -101,13 +100,13 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-player={player}>
       {toast && <Toast toast={toast} />}
 
       {/* Loading spinner */}
       {loading && (
         <div className={styles.loadingContainer}>
-          <div className={styles.spinner} style={{ borderTopColor: accentColor }} />
+          <div className={styles.spinner} style={{ borderTopColor: "var(--player-accent)" }} />
         </div>
       )}
 
@@ -129,7 +128,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
             <button
               onClick={retry}
               className={styles.importButton}
-              style={{ background: PLAYER_GRADIENTS[player], marginTop: 12 }}
+              style={{ background: "var(--player-gradient)", marginTop: 12 }}
             >
               Erneut versuchen
             </button>
@@ -172,9 +171,11 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
               onClick={() => setTab(t.id)}
               className={tab === t.id ? styles.tabButtonActive : styles.tabButton}
               style={{
-                background: tab === t.id ? `${accentColor}15` : "transparent",
-                borderTop: tab === t.id ? `2.5px solid ${accentColor}` : "2.5px solid transparent",
-                color: tab === t.id ? accentColor : "",
+                background: tab === t.id
+                  ? "color-mix(in srgb, var(--player-accent) 8%, transparent)"
+                  : "transparent",
+                borderTop: tab === t.id ? "2.5px solid var(--player-accent)" : "2.5px solid transparent",
+                color: tab === t.id ? "var(--player-accent)" : "",
               }}
             >
               <span className={styles.tabIcon}>{t.icon}</span>

@@ -18,23 +18,15 @@ export function D20({ number, showResult }) {
         height={130}
         className={styles.dieImage}
       />
-      {/* Number overlay */}
-      <div 
+      {/* Number overlay. data-roll picks the colours out of D20.module.css:
+          a natural 20 is gold, a natural 1 is ink, anything else is neutral. */}
+      <div
         className={styles.overlay}
-        style={{
-          background: showResult && number === 20
-            ? "#b4923f"
-            : showResult && number === 1
-              ? "#1c1712"
-              : "rgba(0,0,0,0.5)",
-        }}
+        data-roll={showResult ? (number === 20 ? "crit" : number === 1 ? "fumble" : "plain") : "hidden"}
       >
         <span
           className={styles.number}
-          style={{
-            fontSize: showResult ? "29px" : "41px",
-            color: showResult && number === 1 ? "#c24f63" : "#fff",
-          }}
+          style={{ fontSize: showResult ? "29px" : "41px" }}
         >
           {showResult ? number : "?"}
         </span>

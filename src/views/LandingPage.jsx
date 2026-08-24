@@ -13,7 +13,7 @@ import { NewGameModal } from "../components/NewGameModal.jsx";
 import { Toast } from "../components/Toast.jsx";
 
 // Utils
-import { PLAYERS, PLAYER_COLORS, capitalize } from "../utils/stats.js";
+import { PLAYERS, capitalize } from "../utils/stats.js";
 
 // Styles
 import styles from "./LandingPage.module.css";
@@ -52,10 +52,7 @@ export function LandingPage({ onSelectPlayer, onShowGlobalStats, isDark, onToggl
             key={player}
             onClick={() => onSelectPlayer(player)}
             className={styles.playerCard}
-            style={{
-              "--accent": PLAYER_COLORS[player],
-              "--accent-soft": `${PLAYER_COLORS[player]}40`,
-            }}
+            data-player={player}
           >
             <PlayerAvatar player={player} className={styles.playerAvatar} />
             <span className={styles.playerName}>

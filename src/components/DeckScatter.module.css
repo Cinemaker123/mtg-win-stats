@@ -34,7 +34,9 @@
   min-height: 18px;
 }
 
+/* Colour comes from the data-player rules in theme.css */
 .detailDot {
+  background: var(--player-accent);
   width: 10px;
   height: 10px;
   border-radius: 3px;

@@ -21,7 +21,7 @@ const VARIANTS = {
  * @param {React.ReactNode} props.avatar - Leading avatar element
  * @param {string} props.name - Primary label
  * @param {React.ReactNode} props.meta - Secondary line under the name
- * @param {Object} props.tier - Win-rate tier: { color, icon, label }
+ * @param {Object} props.tier - Win-rate tier: { tier, icon, label }
  * @param {number} props.winRate - Win rate as 0-1
  * @param {number} props.wins - Wins in the record
  * @param {number} props.losses - Losses in the record
@@ -36,7 +36,7 @@ export function StatRow({ variant, avatar, name, meta, tier, winRate, wins, loss
         <div className={v.meta}>{meta}</div>
       </div>
       <div className={styles.stats}>
-        <div className={v.winRate} style={{ color: tier.color }}>
+        <div className={v.winRate} data-tier={tier.tier}>
           <span title={tier.label}>{tier.icon}</span>{" "}
           {formatPct(winRate)}
         </div>
@@ -53,7 +53,7 @@ StatRow.propTypes = {
   name: PropTypes.string.isRequired,
   meta: PropTypes.node.isRequired,
   tier: PropTypes.shape({
-    color: PropTypes.string.isRequired,
+    tier: PropTypes.string.isRequired,
     icon: PropTypes.string.isRequired,
     label: PropTypes.string.isRequired,
   }).isRequired,

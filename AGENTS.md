@@ -50,7 +50,7 @@ mtg-win-stats/
 │   │   ├── useLiveResource.js    # One fetch + debounced realtime channel per resource
 │   │   └── useToast.js           # Shared toast state (show/dismiss/auto-timeout)
 │   ├── utils/
-│   │   ├── stats.js              # Constants, winRate, adjustedWinRate, tiers, combineDeckStats
+│   │   ├── stats.js              # Statistics only, no colors: winRate, tiers, combineDeckStats
 │   │   └── stats.test.js         # Vitest unit tests
 │   ├── views/
 │   │   ├── GamesArchiveView.jsx  # Games archive grouped by day (edit/delete + undo)
@@ -234,18 +234,18 @@ This is a 4-player Commander pod. The random average is 25%:
 - **25-50%** = Good 📈 (more than the 1-in-4 baseline)
 - **Less than 25%** = Struggling 📉 (less than the statistical average)
 
-`getWinRateTier()` applies the color code. It reads `WIN_RATE_TIERS` in
-`utils/stats.js`. This is the single source of truth for both the colors and
-the thresholds. The thresholds derive from `POD_BASELINE_WR`, not from hardcoded
-values, so they follow `PLAYERS.length`:
+`getWinRateTier()` returns the tier name, the icon and the label. It reads
+`WIN_RATE_TIERS` in `utils/stats.js`, which holds the thresholds only. The
+thresholds derive from `POD_BASELINE_WR`, not from hardcoded values, so they
+follow `PLAYERS.length`.
 
-- **Gold (#b4923f)** for more than 50% (legendary 🏆)
-- **Sage green (#3d7a56)** for 25-50% (good 📈)
-- **Crimson (#a8384a)** for less than 25% (struggling 📉)
+The colors live in `theme.css`. A component puts the tier name on an element
+as `data-tier` and the stylesheet resolves `--tier-color` and
+`--tier-gradient`:
 
-JS applies these as inline `style` props. They have no counterpart in
-`theme.css` on purpose. A duplicate as custom properties created a second,
-unreferenced source of truth that could drift.
+- **Gold** for more than 50% (legendary 🏆)
+- **Sage green** for 25-50% (good 📈)
+- **Crimson** for less than 25% (struggling 📉)
 
 ## Features
 
@@ -382,6 +382,31 @@ edits per tweak and can flash the wrong layout on the first paint.
 genuinely needs the pixel width in JS. The `639px` in the media queries mirrors
 it.
 
+### Colors — CSS only, never in JavaScript
+
+**No JavaScript file holds a color.** No hex, no `rgba()`, no gradient string.
+Every value lives in `theme.css` exactly once.
+
+Components pass identity to CSS through a data attribute, and the stylesheet
+resolves it into a custom property:
+
+| Attribute | Set from | Resolves |
+|---|---|---|
+| `data-player` | A player slug | `--player-accent`, `--player-gradient` |
+| `data-tier` | `getWinRateTier().tier` | `--tier-color`, `--tier-gradient` |
+| `data-accent` | A `StatCard` accent token | `--card-accent` |
+
+This works for SVG too. `<g data-player={slug}>` with `fill="var(--player-accent)"`
+replaces a color lookup in JavaScript.
+
+The player palette is a closed set. The four pod players each get a rule. The
+bare `[data-player]` rule is the fallback, and every player added later shares
+it, no matter how many there are. They appear in the games archive but not in
+any statistic, so a distinct color would imply a standing they do not have.
+
+To change a color, edit `theme.css`. Never add a color constant back to
+`stats.js`.
+
 ### Theming — `data-theme`, not props
 
 `useDarkMode` stamps `data-theme="dark"|"light"` on `<html>`. `index.html` does
@@ -410,7 +435,7 @@ Prefer these over a re-render of the same markup:
 - **Components**: PascalCase (`TrackerView.jsx`)
 - **Hooks**: camelCase with a `use` prefix (`useDecks.js`)
 - **CSS Modules**: camelCase classes (`.playerCard`)
-- **Constants**: UPPER_SNAKE_CASE (`PLAYER_COLORS`)
+- **Constants**: UPPER_SNAKE_CASE (`WIN_RATE_TIERS`)
 
 ## Environment Variables
 

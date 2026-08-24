@@ -7,22 +7,20 @@ import styles from './StatCard.module.css';
  * @param {string} props.label - Card label
  * @param {string|number} props.value - Main value to display
  * @param {string} [props.sub] - Subtitle text
- * @param {string} props.accent - Accent color (CSS color value)
+ * @param {string} props.accent - Accent token name: info, activity,
+ *   legendary, good or struggling. theme.css maps it to a colour.
  * @param {string} props.icon - Emoji icon
  * @param {boolean} [props.wide] - Span the full grid row instead of one
  *   column — for values too long to share a half-width cell gracefully
  */
 export function StatCard({ label, value, sub, accent, icon, wide = false }) {
   return (
-    <div className={wide ? `${styles.card} ${styles.wide}` : styles.card}>
-      <div 
-        className={styles.accentBar} 
-        style={{ background: accent }}
-      />
-      <div 
-        className={styles.iconWrapper}
-        style={{ background: accent + '25' }}
-      >
+    <div
+      className={wide ? `${styles.card} ${styles.wide}` : styles.card}
+      data-accent={accent}
+    >
+      <div className={styles.accentBar} />
+      <div className={styles.iconWrapper}>
         {icon}
       </div>
       <div className={styles.content}>

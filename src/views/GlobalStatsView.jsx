@@ -14,7 +14,7 @@ import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils
-import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, streakDisplay, capitalize, formatPct, WIN_RATE_TIERS, MIN_GAMES_FOR_BEST_DECK, MIN_STREAK_GAMES, ACCENT_INFO, ACCENT_ACTIVITY, POD_BASELINE_WR, PLAYER_COLORS, PLAYER_GRADIENTS, PLAYERS } from "../utils/stats.js";
+import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, streakDisplay, capitalize, formatPct, MIN_GAMES_FOR_BEST_DECK, MIN_STREAK_GAMES, POD_BASELINE_WR, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
@@ -49,7 +49,6 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
         winRate: winRate(record),
         adjusted: adjustedWinRate(record),
         deckCount: decks.length,
-        gradient: PLAYER_GRADIENTS[player],
       };
     });
     // Sorted once here, not during render
@@ -154,21 +153,21 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                   label="Spiele insgesamt"
                   value={stats.maxPlayerGames}
                   sub={stats.maxPlayerGames === 0 ? "Noch keine Spiele" : undefined}
-                  accent={ACCENT_INFO}
+                  accent="info"
                   icon="🎲"
                 />
                 <StatCard
                   label="Bestes Deck"
                   value={stats.bestDeck ? stats.bestDeck.name : "-"}
                   sub={stats.bestDeck ? `${formatPct(stats.bestDeck.winRate)} von ${capitalize(stats.bestDeck.player)}` : "Noch keine Daten"}
-                  accent={WIN_RATE_TIERS.LEGENDARY.color}
+                  accent="legendary"
                   icon="🏆"
                 />
                 <StatCard
                   label="Meistgespielt"
                   value={stats.mostPlayed ? stats.mostPlayed.name : "-"}
                   sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${capitalize(stats.mostPlayed.player)}` : "Noch keine Daten"}
-                  accent={ACCENT_ACTIVITY}
+                  accent="activity"
                   icon="🎯"
                 />
                 {[stats.topWinStreak, stats.topLossStreak].filter(Boolean).map(({ player, streak }) => {
@@ -179,7 +178,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       label="Serie"
                       value={capitalize(player)}
                       sub={`${streak.count} ${display.noun} in Folge`}
-                      accent={display.accent}
+                      accent={display.tier}
                       icon={display.icon}
                       wide
                     />
@@ -234,10 +233,8 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                         />
                         <div
                           className={styles.winRateBarFill}
-                          style={{
-                            width: `${Math.max(0, Math.min(100, p.winRate * 100))}%`,
-                            background: p.gradient,
-                          }}
+                          data-player={p.player}
+                          style={{ width: `${Math.max(0, Math.min(100, p.winRate * 100))}%` }}
                         />
                       </div>
                     </StatRow>
@@ -261,7 +258,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                           <PlayerAvatar
                             player={deck.player}
                             className={styles.deckAvatar}
-                            background={PLAYER_COLORS[deck.player]}
+                            flat
                           />
                         }
                         name={deck.name}

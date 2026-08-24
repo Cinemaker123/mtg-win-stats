@@ -1,5 +1,4 @@
 import PropTypes from "prop-types";
-import { playerGradient } from "../utils/stats.js";
 import styles from "./PlayerAvatar.module.css";
 
 /**
@@ -10,13 +9,15 @@ import styles from "./PlayerAvatar.module.css";
  * @param {string} props.player - Player slug; anyone outside the pod gets the
  *   neutral fallback gradient rather than no background at all
  * @param {string} [props.className] - Caller's size/radius class
- * @param {string} [props.background] - Overrides the player's gradient
+ * @param {boolean} [props.flat] - Use the player's flat accent colour
+ *   instead of their gradient
  */
-export function PlayerAvatar({ player, className = "", background = null }) {
+export function PlayerAvatar({ player, className = "", flat = false }) {
   return (
     <div
       className={`${styles.avatar} ${className}`}
-      style={{ background: background ?? playerGradient(player) }}
+      data-player={player}
+      data-flat={flat || undefined}
     >
       {player[0]}
     </div>
@@ -27,5 +28,5 @@ PlayerAvatar.propTypes = {
   // Any slug, not just the pod: the games archive renders added players too.
   player: PropTypes.string.isRequired,
   className: PropTypes.string,
-  background: PropTypes.string,
+  flat: PropTypes.bool,
 };

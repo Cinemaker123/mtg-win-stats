@@ -81,7 +81,9 @@
   pointer-events: none;
 }
 
+/* Colour comes from the data-player rules in theme.css */
 .winRateBarFill {
+  background: var(--player-gradient);
   height: 100%;
   border-radius: 3px;
   position: relative;
@@ -99,4 +101,3 @@
   font-size: 10px;
   font-weight: 700;
 }
-

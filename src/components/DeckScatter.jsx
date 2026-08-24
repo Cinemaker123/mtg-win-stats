@@ -1,14 +1,13 @@
 import { useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { PLAYER_COLORS, POD_BASELINE_WR, PROVEN_DECK_GAMES, WIN_RATE_TIERS } from "../utils/stats.js";
+import { POD_BASELINE_WR, PROVEN_DECK_GAMES } from "../utils/stats.js";
 import styles from "./DeckScatter.module.css";
 
 const W = 320;
 const H = 200;
 const PAD = { l: 30, r: 10, t: 12, b: 24 };
 
-// Gold wash echoes the "Legendär" tier color, distinct from the emerald/red/violet/yellow player dots
-const GOOD_ZONE_FILL = WIN_RATE_TIERS.LEGENDARY.color;
+// Gold wash echoes the "Legendär" tier colour, distinct from the emerald/red/violet/yellow player dots
 const GOOD_ZONE_OPACITY = 0.1;
 
 // Pinch-zoom limits (1 = full chart, aspect ratio stays locked)
@@ -334,7 +333,7 @@ export function DeckScatter({ decks }) {
           y={PAD.t}
           width={W - PAD.r - goodZoneX}
           height={y(POD_BASELINE_WR) - PAD.t}
-          fill={GOOD_ZONE_FILL}
+          fill="var(--tier-legendary)"
           opacity={GOOD_ZONE_OPACITY}
           pointerEvents="none"
         />
@@ -395,12 +394,12 @@ export function DeckScatter({ decks }) {
           const label = `${d.name} (${d.player}) — ${(d.winRate * 100).toFixed(1)}% · ${d.wins}W ${d.losses}L`;
 
           return (
-            <g key={key}>
+            <g key={key} data-player={d.player}>
               <circle
                 cx={cx}
                 cy={cy}
                 r={dotRadius}
-                fill={PLAYER_COLORS[d.player]}
+                fill="var(--player-accent)"
                 className={isSelected ? styles.dotSelected : styles.dot}
               />
 
@@ -434,7 +433,7 @@ export function DeckScatter({ decks }) {
       {/* Pinned details (mobile tap / keyboard) */}
       {selected && (
         <div className={styles.detail}>
-          <span className={styles.detailDot} style={{ background: PLAYER_COLORS[selected.player] }} />
+          <span className={styles.detailDot} data-player={selected.player} />
           <span className={styles.detailName}>{selected.name}</span>
           <span className={styles.detailMeta}>
             {selected.player} · {(selected.winRate * 100).toFixed(1)}% · {selected.wins}W {selected.losses}L

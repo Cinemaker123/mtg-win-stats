@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
 import { useAppData } from "../hooks/AppData.jsx";
-import { PLAYERS, MIN_PARTICIPANTS, MAX_PARTICIPANTS, capitalize, playerColor } from "../utils/stats.js";
+import { PLAYERS, MIN_PARTICIPANTS, MAX_PARTICIPANTS, capitalize } from "../utils/stats.js";
 import { AddPlayer } from "./AddPlayer.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import styles from "./NewGameModal.module.css";
@@ -282,7 +282,8 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
                   <div
                     key={player}
                     className={`${styles.cell} ${isWinner ? styles.cellWinner : ""}`}
-                    style={{ "--accent": playerColor(player) }}
+                    data-player={player}
+                    style={{ "--accent": "var(--player-accent)" }}
                     onClick={() => setWinner(isWinner ? null : player)}
                   >
                     <button

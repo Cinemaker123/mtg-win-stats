@@ -54,9 +54,9 @@
 }
 
 .playerCard:hover {
-  border-color: var(--accent);
+  border-color: var(--player-accent);
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px var(--accent-soft);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--player-accent) 25%, transparent);
 }
 
 /* Sizing only — the avatar body lives in components/PlayerAvatar.module.css */

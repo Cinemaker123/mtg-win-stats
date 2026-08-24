@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
-import { PLAYERS, PLAYER_GRADIENTS, PLAYER_COLORS } from "../../utils/stats.js";
+import { PLAYERS } from "../../utils/stats.js";
 import styles from "../TrackerView.module.css";
 
 /**
@@ -15,7 +15,6 @@ import styles from "../TrackerView.module.css";
 export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
   const [singleDeckName, setSingleDeckName] = useState("");
   const inputRef = useRef(null);
-  const accentColor = PLAYER_COLORS[player];
 
   useEffect(() => {
     if (autoFocus && inputRef.current) {
@@ -35,7 +34,7 @@ export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
   };
 
   return (
-    <div className={styles.importContent}>
+    <div className={styles.importContent} data-player={player}>
       <div style={{ display: "flex", gap: "8px", marginBottom: "8px", marginTop: "8px" }}>
         <input
           type="text"
@@ -43,7 +42,7 @@ export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
           onChange={e => setSingleDeckName(e.target.value)}
           placeholder="Neues Deck hinzufügen..."
           className={styles.importTextarea}
-          style={{ flex: 1, height: "36px", "--accent": accentColor }}
+          style={{ flex: 1, height: "36px", "--accent": "var(--player-accent)" }}
           onKeyDown={e => e.key === "Enter" && addSingleDeck()}
           ref={inputRef}
         />
@@ -54,8 +53,8 @@ export function ImportPanel({ player, addDecks, onImport, autoFocus = false }) {
             width: "auto",
             padding: "0 12px",
             marginTop: 0,
-            background: PLAYER_GRADIENTS[player],
-            boxShadow: `0 4px 14px ${accentColor}50`,
+            background: "var(--player-gradient)",
+            boxShadow: "0 4px 14px color-mix(in srgb, var(--player-accent) 31%, transparent)",
           }}
         >
           Deck hinzufügen

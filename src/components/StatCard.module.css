@@ -17,6 +17,7 @@
 }
 
 .accentBar {
+  background: var(--card-accent);
   position: absolute;
   left: 0;
   top: 0;
@@ -26,6 +27,7 @@
 }
 
 .iconWrapper {
+  background: color-mix(in srgb, var(--card-accent) 15%, transparent);
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
@@ -72,3 +74,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Accent token -> colour. The card sets data-accent; the bar and the icon
+   wrapper read --card-accent. Every colour comes from theme.css. */
+.card { --card-accent: var(--accent-info); }
+.card[data-accent="activity"]   { --card-accent: var(--accent-activity); }
+.card[data-accent="legendary"]  { --card-accent: var(--tier-legendary); }
+.card[data-accent="good"]       { --card-accent: var(--tier-good); }
+.card[data-accent="struggling"] { --card-accent: var(--tier-struggling); }

@@ -2,45 +2,6 @@
 
 export const PLAYERS = ["baum", "mary", "pascal", "wewy"];
 
-export const PLAYER_COLORS = {
-  baum: "#1f9670",
-  mary: "#e74c3c",
-  pascal: "#b0399e",
-  wewy: "#d9a521",
-};
-
-export const PLAYER_GRADIENTS = {
-  baum: "linear-gradient(135deg, #1f9670, #35c194)",
-  mary: "linear-gradient(135deg, #e74c3c, #f1948a)",
-  pascal: "linear-gradient(135deg, #b0399e, #d15fc0)",
-  wewy: "linear-gradient(135deg, #d9a521, #e8c34a)",
-};
-
-// Anyone outside the pod (added through "Neuer Spieler") has no colour of
-// their own: they appear in the games archive but not in any statistic, so a
-// distinct colour would imply a standing they do not have. This neutral stone
-// keeps white initials legible in both themes.
-export const FALLBACK_PLAYER_COLOR = "#6f6658";
-export const FALLBACK_PLAYER_GRADIENT = "linear-gradient(135deg, #6f6658, #948a79)";
-
-/**
- * A player's accent colour, falling back to neutral for non-pod players.
- * @param {string} player - player slug
- * @returns {string} - hex colour
- */
-export function playerColor(player) {
-  return PLAYER_COLORS[player] ?? FALLBACK_PLAYER_COLOR;
-}
-
-/**
- * A player's avatar background, falling back to neutral for non-pod players.
- * @param {string} player - player slug
- * @returns {string} - CSS gradient
- */
-export function playerGradient(player) {
-  return PLAYER_GRADIENTS[player] ?? FALLBACK_PLAYER_GRADIENT;
-}
-
 // Viewport width below which the mobile layout is used
 export const MOBILE_BREAKPOINT = 640;
 
@@ -48,12 +9,6 @@ export const MOBILE_BREAKPOINT = 640;
 // This single number anchors the whole statistical story: the Bayesian
 // prior, the "Gut" tier boundary, and the baseline ticks the charts draw.
 export const POD_BASELINE_WR = 1 / PLAYERS.length;
-
-// Neutral accent for informational stat cards (no win/loss meaning).
-export const ACCENT_INFO = "#667eea";
-
-// Accent for activity/volume stat cards (games played, not games won).
-export const ACCENT_ACTIVITY = "#b0399e";
 
 /**
  * Format a 0-1 win rate as a percentage string.
@@ -122,35 +77,34 @@ export function adjustedWinRate(d, priorGames = PRIOR_GAMES, priorWR = PRIOR_WIN
  * <25% = Struggling (below statistical average)
  */
 export const WIN_RATE_TIERS = {
-  LEGENDARY: { min: 2 * POD_BASELINE_WR, color: "#b4923f", icon: "🏆", label: "Legendär" },
-  GOOD: { min: POD_BASELINE_WR, color: "#3d7a56", icon: "📈", label: "Gut" },
-  STRUGGLING: { min: 0, color: "#a8384a", icon: "📉", label: "Ausbaufähig" },
+  LEGENDARY: { min: 2 * POD_BASELINE_WR, icon: "🏆", label: "Legendär" },
+  GOOD: { min: POD_BASELINE_WR, icon: "📈", label: "Gut" },
+  STRUGGLING: { min: 0, icon: "📉", label: "Ausbaufähig" },
 };
 
 /**
- * Get tier info for a win rate
+ * Get tier info for a win rate. The returned `tier` is a CSS hook: put it on
+ * an element as `data-tier` and read `--tier-color` / `--tier-gradient` back
+ * out. No colour crosses this boundary.
  * @param {number} wr - Win rate as decimal in the 0-1 range (e.g. 0.5 = 50%)
- * @returns {{tier: string, color: string, icon: string, label: string, gradient: string}}
+ * @returns {{tier: string, icon: string, label: string}}
  */
 export function getWinRateTier(wr) {
   if (wr > WIN_RATE_TIERS.LEGENDARY.min) {
     return {
       tier: "legendary",
       ...WIN_RATE_TIERS.LEGENDARY,
-      gradient: "linear-gradient(90deg, #8a6d2c, #d1ab55)",
     };
   }
   if (wr >= WIN_RATE_TIERS.GOOD.min) {
     return {
       tier: "good",
       ...WIN_RATE_TIERS.GOOD,
-      gradient: "linear-gradient(90deg, #2f5f43, #4f9c6d)",
     };
   }
   return {
     tier: "struggling",
     ...WIN_RATE_TIERS.STRUGGLING,
-    gradient: "linear-gradient(90deg, #7c2536, #c24f63)",
   };
 }
 
@@ -179,16 +133,16 @@ export const PROVEN_DECK_GAMES = 5;
 /**
  * Presentation for a win/loss streak, as a StatCard-shaped object.
  * Both the dashboard and Global Stats render streaks, and previously each
- * re-implemented the icon, accent color and wording independently.
+ * re-implemented the icon, tier and wording independently.
  * @param {{type: 'win'|'loss', count: number}|null} streak
- * @returns {{icon: string, accent: string, noun: string}|null} - null if not worth showing
+ * @returns {{icon: string, tier: string, noun: string}|null} - null if not worth showing
  */
 export function streakDisplay(streak) {
   if (!streak || streak.count < MIN_STREAK_GAMES) return null;
   const isWin = streak.type === "win";
   return {
     icon: isWin ? "🔥" : "🥀",
-    accent: isWin ? WIN_RATE_TIERS.GOOD.color : WIN_RATE_TIERS.STRUGGLING.color,
+    tier: isWin ? "good" : "struggling",
     noun: isWin ? "Siege" : "Niederlagen",
   };
 }
@@ -211,7 +165,7 @@ export function getDynamicStats(decks, games = [], player = null) {
         label: "Zuletzt gespielt",
         value: lastPlayed.deck,
         sub: new Date(lastPlayed.playedAt).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" }),
-        accent: ACCENT_INFO,
+        accent: "info",
         icon: "🕐",
       });
     }
@@ -222,7 +176,7 @@ export function getDynamicStats(decks, games = [], player = null) {
       stats.push({
         label: "Serie",
         value: `${streak.count} ${display.noun} in Folge`,
-        accent: display.accent,
+        accent: display.tier,
         icon: display.icon,
       });
     }
@@ -251,7 +205,7 @@ function deckStatCards(decks) {
     label: "Gesamt-Winrate",
     value: `${Math.round(overallWR * 100)}%`,
     sub: `${totalWins}W – ${totalGames - totalWins}L · ${decks.length} Deck${decks.length !== 1 ? "s" : ""}`,
-    accent: tier.color,
+    accent: tier.tier,
     icon: tier.icon,
   });
 
@@ -261,7 +215,7 @@ function deckStatCards(decks) {
       label: "Bestes Deck",
       value: best.name,
       sub: `${Math.round(winRate(best) * 100)}% Winrate · ${best.wins}W ${best.losses}L`,
-      accent: bestTier.color,
+      accent: bestTier.tier,
       icon: "🚀",
     });
   }
@@ -272,7 +226,7 @@ function deckStatCards(decks) {
       label: "Ausbaufähig",
       value: worst.name,
       sub: `${Math.round(winRate(worst) * 100)}% Winrate · ${worst.wins}W ${worst.losses}L`,
-      accent: worstTier.color,
+      accent: worstTier.tier,
       icon: "🔧",
     });
   }

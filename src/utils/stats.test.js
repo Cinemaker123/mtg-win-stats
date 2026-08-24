@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import {
   winRate,
@@ -12,16 +13,10 @@ import {
   MIN_STREAK_GAMES,
   MIN_PARTICIPANTS,
   MAX_PARTICIPANTS,
-  playerColor,
   playerSlug,
-  playerGradient,
-  PLAYER_COLORS,
-  PLAYER_GRADIENTS,
-  FALLBACK_PLAYER_COLOR,
-  FALLBACK_PLAYER_GRADIENT,
   PRIOR_GAMES,
   PRIOR_WIN_RATE,
-  WIN_RATE_TIERS,
+  PLAYERS,
   formatPct,
   capitalize,
 } from "./stats.js";
@@ -290,7 +285,7 @@ describe("streakDisplay", () => {
   it("describes a win streak", () => {
     expect(streakDisplay({ type: "win", count: MIN_STREAK_GAMES })).toEqual({
       icon: "🔥",
-      accent: WIN_RATE_TIERS.GOOD.color,
+      tier: "good",
       noun: "Siege",
     });
   });
@@ -298,26 +293,33 @@ describe("streakDisplay", () => {
   it("describes a loss streak", () => {
     expect(streakDisplay({ type: "loss", count: 3 })).toEqual({
       icon: "🥀",
-      accent: WIN_RATE_TIERS.STRUGGLING.color,
+      tier: "struggling",
       noun: "Niederlagen",
     });
   });
 });
 
-describe("player colours", () => {
-  it("keeps each pod member's own colour and gradient", () => {
-    expect(playerColor("pascal")).toBe(PLAYER_COLORS.pascal);
-    expect(playerGradient("baum")).toBe(PLAYER_GRADIENTS.baum);
+describe("player palette in theme.css", () => {
+  const css = readFileSync(new URL("../styles/theme.css", import.meta.url), "utf8");
+
+  it("gives every pod player their own rule", () => {
+    for (const player of PLAYERS) {
+      expect(css).toContain(`[data-player="${player}"]`);
+    }
   });
 
-  it("falls back to neutral for a player outside the pod", () => {
-    expect(playerColor("gast")).toBe(FALLBACK_PLAYER_COLOR);
-    expect(playerGradient("gast")).toBe(FALLBACK_PLAYER_GRADIENT);
+  it("keeps the bare fallback rule that covers added players", () => {
+    // Without this rule a player outside the pod renders with no colour at
+    // all. It must stay above the per-player rules so they override it.
+    expect(css).toMatch(/\[data-player\]\s*\{[^}]*--player-accent/);
+    expect(css).toMatch(/\[data-player\]\s*\{[^}]*--player-gradient/);
   });
 
-  it("never returns undefined, whatever it is handed", () => {
-    expect(playerColor(undefined)).toBe(FALLBACK_PLAYER_COLOR);
-    expect(playerGradient("")).toBe(FALLBACK_PLAYER_GRADIENT);
+  it("resolves every win-rate tier", () => {
+    for (const tier of ["good", "legendary"]) {
+      expect(css).toContain(`[data-tier="${tier}"]`);
+    }
+    expect(css).toMatch(/\[data-tier\]\s*\{[^}]*--tier-color/);
   });
 });
 

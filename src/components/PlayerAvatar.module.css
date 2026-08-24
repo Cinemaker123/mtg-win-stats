@@ -4,6 +4,8 @@
  * belong in the calling view's stylesheet.
  */
 .avatar {
+  /* Colour comes from the data-player rules in theme.css */
+  background: var(--player-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,4 +14,9 @@
   font-weight: 800;
   text-transform: uppercase;
   flex-shrink: 0;
+}
+
+/* Deck rows use the flat accent so the row reads as one colour, not a wash */
+.avatar[data-flat] {
+  background: var(--player-accent);
 }

@@ -26,3 +26,11 @@
   color: #fff;
   font-family: var(--font-display);
 }
+
+/* Roll result colours. A natural 20 takes the "Legendär" gold and a natural 1
+   the struggling red, so the die speaks the same colour language as the stats. */
+.overlay { background: rgba(0, 0, 0, 0.5); }
+.overlay .number { color: #fff; }
+.overlay[data-roll="crit"] { background: var(--tier-legendary); }
+.overlay[data-roll="fumble"] { background: #1c1712; }
+.overlay[data-roll="fumble"] .number { color: var(--tier-struggling-light); }
