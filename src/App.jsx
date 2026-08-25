@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 
 // Hooks
 import { useDarkMode } from "./hooks/useDarkMode.js";
-import { AppDataProvider } from "./hooks/AppData.jsx";
 import { useRealtimeSync } from "./data/useRealtimeSync.js";
 
 // Components
@@ -101,7 +100,6 @@ export default function App() {
 
   return (
     <div onClick={handleClick} className={styles.root}>
-      <AppDataProvider>
         {route.view === 'landing' && (
           <LandingPage
             onSelectPlayer={handleSelectPlayer}
@@ -118,7 +116,6 @@ export default function App() {
         {route.view === 'games' && (
           <GamesArchiveView onBack={handleBack} {...themeProps} />
         )}
-      </AppDataProvider>
 
       {showDie && <RollingD20 onLanded={handleDieLanded} />}
     </div>

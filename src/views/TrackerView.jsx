@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 
 // Hooks
 import { useDecks } from "../hooks/useDecks.js";
-import { useAppData } from "../hooks/AppData.jsx";
+import { useGamesQuery } from "../data/queries.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
@@ -36,7 +36,7 @@ import styles from "./TrackerView.module.css";
  */
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   const { decks, loading, loaded, error, retry, addDecks, renameDeck, deleteDeckByName, restoreDeck } = useDecks(player);
-  const { games } = useAppData();
+  const { data: games = [] } = useGamesQuery();
   // Stats display combines frozen legacy counters with game-derived counts
   const combinedDecks = useMemo(
     () => combineDeckStats(decks, games, player),
