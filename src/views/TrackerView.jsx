@@ -3,8 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useDecks } from "../hooks/useDecks.js";
-import { useAppData } from "../hooks/AppData.jsx";
+import { useGamesQuery } from "../data/queries.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
@@ -16,7 +15,8 @@ import { ViewHeader } from "../components/ViewHeader.jsx";
 import { PLAYERS, combineDeckStats, capitalize } from "../utils/stats.js";
 
 // Utils / API
-import { renameDeckRegistry } from "../supabaseClient.js";
+import { useDecksQuery } from "../data/queries.js";
+import { useAddDeck, useRenameDeck, useDeleteDeck, useRestoreDeck } from "../data/mutations.js";
 
 // Sub-components
 import { DashboardTab } from "./tracker/DashboardTab.jsx";
@@ -34,9 +34,23 @@ import styles from "./TrackerView.module.css";
  * @param {boolean} props.isDark - Current dark mode state
  * @param {Function} props.onToggleDark - Callback to toggle dark mode
  */
+// Stable empties so the combinedDecks useMemo does not see a new reference
+// each render while the query loads.
+const NO_DECKS_LIST = [];
+const NO_GAMES = [];
+
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
-  const { decks, loading, loaded, error, retry, addDecks, renameDeck, deleteDeckByName, restoreDeck } = useDecks(player);
-  const { games } = useAppData();
+  const decksQuery = useDecksQuery();
+  const decks = decksQuery.data?.[player] ?? NO_DECKS_LIST;
+  const loading = decksQuery.isLoading;
+  const loaded = decksQuery.isSuccess;
+  const error = decksQuery.isError ? "Fehler beim Laden. Bitte erneut versuchen." : null;
+  const retry = decksQuery.refetch;
+  const addDeck = useAddDeck();
+  const renameDeck = useRenameDeck();
+  const deleteDeck = useDeleteDeck();
+  const restoreDeck = useRestoreDeck();
+  const { data: games = NO_GAMES } = useGamesQuery();
   // Stats display combines frozen legacy counters with game-derived counts
   const combinedDecks = useMemo(
     () => combineDeckStats(decks, games, player),
@@ -60,15 +74,16 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   // Delete with 5s undo window (undo reinserts locally, the debounced
   // full sync restores the row in Supabase if it was already deleted)
   const handleDeleteDeck = (name) => {
-    const removed = deleteDeckByName(name);
+    const removed = decks.find(d => d.name.toLowerCase() === name.toLowerCase());
     if (!removed) return;
+    deleteDeck.mutate({ player, id: removed.id });
     showToast({
       type: "undo",
-      message: `„${removed.deck.name}" gelöscht`,
+      message: `„${removed.name}" gelöscht`,
       actionLabel: "Rückgängig",
       onAction: () => {
         dismissToast();
-        restoreDeck(removed.deck, removed.index);
+        restoreDeck.mutate({ player, deck: removed });
       },
     }, 5000);
   };
@@ -77,20 +92,20 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   // deck's id is what game history points at (deck_id), so this single
   // update is all that's needed for the new name to show up everywhere
   const handleRenameDeck = async (oldName, newName) => {
-    const result = renameDeck(oldName, newName);
-    if (!result.ok) {
-      showToast({
-        type: "error",
-        message: result.reason === "duplicate"
-          ? `❌ „${newName.trim()}" existiert bereits`
-          : "❌ Ungültiger Deckname",
-      });
+    const name = newName.trim();
+    const idx = decks.findIndex(d => d.name.toLowerCase() === oldName.toLowerCase());
+    if (!name || idx < 0) {
+      showToast({ type: "error", message: "❌ Ungültiger Deckname" });
       return;
     }
-    if (!result.renamed) return;
+    if (decks.some((d, i) => i !== idx && d.name.toLowerCase() === name.toLowerCase())) {
+      showToast({ type: "error", message: `❌ „${name}" existiert bereits` });
+      return;
+    }
+    if (decks[idx].name === name) return; // no change
     try {
-      await renameDeckRegistry(result.id, newName.trim());
-      showToast({ type: "success", message: `✅ „${oldName}" umbenannt in „${newName.trim()}"` });
+      await renameDeck.mutateAsync({ player, id: decks[idx].id, name });
+      showToast({ type: "success", message: `✅ „${oldName}" umbenannt in „${name}"` });
     } catch {
       showToast({
         type: "error",
@@ -148,7 +163,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
                 <div className={styles.importPanel}>
                   <ImportPanel
                     player={player}
-                    addDecks={addDecks}
+                    addDecks={(list) => list.forEach(d => addDeck.mutate({ player, name: d.name }))}
                     onImport={showToast}
                     autoFocus={decks.length === 0}
                   />

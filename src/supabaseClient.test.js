@@ -184,16 +184,6 @@ describe("getGames", () => {
 });
 
 describe("deck reads", () => {
-  it("getDecks maps rows to the app shape for one player", async () => {
-    h.state.tableResults.decks = {
-      data: [{ id: "1", player: "baum", name: "Zombies", wins: 3, losses: 1, created_at: "x" }],
-      error: null,
-    };
-    expect(await mod.getDecks("baum")).toEqual([
-      { id: "1", name: "Zombies", wins: 3, losses: 1 },
-    ]);
-  });
-
   it("getAllDecks keeps the player field for the cross-player registry", async () => {
     h.state.tableResults.decks = {
       data: [{ id: "1", player: "baum", name: "Zombies", wins: 3, losses: 1, created_at: "x" }],
@@ -205,37 +195,23 @@ describe("deck reads", () => {
   });
 });
 
-describe("saveDecks", () => {
-  it("upserts local decks and deletes only rows whose name is no longer present", async () => {
+describe("deck writes (per-row)", () => {
+  it("deleteDeckById deletes one row by id", async () => {
+    await mod.deleteDeckById("d7");
+    const del = h.state.builderCalls.find((c) => c.table === "decks" && c.method === "delete");
+    const eq = h.state.builderCalls.find((c) => c.table === "decks" && c.method === "eq");
+    expect(del).toBeTruthy();
+    expect(eq.args).toEqual(["id", "d7"]);
+  });
+
+  it("restoreDeckRow upserts the deck with its counts (undo)", async () => {
     h.state.tableResults.players = { data: [{ slug: "baum", id: "p1" }], error: null };
-    await mod.saveDecks("baum", [
-      { name: "Zombies", wins: 2, losses: 1 },
-      { name: "Elves", wins: 0, losses: 0 },
-    ]);
-
+    await mod.restoreDeckRow("baum", { name: "Zombies", wins: 3, losses: 1 });
     const upsert = h.state.builderCalls.find((c) => c.table === "decks" && c.method === "upsert");
-    expect(upsert.args[0]).toEqual([
-      expect.objectContaining({ player: "baum", player_id: "p1", name: "Zombies", wins: 2, losses: 1 }),
-      expect.objectContaining({ player: "baum", player_id: "p1", name: "Elves", wins: 0, losses: 0 }),
-    ]);
+    expect(upsert.args[0]).toEqual(
+      expect.objectContaining({ player: "baum", player_id: "p1", name: "Zombies", wins: 3, losses: 1 }),
+    );
     expect(upsert.args[1]).toEqual({ onConflict: "player,name" });
-
-    // The delete keeps every current deck by excluding their names from the purge.
-    const notFilter = h.state.builderCalls.find((c) => c.method === "not");
-    expect(notFilter.args).toEqual(["name", "in", '("Zombies","Elves")']);
-  });
-
-  it("escapes embedded quotes in deck names so the in-filter can't be broken out of", async () => {
-    await mod.saveDecks("baum", [{ name: 'De"ck', wins: 0, losses: 0 }]);
-    const notFilter = h.state.builderCalls.find((c) => c.method === "not");
-    expect(notFilter.args[2]).toBe('("De\\"ck")');
-  });
-
-  it("purges every deck when local state is empty (no in-filter)", async () => {
-    await mod.saveDecks("baum", []);
-    expect(h.state.builderCalls.some((c) => c.method === "upsert")).toBe(false);
-    expect(h.state.builderCalls.some((c) => c.method === "not")).toBe(false);
-    expect(h.state.builderCalls.some((c) => c.table === "decks" && c.method === "delete")).toBe(true);
   });
 });
 

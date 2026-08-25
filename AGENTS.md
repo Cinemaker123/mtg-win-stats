@@ -23,11 +23,11 @@ of reading a tree that goes stale. The parts that are not obvious:
 ```
 src/
 ├── App.jsx                  # Hash router (#/, #/tracker/<player>, #/global, #/games)
-├── supabaseClient.js        # Every query. All of them go through unwrap()
-├── hooks/
-│   ├── AppData.jsx          # AppDataProvider + useAppData. Mounted once
-│   ├── useLiveResource.js   # One fetch + one debounced realtime channel
-│   └── useDecks.js          # Deck registry: dirty-flag saves, full sync
+├── supabaseClient.js        # Pure async fetch/write functions, all via unwrap()
+├── data/
+│   ├── queries.js           # useGamesQuery, useDecksQuery (one key each)
+│   ├── mutations.js         # per-row deck writes, optimistic cache updates
+│   └── useRealtimeSync.js   # One subscription. Invalidates keys. Mounted once
 ├── utils/stats.js           # Statistics only. Holds no colours
 └── styles/theme.css         # Every colour in the app, each one exactly once
 ```
@@ -46,15 +46,16 @@ work. An invalid hash normalizes to `#/`.
 ## State Management
 
 - **Local React state** through `useState` hooks.
-- **Custom hooks**: `useDecks` holds the registry of the player who edits.
-  `useDarkMode` holds the theme.
-- **One provider, mounted once in `App.jsx`**: `AppDataProvider` holds the games
-  archive and the deck registry of every player. It calls `useLiveResource()`
-  once per resource, which owns the fetch, the debounced realtime channel, and
-  the cleanup. Views read everything through the single `useAppData()` hook.
-  **`AppDataProvider` must stay mounted exactly once, at the app root.** `useLiveResource` is a hook and holds per-instance state, so a
-  call from a view opens a second fetch and a second realtime channel. A new
-  shared resource needs a fetcher and a table list, not a new subscription.
+- **Server state through TanStack Query.** One `QueryClient`, provided once in
+  `main.jsx`. The two shared resources are query keys: `["games"]` and
+  `["decks"]`. Every view reads one cache through `useGamesQuery` /
+  `useDecksQuery` (`src/data/queries.js`), so the same data is fetched once, not
+  per view.
+- **One realtime hook, mounted once.** `useRealtimeSync` (mounted in `App`)
+  holds a single Supabase subscription and invalidates the affected query key on
+  a change. **It must stay mounted exactly once, at the app root.** A second
+  mount opens a second subscription.
+- **`useDarkMode`** holds the theme (local `useState`).
 - **Persistence**: a Supabase PostgreSQL database.
 - **Per-player rows, not per-player access**: each deck row stores a player
   identifier. This is a data-shape convention, **not** a security boundary.
@@ -64,7 +65,7 @@ work. An invalid hash normalizes to `#/`.
   auth is Level 3 in `auth.md`, and it is not applied.
 
 
-## Data Layer (`useDecks` + `useAppData` + `supabaseClient`)
+## Data Layer (TanStack Query + `supabaseClient`)
 
 - **Data Model v2**: the app records results as *games* (the `games` and
   `game_participants` tables), not as manual per-deck counters. The `decks`
@@ -75,12 +76,12 @@ work. An invalid hash normalizes to `#/`.
   `combineDeckStats(registryDecks, games, player)`. This function merges the
   legacy baseline with the game-derived counts. A deck that exists only in
   games still appears.
-- **Dirty-flag saves**: Supabase writes fire only after local mutations, never
-  on load. A failed fetch keeps `loaded = false`. As a result, saves stay
-  disabled, and a failed load can never wipe remote data.
-- **Full sync**: `saveDecks(player, decks)` upserts the given decks and deletes
-  the rows that are not in the list. Local state is authoritative. The app uses
-  this only for registry changes (add or delete a deck).
+- **Deck writes are per-row mutations** (`src/data/mutations.js`): `useAddDeck`,
+  `useRenameDeck`, `useDeleteDeck`, `useRestoreDeck`. Each does one row write
+  (`addDeckToRegistry`, `renameDeckRegistry`, `deleteDeckById`, `restoreDeckRow`)
+  and updates the `["decks"]` cache optimistically, rolling back on error. There
+  is **no full-sync delete-missing** any more, so a bad load can never drive a
+  delete. `useDeleteDeck` plus `useRestoreDeck` is the 5-second undo.
 - **Game CRUD**: `addGame`, `updateGame`, and `deleteGame` write directly, with
   no dirty flag. `addGame` and `updateGame` go through the `save_game` and
   `update_game` Postgres functions (`supabase.rpc`), which write the game and
@@ -95,30 +96,27 @@ work. An invalid hash normalizes to `#/`.
   historical snapshot instead of a dangling reference. `getPlayerIdMap()` caches
   the slug-to-id lookup so deck writes keep `player_id` populated. Games resolve
   `player_id` on the server, so participant rows do not need a fresh cache.
-- **Realtime**: `useDecks` subscribes to `postgres_changes` filtered by player
-  and refetches on remote writes. It suppresses the echoes of its own saves for
-  1 second. In `AppDataProvider`, the games resource subscribes to `games`,
-  `game_participants`, and `decks`. The decks resource subscribes to `decks` and
-  `players`. Both get the 500 ms debounced refetch from `useLiveResource()`, so
-  every view reads the same cache instead of a separate fetch and subscription.
-  The games list must include `decks`, so a deck rename refreshes the cached
-  join instead of showing the old name until reload. A test guards this. All
-  three tables need the `supabase_realtime` publication (see SUPABASE_SETUP.md).
-- **Bulk deck fetch**: `getDecksByPlayer()` fetches every player's decks in one
-  query, grouped, with one entry per `PLAYERS` slug. **Only** `AppDataProvider`
-  calls it, so `GlobalStatsView` and `NewGameModal` read the shared cache and
-  opening the modal costs no query. `useDecks` keeps its per-player
-  `getDecks(player)` for the single-player registry.
+- **Realtime**: `useRealtimeSync` maps each table to the query keys it
+  invalidates. A `decks` change invalidates **both** `["decks"]` and `["games"]`,
+  because the games list shows the live deck name through its join, so a rename
+  must refresh both. A test guards this mapping. All four tables (`games`,
+  `game_participants`, `decks`, `players`) need the `supabase_realtime`
+  publication (see SUPABASE_SETUP.md). Optimistic mutations own the local truth,
+  so the echoed event just refetches the same value.
+- **Bulk deck fetch**: `getDecksByPlayer()` is the `["decks"]` query function.
+  It fetches every player's decks in one query, grouped, with one entry per
+  `PLAYERS` slug. `TrackerView` reads its player's slice from this shared cache,
+  so there is no per-player deck fetch any more.
 - **Added players**: `addPlayer(name)` (from `AddPlayer`, in the modal's empty
   seats) upserts one `players` row. The table's unique constraint is the dedupe
   guard, not client code. An added player plays, owns decks, and shows in the
   archive, because `getDecksByPlayer()` unions `PLAYERS` with the live slugs.
   But every statistic keys off `PLAYERS` in `stats.js`, so an added player stays
   out of all rankings until you add them there on purpose.
-- **Deck ids in the cache**: each entry in the `decksByPlayer` cache carries
-  its `id`. `NewGameModal` resolves the `deck_id` of each participant out of the
-  cache by name. `addDeckLocally` throws if a deck arrives without an id, so an
-  optimistic quick-add can no longer save a game with a null `deck_id`.
+- **Deck ids in the cache**: each entry in the `["decks"]` cache carries its
+  `id`. `NewGameModal` resolves the `deck_id` of each participant out of the
+  cache by name. `useAddDeck` inserts a quick-added deck with its id, so a game
+  saved right after cannot get a null `deck_id`.
 - **Error handling**: every query in `supabaseClient.js` goes through
   `unwrap(result, context)`. This function logs with that context and rethrows.
   Add a new query the same way. Do not re-inline the
@@ -299,7 +297,7 @@ Prefer these over a re-render of the same markup:
 ### Naming Conventions
 
 - **Components**: PascalCase (`TrackerView.jsx`)
-- **Hooks**: camelCase with a `use` prefix (`useDecks.js`)
+- **Hooks**: camelCase with a `use` prefix (`useDarkMode.js`)
 - **CSS Modules**: camelCase classes (`.playerCard`)
 - **Constants**: UPPER_SNAKE_CASE (`WIN_RATE_TIERS`)
 

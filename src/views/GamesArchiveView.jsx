@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useAppData } from "../hooks/AppData.jsx";
+import { useGamesQuery } from "../data/queries.js";
 import { useToast } from "../hooks/useToast.js";
 
 // Components
@@ -68,7 +68,8 @@ function groupByDay(games) {
  * Tap a game to edit it; delete offers a 5s undo window (re-insert).
  */
 export function GamesArchiveView({ onBack, isDark, onToggleDark }) {
-  const { games, gamesLoading, gamesError, gamesRetry } = useAppData();
+  const { data: games = [], isLoading: gamesLoading, isError, refetch: gamesRetry } = useGamesQuery();
+  const gamesError = isError ? "Fehler beim Laden der Spiele." : null;
   const [editGame, setEditGame] = useState(null);
   const { toast, showToast, dismissToast } = useToast();
 

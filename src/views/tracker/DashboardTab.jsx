@@ -6,7 +6,7 @@ import {
   winRate, adjustedWinRate, getDynamicStats, getWinRateTier,
   formatPct, POD_BASELINE_WR,
 } from "../../utils/stats.js";
-import { DeckPropType } from "../../hooks/useDecks.js";
+import { DeckPropType } from "../../data/queries.js";
 import styles from "../TrackerView.module.css";
 
 /**

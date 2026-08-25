@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { Logo } from "../../components/Logo.jsx";
-import { DeckPropType } from "../../hooks/useDecks.js";
+import { DeckPropType } from "../../data/queries.js";
 import styles from "../TrackerView.module.css";
 import { WinLossBar } from "./WinLossBar.jsx";
 

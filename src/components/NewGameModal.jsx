@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { addGame, updateGame, addDeckToRegistry } from "../supabaseClient.js";
-import { useAppData } from "../hooks/AppData.jsx";
+import { addGame, updateGame } from "../supabaseClient.js";
+import { useDecksQuery } from "../data/queries.js";
+import { useAddDeck } from "../data/mutations.js";
 import { PLAYERS, MIN_PARTICIPANTS, MAX_PARTICIPANTS, capitalize } from "../utils/stats.js";
 import { AddPlayer } from "./AddPlayer.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
@@ -62,14 +63,11 @@ function sameDeckMap(a, b) {
  * @param {Function|null} props.onDelete - Edit mode: delete handler for the game
  */
 export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = null }) {
-  // Shared with Global Stats and kept live by AppDataProvider, so opening
-  // the modal costs no query at all.
-  const {
-    decksByPlayer,
-    decksLoading,
-    decksError,
-    addDeckLocally,
-  } = useAppData();
+  // Shared with Global Stats through the ["decks"] cache, so opening the modal
+  // costs no extra query.
+  const { data: decksByPlayer = {}, isLoading: decksLoading, isError } = useDecksQuery();
+  const decksError = isError ? "Fehler beim Laden. Bitte erneut versuchen." : null;
+  const addDeck = useAddDeck();
   // Snapshot of the opening state, kept for the untouched-form check below
   const [initial] = useState(() => initialFormState(editGame));
   const [participants, setParticipants] = useState(initial.participants);
@@ -81,7 +79,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Keyed on the players table via AppDataProvider, so anyone added through
+  // Keyed on the players table via the ["decks"] query, so anyone added through
   // "Neuer Spieler" can be picked here; the pod is listed first.
   const knownPlayers = Object.keys(decksByPlayer);
   const availablePlayers = [
@@ -152,7 +150,7 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
   };
 
   // A player added mid-entry is almost always meant for this game, so take a
-  // free slot straight away. The AppDataProvider players-table subscription
+  // free slot straight away. The useRealtimeSync players-table subscription
   // refetches the registry on its own, so no manual reload is needed here.
   const handlePlayerAdded = (slug) => {
     addParticipant(slug);
@@ -172,11 +170,9 @@ export function NewGameModal({ editGame = null, onClose, onSaved, onDelete = nul
       return;
     }
     try {
-      // The id matters: `save` below resolves each participant's deck_id
-      // out of this cache, so an entry without one would record the game
-      // with a null deck_id and lose the link to the registry row.
-      const id = await addDeckToRegistry(player, name);
-      addDeckLocally(player, { id, name, wins: 0, losses: 0 });
+      // The mutation inserts the deck into the ["decks"] cache, so `save`
+      // below can resolve each participant's deck_id from it.
+      await addDeck.mutateAsync({ player, name });
       setDeckByPlayer(d => ({ ...d, [player]: name }));
       setAddingDeckFor(null);
       setNewDeckName("");

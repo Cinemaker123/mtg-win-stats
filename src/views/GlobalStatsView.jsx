@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
-import { useAppData } from "../hooks/AppData.jsx";
+import { useGamesQuery, useDecksQuery } from "../data/queries.js";
 
 // Components
 import { PlayerAvatar } from "../components/PlayerAvatar.jsx";
@@ -20,11 +20,18 @@ import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentS
 import styles from "./GlobalStatsView.module.css";
 import chrome from "../styles/viewChrome.module.css";
 
+// Stable empty defaults, so the useMemo below does not see a new reference
+// on every render while a query is still loading.
+const NO_GAMES = [];
+const NO_DECKS = {};
+
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
-  const { games, gamesLoading, gamesError,
-          decksByPlayer, decksLoading, decksError } = useAppData();
-  const loading = gamesLoading || decksLoading;
-  const error = gamesError || decksError;
+  const gamesQuery = useGamesQuery();
+  const decksQuery = useDecksQuery();
+  const games = gamesQuery.data ?? NO_GAMES;
+  const decksByPlayer = decksQuery.data ?? NO_DECKS;
+  const loading = gamesQuery.isLoading || decksQuery.isLoading;
+  const error = gamesQuery.isError || decksQuery.isError ? "Fehler beim Laden." : null;
 
   // Calculate statistics
   // Win rates are kept as 0-1 numbers throughout; formatted only at render time

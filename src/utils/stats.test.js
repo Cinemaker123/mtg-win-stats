@@ -321,13 +321,14 @@ describe("player palette in theme.css", () => {
     expect(css).toMatch(/\[data-player\]\s*\{[^}]*--player-gradient/);
   });
 
-  it("keeps decks in the realtime games table list", () => {
-    // AppData's GAMES_TABLES must include decks. A deck rename now touches
-    // only the decks table, so without it the cached games join keeps the old
-    // name until reload. Scan the source, not a mocked import.
-    const src = readFileSync(new URL("../hooks/AppData.jsx", import.meta.url), "utf8");
-    const line = src.match(/const GAMES_TABLES = \[([^\]]*)\]/);
+  it("invalidates both caches when a deck changes", () => {
+    // A deck rename touches the decks table, and the games list shows the live
+    // deck name through its join, so a decks change must refresh both keys.
+    // Scan the source, not a mocked import.
+    const src = readFileSync(new URL("../data/useRealtimeSync.js", import.meta.url), "utf8");
+    const line = src.match(/decks:\s*\[([^\]]*(?:\][^\]]*)*)\]/);
     expect(line).not.toBeNull();
+    expect(line[1]).toContain("games");
     expect(line[1]).toContain("decks");
   });
 

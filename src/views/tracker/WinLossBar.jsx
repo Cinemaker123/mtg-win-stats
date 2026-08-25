@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { DeckPropType } from "../../hooks/useDecks.js";
+import { DeckPropType } from "../../data/queries.js";
 import { winRate } from "../../utils/stats.js";
 import styles from "../TrackerView.module.css";
 

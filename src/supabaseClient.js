@@ -94,30 +94,6 @@ export async function addPlayer(name) {
 }
 
 /**
- * Fetch all decks for a player
- * @param {string} player - player name (baum, mary, pascal, wewy)
- * @returns {Promise<Array>} - array of deck objects
- */
-export async function getDecks(player) {
-  const data = unwrap(
-    await supabase
-      .from(TABLE_NAME)
-      .select('*')
-      .eq('player', player)
-      .order('created_at', { ascending: true }),
-    'Error fetching decks'
-  )
-
-  // Transform to app format
-  return (data || []).map(row => ({
-    id: row.id,
-    name: row.name,
-    wins: row.wins,
-    losses: row.losses,
-  }))
-}
-
-/**
  * Fetch all decks for every player in one call.
  * @returns {Promise<Array>} - array of { id, player, name, wins, losses }
  */
@@ -161,61 +137,6 @@ export async function getDecksByPlayer() {
     byPlayer[d.player].push(d)
   })
   return byPlayer
-}
-
-/**
- * Quote a value for use inside a PostgREST `in` filter list
- * @param {string} value - raw filter value
- * @returns {string} - quoted and escaped value
- */
-function quoteFilterValue(value) {
-  return `"${String(value).replace(/"/g, '\\"')}"`
-}
-
-/**
- * Sync all decks for a player (local state is authoritative).
- * Upserts the given decks in one call and deletes rows for this player
- * whose name is no longer present in the list.
- * @param {string} player - player name
- * @param {Array} decks - array of deck objects
- */
-export async function saveDecks(player, decks) {
-  // Bulk upsert all decks in a single API call
-  let upsert = null
-  if (decks.length > 0) {
-    const playerIdMap = await getPlayerIdMap()
-    upsert = supabase
-      .from(TABLE_NAME)
-      .upsert(
-        decks.map(deck => ({
-          player,
-          player_id: playerIdMap[player] ?? null,
-          name: deck.name,
-          wins: deck.wins,
-          losses: deck.losses,
-          updated_at: new Date().toISOString(),
-        })),
-        { onConflict: 'player,name' }
-      )
-  }
-
-  // Delete rows that are no longer in local state (full sync)
-  let remove = supabase
-    .from(TABLE_NAME)
-    .delete()
-    .eq('player', player)
-
-  if (decks.length > 0) {
-    const names = decks.map(d => quoteFilterValue(d.name)).join(',')
-    remove = remove.not('name', 'in', `(${names})`)
-  }
-
-  // Disjoint row sets (the delete excludes everything the upsert writes),
-  // so the two round trips can overlap instead of running back to back.
-  const [upsertResult, removeResult] = await Promise.all([upsert, remove])
-
-  if (upsertResult) unwrap(upsertResult, 'Error upserting decks')
-  unwrap(removeResult, 'Error deleting removed decks')
 }
 
 // ============================================================
@@ -345,5 +266,43 @@ export async function renameDeckRegistry(id, newName) {
       .update({ name: newName, updated_at: new Date().toISOString() })
       .eq('id', id),
     'Error renaming deck'
+  )
+}
+
+/**
+ * Delete one deck by id. Per-row, so a failed load can never drive it (the old
+ * full-sync saveDecks deleted every row missing from local state).
+ * game_participants.deck_id is ON DELETE SET NULL, so past games keep their
+ * frozen text name.
+ * @param {string} id - deck id
+ */
+export async function deleteDeckById(id) {
+  unwrap(
+    await supabase.from(TABLE_NAME).delete().eq('id', id),
+    'Error deleting deck'
+  )
+}
+
+/**
+ * Re-insert a deck with its counts, for undo after a delete. Upserts by
+ * (player, name), so the legacy wins/losses survive the round trip.
+ * @param {string} player - player slug
+ * @param {{name: string, wins: number, losses: number}} deck
+ */
+export async function restoreDeckRow(player, deck) {
+  const playerIdMap = await getPlayerIdMap()
+  unwrap(
+    await supabase.from(TABLE_NAME).upsert(
+      {
+        player,
+        player_id: playerIdMap[player] ?? null,
+        name: deck.name,
+        wins: deck.wins,
+        losses: deck.losses,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'player,name' }
+    ),
+    'Error restoring deck'
   )
 }

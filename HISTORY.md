@@ -120,6 +120,21 @@ reimplementation of the `autoFocus` of React. The prop flips false→true after
 the decks load asynchronously, which the built-in `autoFocus` (mount-only) would
 not catch.
 
+Completed in 2026-08 (TanStack Query migration, branch
+`refactor/tanstack-query-migration`):
+
+The hand-rolled fetch, cache, realtime, and optimistic-save layer was a partial
+re-implementation of one library. TanStack Query replaced it.
+
+| Phase | Changes |
+|-------|---------|
+| **Read path** | One `QueryClient` (main.jsx) with keys `["games"]` and `["decks"]`. `useGamesQuery` / `useDecksQuery` in `src/data/queries.js` give every view one shared cache. `AppData.jsx` and `useLiveResource.js` deleted. |
+| **Realtime** | `src/data/useRealtimeSync.js`, one subscription for the app, invalidates the affected key on a change. A `decks` change invalidates both keys (the rename-join rule), guarded by a test. Replaced the two per-resource subscriptions. |
+| **Write path** | Per-row deck mutations in `src/data/mutations.js` (`useAddDeck`, `useRenameDeck`, `useDeleteDeck`, `useRestoreDeck`) with optimistic cache updates and rollback. `useDecks.js` deleted. |
+| **supabaseClient** | Added `deleteDeckById` and `restoreDeckRow`. Deleted `getDecks`, `saveDecks`, and `quoteFilterValue`. The full-sync delete-missing path is gone, so a bad load can no longer drive a delete. 349 to 308 lines. |
+| **Result** | Two parallel deck caches became one. Two realtime subscriptions became one. The data layer dropped from about 734 to about 440 hand-rolled lines. One new dependency (`@tanstack/react-query`). |
+| **Verified** | Add, delete, undo-restore, and rename each browser-tested against the live database. |
+
 See the git history for the detailed commits:
 
 ```bash
