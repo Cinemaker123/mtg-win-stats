@@ -1,89 +1,49 @@
-# MTG Win Stats Tracker
+# MTG Win Stats Tracker — Agent Guide
 
-## Project Overview
+This file holds the **invariants**: the rules that must stay true, and that the
+code alone does not tell you. Break one and nothing throws an error. The data
+goes wrong in silence.
 
-This is a **React and Vite application**. It tracks Magic: The Gathering deck
-performance for several players. The interface is mobile-friendly. It records
-wins and losses, imports deck data, and shows cross-player analytics.
+Everything else lives elsewhere:
 
-## Technology Stack
+| Question | File |
+|---|---|
+| What does the app do? How do I run it? | `README.md` |
+| What changed in past refactors? | `HISTORY.md` |
+| What is still planned? | `progress.md` |
+| What is the database schema? | `SUPABASE_SETUP.md` |
+| How is it secured? | `auth.md` |
+| Where does this symbol live? | `graphify query "<question>"` |
 
-- **Framework**: React 18+ with the Vite build system
-- **Language**: JavaScript (JSX) with PropTypes
-- **Styling**: CSS Modules with CSS custom properties
-- **Storage**: Supabase (PostgreSQL backend) with Realtime subscriptions
-- **Fonts**: Google Fonts, loaded with a `<link>` in `index.html`. Baloo 2 is
-  the display font. Figtree is the body font. Cinzel is `--font-display-alt`,
-  used for the big values on stat cards, the player names on the landing page,
-  and the Spielerstärke names and percentages.
-- **Build Tool**: Vite with Hot Module Replacement
-- **Tooling**: ESLint 9 (flat config: react + react-hooks) and Vitest
+## Layout
 
-## File Structure
+`graphify` holds the current file map. Run `graphify query "<question>"` instead
+of reading a tree that goes stale. The parts that are not obvious:
 
 ```
-mtg-win-stats/
-├── src/
-│   ├── App.jsx                    # Hash router (#/, #/tracker/<player>, #/global, #/games)
-│   ├── App.module.css             # App root styles
-│   ├── assets/
-│   │   ├── D20_icon.png           # D20 die image
-│   │   └── logo.png               # MTG logo
-│   ├── components/
-│   │   ├── AddPlayer.jsx         # "Neuer Spieler": inline add-player field (new-game modal seats)
-│   │   ├── D20.jsx               # D20 die display component
-│   │   ├── DarkModeToggle.jsx    # Dark mode toggle button
-│   │   ├── DeckScatter.jsx       # Activity vs. win rate scatter (SVG)
-│   │   ├── Logo.jsx              # MTG logo (size prop optional; omit to size from CSS)
-│   │   ├── NewGameModal.jsx      # Game entry modal (2x2 grid, winner tap, quick-add deck)
-│   │   ├── PlayerAvatar.jsx      # Player initial on their gradient (all 6 avatar sites)
-│   │   ├── PlayerStrengthChart.jsx  # Adjusted win-rate ranking per player (SVG)
-│   │   ├── RollingD20.jsx        # D20 rolling animation (reads window.innerWidth itself)
-│   │   ├── StatCard.jsx          # Reusable statistics card
-│   │   ├── StatRow.jsx           # Ranked-list row, player/deck variant (Global Stats)
-│   │   ├── Toast.jsx             # The only toast renderer ({type, message, action})
-│   │   └── ViewHeader.jsx        # Back button + icon + title + DarkModeToggle
-│   ├── hooks/
-│   │   ├── AppData.jsx           # AppDataProvider + useAppData, mounted once in App.jsx
-│   │   ├── useDarkMode.js        # Dark mode state management
-│   │   ├── useDecks.js           # Deck registry: dirty-flag saves, full sync, realtime
-│   │   ├── useLiveResource.js    # One fetch + debounced realtime channel per resource
-│   │   └── useToast.js           # Shared toast state (show/dismiss/auto-timeout)
-│   ├── utils/
-│   │   ├── stats.js              # Statistics only, no colors: winRate, tiers, combineDeckStats
-│   │   └── stats.test.js         # Vitest unit tests
-│   ├── views/
-│   │   ├── GamesArchiveView.jsx  # Games archive grouped by day (edit/delete + undo)
-│   │   ├── GlobalStatsView.jsx   # Cross-player statistics page
-│   │   ├── LandingPage.jsx       # Player selection + "Neues Spiel" button
-│   │   ├── TrackerView.jsx       # Main tracker (Dashboard/Decks) + toasts
-│   │   └── tracker/              # Sub-components
-│   │       ├── DashboardTab.jsx
-│   │       ├── DecksTab.jsx      # Read-only deck bars (combined stats)
-│   │       ├── ImportPanel.jsx   # Single-deck add
-│   │       └── WinLossBar.jsx    # Read-only win/loss bar
-│   ├── styles/
-│   │   ├── theme.css             # CSS custom properties (light/dark) + reset
-│   │   └── viewChrome.module.css # Shell/header/spinner shared by the 3 full views
-│   ├── supabaseClient.js         # Supabase API client (decks + games + players CRUD)
-│   └── main.jsx                  # Vite entry point
-├── public/
-│   ├── manifest.webmanifest      # PWA manifest
-│   ├── apple-touch-icon.png
-│   └── icons/                    # PWA launcher icons (192, 512)
-├── db/
-│   └── level1_rls.sql           # Level 1 RLS hardening SQL (run once in SQL editor; see auth.md)
-├── eslint.config.js              # ESLint flat config
-├── index.html
-├── package.json
-├── vite.config.js
-├── .env.example                  # Supabase credentials template
-└── AGENTS.md                     # This file
+src/
+├── App.jsx                  # Hash router (#/, #/tracker/<player>, #/global, #/games)
+├── supabaseClient.js        # Every query. All of them go through unwrap()
+├── hooks/
+│   ├── AppData.jsx          # AppDataProvider + useAppData. Mounted once
+│   ├── useLiveResource.js   # One fetch + one debounced realtime channel
+│   └── useDecks.js          # Deck registry: dirty-flag saves, full sync
+├── utils/stats.js           # Statistics only. Holds no colours
+└── styles/theme.css         # Every colour in the app, each one exactly once
 ```
 
-## Architecture
+## Routing
 
-### State Management
+`App.jsx` uses hash-based routing, so a page refresh and the back button both
+work. An invalid hash normalizes to `#/`.
+
+- `#/` → `LandingPage`
+- `#/tracker/<player>` → `TrackerView`
+- `#/global` → `GlobalStatsView`
+- `#/games` → `GamesArchiveView`
+
+
+## State Management
 
 - **Local React state** through `useState` hooks.
 - **Custom hooks**: `useDecks` holds the registry of the player who edits.
@@ -98,18 +58,8 @@ mtg-win-stats/
 - **Persistence**: a Supabase PostgreSQL database.
 - **Per-player data isolation**: each deck row stores a player identifier.
 
-### Routing
 
-`App.jsx` uses hash-based routing. It survives a page refresh, and the back and
-forward buttons work:
-
-- `#/` → `LandingPage`
-- `#/tracker/<player>` → `TrackerView` (one player)
-- `#/global` → `GlobalStatsView` (cross-player stats)
-- `#/games` → `GamesArchiveView` (games archive)
-- An invalid hash normalizes to `#/`.
-
-### Data Layer (`useDecks` + `useAppData` + `supabaseClient`)
+## Data Layer (`useDecks` + `useAppData` + `supabaseClient`)
 
 - **Data Model v2**: the app records results as *games* (the `games` and
   `game_participants` tables), not as manual per-deck counters. The `decks`
@@ -181,12 +131,9 @@ forward buttons work:
   `unwrap(result, context)`. This function logs with that context and rethrows.
   Add a new query the same way. Do not re-inline the
   `if (error) { console.error; throw }` block.
-- **Undo on delete**: a deck deletion is local, with a toast and a 5 s
-  "Rückgängig". The undo reinserts the deck locally, and the debounced sync
-  restores the DB row. A game deletion offers the same 5 s undo. The undo
-  re-inserts the game with a new id.
 
-### Win Rate Ranking
+
+## Win Rate Ranking
 
 - Raw win rate (`winRate`) is for display. It is always a 0-1 number.
 - `adjustedWinRate` is for the **ranking** of decks. It uses a Bayesian prior of
@@ -198,7 +145,8 @@ forward buttons work:
   (`getDynamicStats`) and the `bestDeck` in Global Stats use it, so they always
   agree.
 
-### Data Model
+
+## Data Model
 
 ```javascript
 // Deck object structure (registry; wins/losses = frozen legacy baseline)
@@ -226,7 +174,8 @@ forward buttons work:
 }
 ```
 
-### 4-Player Pod Win Rate Context
+
+## 4-Player Pod Win Rate Context
 
 This is a 4-player Commander pod. The random average is 25%:
 
@@ -247,91 +196,27 @@ as `data-tier` and the stylesheet resolves `--tier-color` and
 - **Sage green** for 25-50% (good 📈)
 - **Crimson** for less than 25% (struggling 📉)
 
-## Features
+## Feature Invariants
 
-1. **Landing Page**
-   - 4 player selection buttons, each with a unique color
-   - "Neues Spiel" button opens the game entry modal
-   - Global statistics button (Gesamtübersicht)
-   - "Spielarchiv" link to the games archive
-   - Dark mode toggle
-   - A D20 triple-click easter egg (ignored on interactive elements)
+Three rules live in feature behaviour rather than in the data layer. Each one
+fails silently.
 
-2. **New Game Modal**
-   - A 2x2 grid of players. Tap a cell to crown the winner (border + 👑).
-   - A deck select per player (sorted by games played)
-   - "＋ Neues Deck" quick-add writes to the deck registry
-   - You can remove a participant (✕, minimum `MIN_PARTICIPANTS`) and add them
-     again through an empty slot
-   - "＋ Neuer Spieler" in an empty seat adds a brand-new player (`AddPlayer` →
-     `players` table). They can play at once but stay out of the pod stats (see
-     Data Layer → Added players).
-   - Edit mode (from the archive): change the date, decks, or winner; delete the
-     game
-   - **The modal never discards input by accident.** The backdrop and Escape
-     close the modal only while the form is untouched. After you enter
-     anything, both go inert, and "Abbrechen" is the only way out. Every field
-     is local state, and the modal unmounts on close. In the past, a stray
-     backdrop tap could throw away a fully entered game with no undo. The app
-     derives dirtiness. It diffs the live state against a snapshot of the
-     opening state (`initialFormState`), so a new field is covered
-     automatically. Do not replace this with a `dirty` flag that each handler
-     must remember to set.
-
-3. **Games Archive (`#/games`)**
-   - All games grouped by day (Heute/Gestern/date), newest first
-   - The winner shows first with 👑. Tap a card to edit it.
-   - Delete with a 5 s undo toast (re-insert)
-   - Live updates through Supabase Realtime
-
-4. **Tracker View (per player)**
-   - A Dashboard tab with win rate stats (Bayesian-ranked) and deck bars with a
-     25% baseline tick
-   - "Zuletzt gespielt" (deck and date of the most recent recorded game of the
-     player) and "Serie" (the current win or loss streak, shown once it is 2 or
-     more games). The app derives both from `games`, not just from win and loss
-     totals, through `playerGameHistory`, `getCurrentStreak`, and
-     `getLastPlayed`.
-   - A Decks tab with read-only win/loss bars (legacy and game-derived). An
-     unplayed deck shows a neutral bar. A games-only deck has no delete control.
-   - Rename a registry deck inline (pencil). The app persists this as a single
-     `renameDeckRegistry(id, name)` update on the row of the deck. Game history
-     references the same `deck_id`, so the new name shows up everywhere through
-     the join. No propagation write is necessary.
-   - Delete a registry deck with a 5 s undo toast
-   - A single-deck add panel
-   - Live updates through Supabase Realtime
-
-5. **Global Stats View**
-   - Games played, pod-wide. This is not a "Gesamt-Winrate". With one winner per
-     multiplayer game, an all-players win rate is pinned near 1/pod-size and
-     says nothing that the 25% baseline does not already say. The value is the
-     highest per-player total (wins + losses), not `games.length`. A legacy
-     pre-Data-Model-v2 game survives only as a frozen counter on `decks`, with
-     no row in `games`. As a result, `games.length` alone would undercount.
-   - "Serie": the longest active win streak and the longest active loss streak
-     pod-wide, shown as separate cards. Each card appears only if at least one
-     player currently has a streak (player name capitalized). Both cards render
-     `wide`. The `wide` prop of StatCard spans the full grid row with
-     `grid-column: 1 / -1`. "X Niederlagen in Folge" is too long to share a
-     half-width mobile cell without clipping.
-   - Player strength: one dot per player at their Bayesian-adjusted win rate
-     (the same prior as the deck rankings), sorted, against the 25% baseline.
-     This surfaces a case where the raw win-rate ranking below and the
-     games-weighted ranking here disagree (small sample vs. proven).
-   - An activity vs. win rate scatter with quadrant labels. A tap anywhere in
-     the plot resolves to the *nearest* dot, and does not need a precise hit, so
-     tightly-packed small decks stay easy to select. Keyboard users still tab
-     dot-by-dot. The plot supports pinch-zoom, double-click zoom, and pan on
-     touch.
-   - A player comparison with win rate bars (25% baseline tick, tier icons)
-   - The full list of all played decks, ranked by Bayesian-adjusted win rate
-   - Best deck (minimum 2 games) and Most played deck highlights
-   - A 📜 shortcut to the games archive
-   - Live updates through Supabase Realtime
-
-6. **PWA**
-   - A web app manifest, launcher icons (192/512), and an apple-touch-icon
+- **The new-game modal derives dirtiness, it does not track it.** The backdrop
+  and Escape close the modal only while the form is untouched. After any input,
+  both go inert, and "Abbrechen" is the only way out. The modal diffs the live
+  state against `initialFormState`, a snapshot of the opening state, so a new
+  field is covered automatically. Do not replace this with a `dirty` flag that
+  each handler must remember to set. A stray backdrop tap used to discard a
+  fully entered game with no undo.
+- **"Spiele insgesamt" is the highest per-player total, not `games.length`.**
+  A legacy pre-v2 game survives only as a frozen counter on `decks`, with no row
+  in `games`. As a result, `games.length` undercounts. This figure is also not a
+  pod win rate: with one winner per game, that number is pinned near
+  1/pod-size and says nothing the 25% baseline does not already say.
+- **A deck rename is one row update.** `renameDeckRegistry(id, name)` writes the
+  `decks` row. Game history points at the same `deck_id`, so the new name
+  appears everywhere through the join. Do not add a propagation write across
+  `game_participants`.
 
 ## Code Style Guidelines
 
@@ -437,15 +322,6 @@ Prefer these over a re-render of the same markup:
 - **CSS Modules**: camelCase classes (`.playerCard`)
 - **Constants**: UPPER_SNAKE_CASE (`WIN_RATE_TIERS`)
 
-## Environment Variables
-
-These are necessary for the Supabase integration:
-
-```
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
-
 ## Testing
 
 Automated:
@@ -483,131 +359,18 @@ tests.** As a result, you must test anything that touches the UI by hand:
     on the landing page and their hover glow in both themes, because they are
     now styled from `[data-theme="dark"]`.
 
-## Refactoring History
-
-Completed in 2026-02:
-
-| Phase | Changes |
-|-------|---------|
-| **Foundation** | Fixed useDarkMode hook, consolidated win rate logic, removed sample data |
-| **CSS Modules** | Migrated inline styles to CSS Modules with CSS custom properties |
-| **Architecture** | Extracted useDecks hook, split TrackerView into sub-components |
-| **Polish** | Standardized imports, added PropTypes/JSDoc, optimized Supabase bulk operations |
-| **Cleanup** | Removed duplicate `supabase.js` file, added PropTypes to all components, created `App.module.css` |
-
-Completed in 2026-07:
-
-| Phase | Changes |
-|-------|---------|
-| **Tooling** | ESLint 9 flat config + Vitest with stats unit tests |
-| **Data safety** | Dirty-flag saves (no wipe on failed load, no redundant upserts), full-sync `saveDecks`, Realtime subscriptions, loud env-var failure |
-| **Stats** | Bayesian `adjustedWinRate` (5 games @ 25%) for deck rankings, strict 0-1 tiers, `MOBILE_BREAKPOINT` |
-| **Routing** | Hash routes (`#/tracker/<player>`) survive refresh |
-| **UX** | Toast state machine with 5s delete-undo, import merge counts, neutral bar for unplayed decks, pod-aware labels |
-| **Visual** | Anti-FOUC dark mode, CSS `:hover` via custom properties (no JS handlers), 25% baseline ticks, tier icons, `lang="de"` |
-| **Cleanup** | Removed unused primitives library, images, CSS classes, `100MB` file; assets moved to `src/assets/` |
-| **Features** | Pod-share donut, activity/winrate scatter (hand-rolled SVG), PWA manifest + icons |
-
-Completed in 2026-07 (Data Model v2):
-
-| Phase | Changes |
-|-------|---------|
-| **Schema** | `games` + `game_participants` tables (SQL in SUPABASE_SETUP.md); `decks.wins/losses` frozen as legacy baseline |
-| **Data layer** | Game CRUD in `supabaseClient.js`, `useGames` hook with realtime, `combineDeckStats` merge util, `addDeckToRegistry` quick-add |
-| **Game entry** | `NewGameModal`: 2x2 player grid, tap-to-crown winner, deck selects, participant remove/re-add, quick-add deck, edit mode with date |
-| **Archive** | `GamesArchiveView` at `#/games`: day grouping, edit, delete with 5s undo (re-insert) |
-| **Deprecation** | Read-only deck bars (no +/- controls), single-deck add replaces bulk import, `updateDeck` removed, name-based `deleteDeckByName`, `Btn.jsx` deleted |
-
-Completed in 2026-08 (post-review cleanup):
-
-| Phase | Changes |
-|-------|---------|
-| **Consistency** | Unified "best deck" logic behind `MIN_GAMES_FOR_BEST_DECK`. The dashboard and Global Stats had used different thresholds (2 vs. 3 games) and could disagree. |
-| **Data layer** | `getAllDecks()` replaces 4x parallel per-player `getDecks()` calls in `GlobalStatsView`/`NewGameModal`. `useGames` split into a context (`GamesContext`/`useGames()`) + `GamesProvider` mounted once in `App.jsx`, so games are fetched and subscribed once instead of per-view. |
-| **Cleanup** | `useToast` hook replaces duplicated toast state in `LandingPage`/`TrackerView`/`GamesArchiveView`. Dead commented-out JSX removed from `DeckScatter`. Inline win-rate math in `GlobalStatsView` now reuses `winRate()`. |
-| **Global Stats content** | `PodShareDonut` (win-share donut, mixed adjusted arc sizes with raw-share numbers) replaced by `PlayerStrengthChart`. This shows one dot per player at their Bayesian-adjusted win rate against the 25% baseline, with no raw-vs-adjusted comparison. It moved from the bottom-most section to right after "Gesamtübersicht", and swapped places with "Spieler-Vergleich". |
-
-Completed in 2026-08 ("Kartenrahmen" visual redesign, merged from
-`design/kartenrahmen`):
-
-A dark cardstock and foil theme, with a light parchment card-face, replaces the
-original purple/green/Outfit look app-wide:
-
-- **Typography**: `Cinzel` (display, engraved-capitals headers and labels) and
-  `Work Sans` (body) replace `Outfit` and `DM Sans`.
-- **Palette**: `PLAYER_COLORS` is re-mapped to emerald (baum), red (mary),
-  violet-magenta (pascal), and gold-yellow (wewy). The hex is the same in both
-  themes, which matches the theme-independent architecture that was already
-  there. The `theme.css` tokens are rebuilt for both a dark cardstock surface
-  (`#1c1712`) and a light parchment surface (`#ece0c8`). The win-rate tiers are
-  restyled to gold, sage-green, and crimson, so they stay distinct from the new
-  player hues. The colors were picked by eye for this direction. They did not go
-  through colorblind-safety validation (see the `no-colorblind-palette-validation`
-  project memory).
-- Every hardcoded color that did not already flow through a `theme.css` token
-  was found and updated one at a time. `DarkModeToggle` icons now use
-  `currentColor` instead of baked-in old-theme hex. This also covers the
-  critical-hit and critical-fail colors of `D20`, the button gradients and glow
-  shadows of `LandingPage`, the ad-hoc `StatCard` accents of `GlobalStatsView`,
-  and the "good zone" wash of `DeckScatter`.
-
-Completed in 2026-08 (DB IDs migration):
-
-The `player` and `deck` text columns stay. The app never drops them, and they
-remain the permanent historical snapshot for a deleted deck. The `decks` and
-`game_participants` tables gained `player_id` and `deck_id` foreign keys, and a
-new `players` table was added. The user ran the SQL by hand in the Supabase SQL
-Editor (see SUPABASE_SETUP.md). This phase is the code side:
-
-- `getPlayerIdMap()` in `supabaseClient.js` caches the lookup from player slug to
-  id. Every write path (`saveDecks`, `addDeckToRegistry`, `addGame`,
-  `updateGame`) used it to populate `player_id`. The atomic `save_game` and
-  `update_game` RPC later superseded this for games: they resolve `player_id` on
-  the server, so only the deck writes still use `getPlayerIdMap()` (see the
-  current-state Data Layer section above).
-- `getGames()` embeds `decks(name)` through `deck_id` and prefers the live name
-  over the stored text, so a rename shows up everywhere at once.
-- `renameDeckInGames` (a propagation write into every game row) was removed. It
-  is replaced by `renameDeckRegistry(id, name)`, a single-row update on the deck
-  itself. The `renameDeck` in `useDecks` no longer marks the change dirty for
-  the debounced full-sync. A race between that name-keyed upsert and the new
-  id-keyed update could otherwise create a duplicate row.
-- The realtime subscription of `GamesProvider` added `decks` alongside `games`
-  and `game_participants`, because a rename now touches only `decks`. Without
-  it, the cached join would show the old name until a reload.
-
-Completed in 2026-08 (`/simplify` pass over `src/`, branch
-`worktree-simplify-codebase`):
-
-A four-angle review (reuse, simplification, efficiency, altitude), applied in
-two halves. The mechanical half went in at once. The structural half went in one
-commit at a time afterwards. Each commit was verified with lint, tests, and
-build.
-
-| Phase | Changes |
-|-------|---------|
-| **Applied first** | Deduped constants into `stats.js` (`POD_BASELINE_WR`, `formatPct`, `streakDisplay`, `MIN_STREAK_GAMES`, `PROVEN_DECK_GAMES`). Memoized the `DeckScatter` layout (it was rebuilt on every touchmove) and the `GlobalStatsView` stats. `combineDeckStats` called once per player instead of three times. `useIsMobile` switched to `matchMedia`. Dead theme tokens and CSS removed. |
-| **Tests** | 16 cases for the previously untested `playerGameHistory` / `getCurrentStreak` / `getLastPlayed` / `streakDisplay` |
-| **Bug fix** | The new-game modal no longer discards a filled-in game when the backdrop is tapped |
-| **Components** | `Toast`, `ViewHeader`, `PlayerAvatar`, `StatRow` extracted. The toast type is no longer sniffed from the leading emoji of the message. |
-| **CSS** | `styles/viewChrome.module.css` for the shell, header, and spinner that the three views had duplicated. The JS responsive layer was replaced by media queries (17 `*Mobile` classes and about 25 ternaries deleted, `useIsMobile` removed). Dark mode moved to `[data-theme="dark"]` rules. |
-| **Data layer** | `AllDecksProvider` owns the fetch and realtime for the registries. This was a third hand-rolled subscription in `GlobalStatsView`, and no subscription at all in `NewGameModal`. `unwrap()` replaces 13 copies of the error block in `supabaseClient.js`. |
-| **Small** | `RollingD20` reads `window.innerWidth` itself (App was passing a hardcoded 1024 on desktop, so the die aimed at the wrong center). The `loaded` flag of `useDarkMode` was dropped. The two click handlers of App were merged. `TAB_H` moved to CSS. `MIN_PARTICIPANTS` named. The reset of `index.html` was folded into `theme.css`. |
-
-Deferred items and the reasoning for each are in `CLEANUP-BACKLOG.md`
-(gitignored, a local working note). It also records one **do not do**: the
-`useRef` and `useEffect` focus handling in `ImportPanel` is *not* a
-reimplementation of the `autoFocus` of React. The prop flips false→true after
-the decks load asynchronously, which the built-in `autoFocus` (mount-only) would
-not catch.
-
-See the git history for the detailed commits:
-
-```bash
-git log --oneline --all
-```
-
 ## Git Workflow Prerogatives
+
+**The pre-commit hook is the gate.** `scripts/precheck.sh` runs lint, test and
+build, then refreshes the graph and the wiki. Never weaken it to make a commit
+pass. Use `git commit --no-verify` for a one-off, and fix the cause.
+
+The build step is not redundant with lint. It is the only check that catches a
+deleted export that another file still imports.
+
+`graphify update .` does not refresh the wiki. The export must run after it, or
+`graphify-out/wiki/` silently describes old code.
+
 
 ### Author Attribution
 
@@ -666,44 +429,3 @@ Conventional Commits types:
 The description is lowercase kebab-case, with no trailing ticket noise. For
 example: `feat/level1-rls-hardening`, `fix/deck-rename-race`,
 `docs/auth-hardening-notes`.
-
-## Deployment
-
-**Vercel setup:**
-
-1. Connect the GitHub repo.
-2. Framework preset: "Vite".
-3. Build command: `npm run build` (auto-detected).
-4. Output directory: `dist` (auto-detected).
-5. Add the environment variables in the Vercel dashboard.
-
-## CI & Backups
-
-`.github/workflows/ci.yml` runs `lint`, `test`, and `build` on every PR and on
-every push to `main`. It only reports status. To make it a real merge gate,
-enable a branch protection rule on `main` that requires the `check` job.
-
-`.github/workflows/backup.yml` runs weekly (Sundays, about evening Central
-European time), and also on a manual `workflow_dispatch`. It exports `decks`,
-`games`, and `game_participants` as JSON. The free Supabase tier has no
-automated backups, so this is the real data-loss insurance (see `auth.md`). The
-export is pushed to a **separate private repo**
-(`Cinemaker123/mtg-win-stats-backups`), not committed here. This repo is public,
-and the data includes player names. Both workflows need `VITE_SUPABASE_URL` and
-`VITE_SUPABASE_ANON_KEY` added as **GitHub Actions secrets** (repo Settings →
-Secrets and variables → Actions). These are the same values as the Vercel env
-vars, but Actions cannot read those directly. `backup.yml` also needs
-`BACKUP_REPO_TOKEN`, a fine-grained PAT scoped to `contents: write` on the
-private backup repo only.
-
-## Future Enhancements (Potential)
-
-- Deck archetype categorization
-- Win/loss streak tracking
-- Head-to-head matchup records (possible with the v2 game data)
-- Seasonal statistics reset
-- **Auth — Level 2/3 in `auth.md`.** Level 1 is **applied** through
-  `db/level1_rls.sql` and verified live (RLS enabled, allow-all policies,
-  `decks_counts_check`, pinned RPC `search_path`). The net anon access is
-  unchanged. A PIN gate (Level 2) or real per-player auth (Level 3) stay
-  optional.
