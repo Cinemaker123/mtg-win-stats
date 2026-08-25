@@ -100,14 +100,9 @@ Security hardening is documented in `auth.md`.
    - Edit mode (from the archive): change the date, decks, or winner; delete the
      game
    - **The modal never discards input by accident.** The backdrop and Escape
-     close the modal only while the form is untouched. After you enter
-     anything, both go inert, and "Abbrechen" is the only way out. Every field
-     is local state, and the modal unmounts on close. In the past, a stray
-     backdrop tap could throw away a fully entered game with no undo. The app
-     derives dirtiness. It diffs the live state against a snapshot of the
-     opening state (`initialFormState`), so a new field is covered
-     automatically. Do not replace this with a `dirty` flag that each handler
-     must remember to set.
+     close it only while the form is untouched. After you enter anything,
+     "Abbrechen" is the one way out. AGENTS.md holds the full rule and the
+     reason. Do not restate it here.
 
 3. **Games Archive (`#/games`)**
    - All games grouped by day (Heute/Gestern/date), newest first

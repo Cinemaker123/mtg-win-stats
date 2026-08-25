@@ -149,6 +149,14 @@ export const MAX_PARTICIPANTS = 4;
 // MIN_GAMES_FOR_BEST_DECK, which only gates a headline card.
 export const PROVEN_DECK_GAMES = 5;
 
+// ---------------------------------------------------------------------------
+// View models (StatCard props), not math.
+// Everything below builds German-labeled, icon-carrying StatCard props. It is
+// presentation logic that lives here next to the pure math above only for
+// history. If this grows, split it into its own module (for example
+// viewModels.js) so utils/stats.js stays pure numbers.
+// ---------------------------------------------------------------------------
+
 /**
  * Presentation for a win/loss streak, as a StatCard-shaped object.
  * Both the dashboard and Global Stats render streaks, and previously each

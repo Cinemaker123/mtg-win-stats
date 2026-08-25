@@ -112,7 +112,14 @@ work. An invalid hash normalizes to `#/`.
   guard, not client code. An added player plays, owns decks, and shows in the
   archive, because `getDecksByPlayer()` unions `PLAYERS` with the live slugs.
   But every statistic keys off `PLAYERS` in `stats.js`, so an added player stays
-  out of all rankings until you add them there on purpose.
+  out of all rankings until you add them there on purpose. The `#/tracker/<slug>`
+  route is also gated on `PLAYERS`, so an added player has no dashboard. Their
+  name in the archive does not link anywhere. This is on purpose: the dashboards
+  are pod-only.
+- **Client-side by design**: every view fetches all games and all decks, then
+  computes stats in the browser. The pod is four people, so the dataset stays
+  tiny. This is a deliberate bound, not an oversight. Do not add pagination or
+  server-side aggregation to "scale" it.
 - **Deck ids in the cache**: each entry in the `["decks"]` cache carries its
   `id`. `NewGameModal` resolves the `deck_id` of each participant out of the
   cache by name. `useAddDeck` inserts a quick-added deck with its id, so a game
