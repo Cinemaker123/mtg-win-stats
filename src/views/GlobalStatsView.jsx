@@ -153,7 +153,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
           </div>
         ) : (
           <>
-            {/* Overall Stats */}
+            {/* Spiele insgesamt — full width */}
             <div className={styles.section}>
               <div className={styles.statsGrid}>
                 <StatCard
@@ -162,7 +162,23 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                   sub={stats.maxPlayerGames === 0 ? "Noch keine Spiele" : undefined}
                   accent="info"
                   icon="🎲"
+                  wide
                 />
+              </div>
+            </div>
+
+            {/* Player strength: adjusted win rate ranking (no headline) */}
+            {stats.totalWinsAll > 0 && (
+              <div className={styles.section}>
+                <div className={styles.card}>
+                  <PlayerStrengthChart playerStats={stats.playerStats} />
+                </div>
+              </div>
+            )}
+
+            {/* Best deck, most played, and streaks — 2x2 */}
+            <div className={styles.section}>
+              <div className={styles.statsGrid}>
                 <StatCard
                   label="Bestes Deck"
                   value={stats.bestDeck ? stats.bestDeck.name : "-"}
@@ -187,27 +203,15 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       sub={`${streak.count} ${display.noun} in Folge`}
                       accent={display.tier}
                       icon={display.icon}
-                      wide
                     />
                   );
                 })}
               </div>
             </div>
 
-            {/* Player strength: adjusted win rate ranking */}
-            {stats.totalWinsAll > 0 && (
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>Spielerstärke</div>
-                <div className={styles.card}>
-                  <PlayerStrengthChart playerStats={stats.playerStats} />
-                </div>
-              </div>
-            )}
-
-            {/* Activity vs. performance scatter */}
+            {/* Activity vs. performance scatter (no headline) */}
             {stats.allDecks.length > 0 && (
               <div className={styles.section}>
-                <div className={styles.sectionTitle}>Deckperformance</div>
                 <div className={styles.card}>
                   <DeckScatter decks={stats.allDecks} />
                 </div>

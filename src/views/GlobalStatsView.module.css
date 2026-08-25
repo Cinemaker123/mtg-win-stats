@@ -30,14 +30,8 @@
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
-}
-
-@media (max-width: 639px) {
-  .statsGrid {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 .card {

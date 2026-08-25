@@ -142,10 +142,11 @@ Security hardening is documented in `auth.md`.
      no row in `games`. As a result, `games.length` alone would undercount.
    - "Serie": the longest active win streak and the longest active loss streak
      pod-wide, shown as separate cards. Each card appears only if at least one
-     player currently has a streak (player name capitalized). Both cards render
-     `wide`. The `wide` prop of StatCard spans the full grid row with
-     `grid-column: 1 / -1`. "X Niederlagen in Folge" is too long to share a
-     half-width mobile cell without clipping.
+     player currently has a streak (player name capitalized). The streak cards
+     sit in the 2x2 grid with "Bestes Deck" and "Meistgespielt", below "Spiele
+     insgesamt" (full width) and the player-strength chart. At mobile width the
+     2x2 cells are narrow, so long values (deck names, "X Niederlagen in Folge")
+     truncate with an ellipsis.
    - Player strength: one dot per player at their Bayesian-adjusted win rate
      (the same prior as the deck rankings), sorted, against the 25% baseline.
      This surfaces a case where the raw win-rate ranking below and the
