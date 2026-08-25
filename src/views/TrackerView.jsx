@@ -34,9 +34,14 @@ import styles from "./TrackerView.module.css";
  * @param {boolean} props.isDark - Current dark mode state
  * @param {Function} props.onToggleDark - Callback to toggle dark mode
  */
+// Stable empties so the combinedDecks useMemo does not see a new reference
+// each render while the query loads.
+const NO_DECKS_LIST = [];
+const NO_GAMES = [];
+
 export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   const decksQuery = useDecksQuery();
-  const decks = decksQuery.data?.[player] ?? [];
+  const decks = decksQuery.data?.[player] ?? NO_DECKS_LIST;
   const loading = decksQuery.isLoading;
   const loaded = decksQuery.isSuccess;
   const error = decksQuery.isError ? "Fehler beim Laden. Bitte erneut versuchen." : null;
@@ -45,7 +50,7 @@ export function TrackerView({ player, onBack, isDark, onToggleDark }) {
   const renameDeck = useRenameDeck();
   const deleteDeck = useDeleteDeck();
   const restoreDeck = useRestoreDeck();
-  const { data: games = [] } = useGamesQuery();
+  const { data: games = NO_GAMES } = useGamesQuery();
   // Stats display combines frozen legacy counters with game-derived counts
   const combinedDecks = useMemo(
     () => combineDeckStats(decks, games, player),

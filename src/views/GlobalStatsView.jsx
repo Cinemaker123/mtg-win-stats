@@ -20,11 +20,16 @@ import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentS
 import styles from "./GlobalStatsView.module.css";
 import chrome from "../styles/viewChrome.module.css";
 
+// Stable empty defaults, so the useMemo below does not see a new reference
+// on every render while a query is still loading.
+const NO_GAMES = [];
+const NO_DECKS = {};
+
 export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
   const gamesQuery = useGamesQuery();
   const decksQuery = useDecksQuery();
-  const games = gamesQuery.data ?? [];
-  const decksByPlayer = decksQuery.data ?? {};
+  const games = gamesQuery.data ?? NO_GAMES;
+  const decksByPlayer = decksQuery.data ?? NO_DECKS;
   const loading = gamesQuery.isLoading || decksQuery.isLoading;
   const error = gamesQuery.isError || decksQuery.isError ? "Fehler beim Laden." : null;
 
