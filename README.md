@@ -141,12 +141,12 @@ Security hardening is documented in `auth.md`.
      pre-Data-Model-v2 game survives only as a frozen counter on `decks`, with
      no row in `games`. As a result, `games.length` alone would undercount.
    - "Serie": the longest active win streak and the longest active loss streak
-     pod-wide, shown as separate cards. Each card appears only if at least one
-     player currently has a streak (player name capitalized). The streak cards
-     sit in the 2x2 grid with "Bestes Deck" and "Meistgespielt", below "Spiele
-     insgesamt" (full width) and the player-strength chart. At mobile width the
-     2x2 cells are narrow, so long values (deck names, "X Niederlagen in Folge")
-     truncate with an ellipsis.
+     pod-wide, shown as separate cards. A win streak shows from 2 games; a loss
+     streak needs 4, because a 2-3 game losing run is common in a 4-player pod
+     (the base loss rate is 75%) and says little. The streak cards sit in the
+     2x2 grid with "Bestes Deck" and "Meistgespielt", below "Spiele insgesamt"
+     (full width) and the player-strength chart. On mobile the cards drop the
+     "in Folge" suffix so "4 Niederlagen" fits the narrow cell.
    - Player strength: one dot per player at their Bayesian-adjusted win rate
      (the same prior as the deck rankings), sorted, against the 25% baseline.
      This surfaces a case where the raw win-rate ranking below and the

@@ -14,7 +14,7 @@ import { PlayerStrengthChart } from "../components/PlayerStrengthChart.jsx";
 import { DeckScatter } from "../components/DeckScatter.jsx";
 
 // Utils
-import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, streakDisplay, capitalize, formatPct, MIN_GAMES_FOR_BEST_DECK, MIN_STREAK_GAMES, POD_BASELINE_WR, PLAYERS } from "../utils/stats.js";
+import { getWinRateTier, adjustedWinRate, combineDeckStats, winRate, getCurrentStreak, streakDisplay, capitalize, formatPct, MIN_GAMES_FOR_BEST_DECK, minStreakGames, POD_BASELINE_WR, PLAYERS } from "../utils/stats.js";
 
 // Styles
 import styles from "./GlobalStatsView.module.css";
@@ -74,7 +74,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     // (shown separately, each only if at least one player currently has one)
     const streaks = PLAYERS
       .map(player => ({ player, streak: getCurrentStreak(games, player) }))
-      .filter(s => s.streak && s.streak.count >= MIN_STREAK_GAMES);
+      .filter(s => s.streak && s.streak.count >= minStreakGames(s.streak.type));
     const topStreak = type => streaks
       .filter(s => s.streak.type === type)
       .sort((a, b) => b.streak.count - a.streak.count)[0] || null;
@@ -200,7 +200,7 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                       key={streak.type}
                       label="Serie"
                       value={capitalize(player)}
-                      sub={`${streak.count} ${display.noun} in Folge`}
+                      sub={<>{streak.count} {display.noun}<span className={styles.streakSuffix}> in Folge</span></>}
                       accent={display.tier}
                       icon={display.icon}
                     />

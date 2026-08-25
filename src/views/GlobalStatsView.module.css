@@ -95,3 +95,10 @@
   font-size: 10px;
   font-weight: 700;
 }
+
+/* On a narrow 2x2 cell, drop the "in Folge" suffix so the streak text fits. */
+@media (max-width: 639px) {
+  .streakSuffix {
+    display: none;
+  }
+}

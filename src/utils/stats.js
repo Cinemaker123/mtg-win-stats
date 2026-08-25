@@ -122,6 +122,19 @@ export const MIN_GAMES_FOR_BEST_DECK = 2;
 // shared by the per-player dashboard and Global Stats so both agree.
 export const MIN_STREAK_GAMES = 2;
 
+// Loss streaks need a longer run to be worth showing. In a 4-player pod a
+// 2-3 game losing run is common (the base loss rate is 75%), so it says little.
+export const MIN_LOSS_STREAK_GAMES = 4;
+
+/**
+ * The minimum run length for a streak of this type to surface.
+ * @param {'win'|'loss'} type
+ * @returns {number}
+ */
+export function minStreakGames(type) {
+  return type === "loss" ? MIN_LOSS_STREAK_GAMES : MIN_STREAK_GAMES;
+}
+
 // Smallest pod a recorded game can have. Fewer than two players isn't a
 // game, and the new-game modal blocks saving below it.
 export const MIN_PARTICIPANTS = 2;
@@ -144,7 +157,7 @@ export const PROVEN_DECK_GAMES = 5;
  * @returns {{icon: string, tier: string, noun: string}|null} - null if not worth showing
  */
 export function streakDisplay(streak) {
-  if (!streak || streak.count < MIN_STREAK_GAMES) return null;
+  if (!streak || streak.count < minStreakGames(streak.type)) return null;
   const isWin = streak.type === "win";
   return {
     icon: isWin ? "🔥" : "🥀",

@@ -6,7 +6,7 @@ import styles from './StatCard.module.css';
  * @param {Object} props
  * @param {string} props.label - Card label
  * @param {string|number} props.value - Main value to display
- * @param {string} [props.sub] - Subtitle text
+ * @param {React.ReactNode} [props.sub] - Subtitle (text or nodes)
  * @param {string} props.accent - Accent token name: info, activity,
  *   legendary, good or struggling. theme.css maps it to a colour.
  * @param {string} props.icon - Emoji icon
@@ -35,7 +35,7 @@ export function StatCard({ label, value, sub, accent, icon, wide = false }) {
 StatCard.propTypes = {
   label: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  sub: PropTypes.string,
+  sub: PropTypes.node,
   accent: PropTypes.string.isRequired,
   icon: PropTypes.string.isRequired,
   wide: PropTypes.bool,

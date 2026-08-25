@@ -288,6 +288,10 @@ describe("streakDisplay", () => {
     expect(streakDisplay({ type: "win", count: MIN_STREAK_GAMES - 1 })).toBeNull();
   });
 
+  it("hides a common short loss streak (needs 4 in a 4-player pod)", () => {
+    expect(streakDisplay({ type: "loss", count: 3 })).toBeNull();
+  });
+
   it("describes a win streak", () => {
     expect(streakDisplay({ type: "win", count: MIN_STREAK_GAMES })).toEqual({
       icon: "🔥",
@@ -297,7 +301,7 @@ describe("streakDisplay", () => {
   });
 
   it("describes a loss streak", () => {
-    expect(streakDisplay({ type: "loss", count: 3 })).toEqual({
+    expect(streakDisplay({ type: "loss", count: 4 })).toEqual({
       icon: "🥀",
       tier: "struggling",
       noun: "Niederlagen",
