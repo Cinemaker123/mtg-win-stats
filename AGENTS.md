@@ -214,26 +214,14 @@ fails silently.
 
 ### Import Order
 
-```javascript
-// 1. React
-import { useEffect, useState } from "react";
-import PropTypes from "prop-types";
+Order groups like this, with a blank line between them:
 
-// 2. Hooks (internal)
-import { useDecks } from "../hooks/useDecks.js";
-
-// 3. Components (internal)
-import { DarkModeToggle } from "../components/DarkModeToggle.jsx";
-
-// 4. Utils / API
-import { getDecks } from "../supabaseClient.js";
-
-// 5. Sub-components
-import { DashboardTab } from "./tracker/DashboardTab.jsx";
-
-// 6. Styles
-import styles from "./TrackerView.module.css";
-```
+1. React and third-party (`react`, `prop-types`)
+2. Internal hooks
+3. Internal components
+4. Utils and API (`stats.js`, `supabaseClient.js`)
+5. Sub-components (`./tracker/...`)
+6. The component's own `.module.css`
 
 ### CSS Modules Pattern
 
@@ -245,19 +233,16 @@ import styles from "./TrackerView.module.css";
 - Keep only a truly computed value inline (win rate bar widths).
 - Share a rule **across** stylesheets with
   `composes: x from "../styles/viewChrome.module.css"`. Do not copy a block
-  between views. The three view stylesheets had drifted apart while they were
-  character-for-character identical for 80 lines.
+  between views. Copied blocks drift apart while looking identical.
 
 ### Responsive Layout — CSS only
 
 Breakpoint decisions live in `@media (max-width: 639px)` blocks, one per
-stylesheet. There is **no JS breakpoint hook**. `useIsMobile` was deleted, with
-every `isMobile ? styles.xMobile : styles.x` ternary and its `composes:`-based
-`*Mobile` twin. Do not add them again. A layout in two languages needs two
-edits per tweak and can flash the wrong layout on the first paint.
-`MOBILE_BREAKPOINT` (640) survives in `utils/stats.js` for `RollingD20`, which
-genuinely needs the pixel width in JS. The `639px` in the media queries mirrors
-it.
+stylesheet. There is **no JS breakpoint hook**. `useIsMobile` was deleted. Do
+not add one back: a layout in two languages needs two edits per tweak and can
+flash the wrong layout on the first paint. `MOBILE_BREAKPOINT` (640) survives in
+`utils/stats.js` for `RollingD20`, which needs the pixel width in JS. The
+`639px` in the media queries mirrors it.
 
 ### Colors — CSS only, never in JavaScript
 
@@ -308,7 +293,7 @@ Prefer these over a re-render of the same markup:
 - `ViewHeader` — a back button, an icon, a title, extra buttons as children,
   then the toggle.
 - `PlayerAvatar` — a player initial on their gradient. The caller passes only a
-  size or radius class. `background` overrides the gradient with a flat color.
+  size or radius class. The `flat` prop swaps the gradient for the flat accent.
 - `StatRow` — one ranked-list row, `variant="player"` or `"deck"`.
 
 ### Naming Conventions
