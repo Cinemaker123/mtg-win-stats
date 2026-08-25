@@ -325,17 +325,6 @@ describe("player palette in theme.css", () => {
     expect(css).toMatch(/\[data-player\]\s*\{[^}]*--player-gradient/);
   });
 
-  it("invalidates both caches when a deck changes", () => {
-    // A deck rename touches the decks table, and the games list shows the live
-    // deck name through its join, so a decks change must refresh both keys.
-    // Scan the source, not a mocked import.
-    const src = readFileSync(new URL("../data/useRealtimeSync.js", import.meta.url), "utf8");
-    const line = src.match(/decks:\s*\[([^\]]*(?:\][^\]]*)*)\]/);
-    expect(line).not.toBeNull();
-    expect(line[1]).toContain("games");
-    expect(line[1]).toContain("decks");
-  });
-
   it("holds no colour literal in any JavaScript file", () => {
     // theme.css is the only home for a colour. A hex or rgba() in JS means
     // someone bypassed the data-player / data-tier hooks, and that value can
@@ -353,6 +342,19 @@ describe("player palette in theme.css", () => {
       expect(css).toContain(`[data-tier="${tier}"]`);
     }
     expect(css).toMatch(/\[data-tier\]\s*\{[^}]*--tier-color/);
+  });
+});
+
+describe("useRealtimeSync cache invalidation", () => {
+  it("invalidates both caches when a deck changes", () => {
+    // A deck rename touches the decks table, and the games list shows the live
+    // deck name through its join, so a decks change must refresh both keys.
+    // Scan the source, not a mocked import.
+    const src = readFileSync(new URL("../data/useRealtimeSync.js", import.meta.url), "utf8");
+    const line = src.match(/decks:\s*\[([^\]]*(?:\][^\]]*)*)\]/);
+    expect(line).not.toBeNull();
+    expect(line[1]).toContain("games");
+    expect(line[1]).toContain("decks");
   });
 });
 
