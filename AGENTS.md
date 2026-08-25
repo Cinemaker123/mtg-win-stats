@@ -88,42 +88,33 @@ work. An invalid hash normalizes to `#/`.
   `update_game` replaces all participants. The definitions live in
   SUPABASE_SETUP.md. Apply them once in the SQL editor.
 - **IDs alongside names**: the `decks` and `game_participants` tables carry
-  `player_id` and `deck_id` foreign keys (into `players` and `decks`), next to
-  their original `player` and `deck` text columns. The app never drops the text
-  columns. `getGames()` embeds `decks(name)` through `deck_id` and prefers that
-  live name over the stored `deck` text. `deck_id` is `ON DELETE SET NULL`. As
-  a result, when a registry deck is deleted, the join returns null, and the
-  stored text becomes a permanent historical snapshot instead of a dangling
-  reference. `getPlayerIdMap()` caches the lookup from player slug to id for the
-  page lifetime. It is used whenever the app writes a deck row (`saveDecks`,
-  `addDeckToRegistry`), so `player_id` stays populated. For games, `save_game`
-  and `update_game` resolve `player_id` on the server from the slug. As a
-  result, participant rows do not depend on a fresh client cache.
+  `player_id` and `deck_id` foreign keys next to their original `player` and
+  `deck` text columns. **Never drop the text columns.** `getGames()` prefers the
+  live name through the `deck_id` join, but `deck_id` is `ON DELETE SET NULL`,
+  so when a registry deck is deleted the stored text becomes a permanent
+  historical snapshot instead of a dangling reference. `getPlayerIdMap()` caches
+  the slug-to-id lookup so deck writes keep `player_id` populated. Games resolve
+  `player_id` on the server, so participant rows do not need a fresh cache.
 - **Realtime**: `useDecks` subscribes to `postgres_changes` filtered by player
   and refetches on remote writes. It suppresses the echoes of its own saves for
   1 second. In `AppDataProvider`, the games resource subscribes to `games`,
   `game_participants`, and `decks`. The decks resource subscribes to `decks` and
   `players`. Both get the 500 ms debounced refetch from `useLiveResource()`, so
   every view reads the same cache instead of a separate fetch and subscription.
-  The games list includes `decks` because a deck rename now touches only the
-  `decks` table (see above). Without it, the cached `games` join would keep the
-  old name until a reload. This needs the tables in the `supabase_realtime`
-  publication (see SUPABASE_SETUP.md).
-- **Bulk deck fetch**: `getDecksByPlayer()` fetches the decks of every player in
-  one unfiltered query and groups them. It guarantees one entry per player in
-  `PLAYERS`. **Only** `AppDataProvider` calls it. `GlobalStatsView` and
-  `NewGameModal` read the shared cache, so opening the game modal costs no
-  query. `useDecks` still calls the per-player `getDecks(player)`. That call is
-  correctly scoped.
-- **Added players**: `addPlayer(name)` comes from the `AddPlayer` component, in
-  the empty seats of the new-game modal. It upserts one row into the `players`
-  table. The slug comes from `playerSlug`. The unique constraint on the table
-  is the real dedupe guard. The function then busts the `getPlayerIdMap` cache,
-  so the new slug resolves at once. The app records an added player like anyone
-  else (games, decks, archive). But every statistic keys off `PLAYERS` in
-  `stats.js`. As a result, an added player stays out of all rankings until you
-  add them there on purpose. `getDecksByPlayer()` unions `PLAYERS` with the live
-  slugs. This is what lets an added player own decks at all.
+  The games list must include `decks`, so a deck rename refreshes the cached
+  join instead of showing the old name until reload. A test guards this. All
+  three tables need the `supabase_realtime` publication (see SUPABASE_SETUP.md).
+- **Bulk deck fetch**: `getDecksByPlayer()` fetches every player's decks in one
+  query, grouped, with one entry per `PLAYERS` slug. **Only** `AppDataProvider`
+  calls it, so `GlobalStatsView` and `NewGameModal` read the shared cache and
+  opening the modal costs no query. `useDecks` keeps its per-player
+  `getDecks(player)` for the single-player registry.
+- **Added players**: `addPlayer(name)` (from `AddPlayer`, in the modal's empty
+  seats) upserts one `players` row. The table's unique constraint is the dedupe
+  guard, not client code. An added player plays, owns decks, and shows in the
+  archive, because `getDecksByPlayer()` unions `PLAYERS` with the live slugs.
+  But every statistic keys off `PLAYERS` in `stats.js`, so an added player stays
+  out of all rankings until you add them there on purpose.
 - **Deck ids in the cache**: each entry in the `decksByPlayer` cache carries
   its `id`. `NewGameModal` resolves the `deck_id` of each participant out of the
   cache by name. `addDeckLocally` throws if a deck arrives without an id, so an
