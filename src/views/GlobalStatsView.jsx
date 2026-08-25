@@ -1,5 +1,5 @@
 // React
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useLayoutEffect } from "react";
 import PropTypes from "prop-types";
 
 // Hooks
@@ -124,6 +124,27 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
     };
   }, [decksByPlayer, games]);
 
+  // "Bestes Deck" and "Meistgespielt" share one widen decision, so one long
+  // name never leaves the other hanging as a lone half-width card. Measure
+  // both value elements: if either clips in the single-column layout, both
+  // cards span the full row. The latch only goes narrow -> wide within one
+  // pair of names, so widening (which removes the clip) does not toggle it
+  // back. A name change resets it; the observer re-measures on a resize too.
+  const bestNameRef = useRef(null);
+  const mostNameRef = useRef(null);
+  const [deckCardsWide, setDeckCardsWide] = useState(false);
+  const bestName = stats.bestDeck ? stats.bestDeck.name : "-";
+  const mostName = stats.mostPlayed ? stats.mostPlayed.name : "-";
+  useLayoutEffect(() => {
+    const els = [bestNameRef.current, mostNameRef.current].filter(Boolean);
+    if (!els.length) return undefined;
+    setDeckCardsWide(false);
+    const check = () => setDeckCardsWide(prev => prev || els.some(el => el.scrollWidth > el.clientWidth));
+    const ro = new ResizeObserver(check);
+    els.forEach(el => ro.observe(el));
+    return () => ro.disconnect();
+  }, [bestName, mostName]);
+
   return (
     <div className={styles.container}>
       <ViewHeader
@@ -181,17 +202,21 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
               <div className={styles.statsGrid}>
                 <StatCard
                   label="Bestes Deck"
-                  value={stats.bestDeck ? stats.bestDeck.name : "-"}
+                  value={bestName}
                   sub={stats.bestDeck ? `${formatPct(stats.bestDeck.winRate)} von ${capitalize(stats.bestDeck.player)}` : "Noch keine Daten"}
                   accent="legendary"
                   icon="🏆"
+                  wide={deckCardsWide}
+                  valueRef={bestNameRef}
                 />
                 <StatCard
                   label="Meistgespielt"
-                  value={stats.mostPlayed ? stats.mostPlayed.name : "-"}
+                  value={mostName}
                   sub={stats.mostPlayed ? `${stats.mostPlayed.totalGames} Spiele von ${capitalize(stats.mostPlayed.player)}` : "Noch keine Daten"}
                   accent="activity"
                   icon="🎯"
+                  wide={deckCardsWide}
+                  valueRef={mostNameRef}
                 />
                 {[stats.topWinStreak, stats.topLossStreak].filter(Boolean).map(({ player, streak }) => {
                   const display = streakDisplay(streak);

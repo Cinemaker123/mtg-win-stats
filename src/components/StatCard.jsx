@@ -12,8 +12,10 @@ import styles from './StatCard.module.css';
  * @param {string} props.icon - Emoji icon
  * @param {boolean} [props.wide] - Span the full grid row instead of one
  *   column — for values too long to share a half-width cell gracefully
+ * @param {React.Ref} [props.valueRef] - Ref on the value element, so a parent
+ *   can measure whether the value clips and decide to widen the card
  */
-export function StatCard({ label, value, sub, accent, icon, wide = false }) {
+export function StatCard({ label, value, sub, accent, icon, wide = false, valueRef = null }) {
   return (
     <div
       className={wide ? `${styles.card} ${styles.wide}` : styles.card}
@@ -25,7 +27,7 @@ export function StatCard({ label, value, sub, accent, icon, wide = false }) {
       </div>
       <div className={styles.content}>
         <div className={styles.label}>{label}</div>
-        <div className={styles.value}>{value}</div>
+        <div ref={valueRef} className={styles.value}>{value}</div>
         {sub && <div className={styles.sub}>{sub}</div>}
       </div>
     </div>
@@ -39,4 +41,5 @@ StatCard.propTypes = {
   accent: PropTypes.string.isRequired,
   icon: PropTypes.string.isRequired,
   wide: PropTypes.bool,
+  valueRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
 };
