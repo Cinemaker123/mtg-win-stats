@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import {
   winRate,
@@ -313,6 +313,18 @@ describe("player palette in theme.css", () => {
     // all. It must stay above the per-player rules so they override it.
     expect(css).toMatch(/\[data-player\]\s*\{[^}]*--player-accent/);
     expect(css).toMatch(/\[data-player\]\s*\{[^}]*--player-gradient/);
+  });
+
+  it("holds no colour literal in any JavaScript file", () => {
+    // theme.css is the only home for a colour. A hex or rgba() in JS means
+    // someone bypassed the data-player / data-tier hooks, and that value can
+    // then drift from the palette without anything failing.
+    const root = new URL("../", import.meta.url);
+    const files = readdirSync(root, { recursive: true })
+      .filter(f => /\.jsx?$/.test(f) && !/\.test\.jsx?$/.test(f));
+    const offenders = files.filter(f =>
+      /#[0-9a-fA-F]{3,8}["'`]|rgba?\(/.test(readFileSync(new URL(f, root), "utf8")));
+    expect(offenders).toEqual([]);
   });
 
   it("resolves every win-rate tier", () => {

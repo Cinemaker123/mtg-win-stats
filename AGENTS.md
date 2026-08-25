@@ -56,7 +56,12 @@ work. An invalid hash normalizes to `#/`.
   call from a view opens a second fetch and a second realtime channel. A new
   shared resource needs a fetcher and a table list, not a new subscription.
 - **Persistence**: a Supabase PostgreSQL database.
-- **Per-player data isolation**: each deck row stores a player identifier.
+- **Per-player rows, not per-player access**: each deck row stores a player
+  identifier. This is a data-shape convention, **not** a security boundary.
+  `db/level1_rls.sql` enables RLS but grants `anon` allow-all policies on all
+  four tables, so any holder of the anon key reads and writes every player's
+  rows. Do not treat the player column as an access control. Real per-player
+  auth is Level 3 in `auth.md`, and it is not applied.
 
 
 ## Data Layer (`useDecks` + `useAppData` + `supabaseClient`)
@@ -100,9 +105,8 @@ work. An invalid hash normalizes to `#/`.
   and refetches on remote writes. It suppresses the echoes of its own saves for
   1 second. In `AppDataProvider`, the games resource subscribes to `games`,
   `game_participants`, and `decks`. The decks resource subscribes to `decks` and
-  `players`. Both get the 500 ms debounced refetch from `useLiveResource()`, and
-  the provider is mounted once in `App.jsx`. As a result, every view reads the
-  same cache instead of a separate fetch and subscription.
+  `players`. Both get the 500 ms debounced refetch from `useLiveResource()`, so
+  every view reads the same cache instead of a separate fetch and subscription.
   The games list includes `decks` because a deck rename now touches only the
   `decks` table (see above). Without it, the cached `games` join would keep the
   old name until a reload. This needs the tables in the `supabase_realtime`
@@ -291,6 +295,10 @@ any statistic, so a distinct color would imply a standing they do not have.
 
 To change a color, edit `theme.css`. Never add a color constant back to
 `stats.js`.
+
+A test enforces this. `stats.test.js` scans every `.js` and `.jsx` file under
+`src/` for a hex or `rgba()` literal and fails with the offending file name.
+The pre-commit hook runs it, so this rule cannot rot.
 
 ### Theming — `data-theme`, not props
 
