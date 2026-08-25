@@ -71,6 +71,11 @@ export function AppDataProvider({ children }) {
   // `id` — callers resolve `deck_id` out of this cache.
   const { setData: setDecks } = decks;
   const addDeckLocally = useCallback((player, deck) => {
+    // The id is how NewGameModal resolves deck_id at save time. A quick-add
+    // that drops it saves a game with a null deck_id, silently. Crash here.
+    if (!deck || !deck.id) {
+      throw new Error("addDeckLocally needs a deck with an id");
+    }
     setDecks(current => ({
       ...current,
       [player]: [...(current[player] || []), deck],

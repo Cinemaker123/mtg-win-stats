@@ -82,13 +82,11 @@ work. An invalid hash normalizes to `#/`.
   the rows that are not in the list. Local state is authoritative. The app uses
   this only for registry changes (add or delete a deck).
 - **Game CRUD**: `addGame`, `updateGame`, and `deleteGame` write directly, with
-  no dirty flag. `addGame` and `updateGame` call the `save_game` and
-  `update_game` Postgres functions through `supabase.rpc(...)`. This writes the
-  game row and its participants in **one transaction**. As a result, a
-  mid-write failure can no longer leave a game with zero participants or wipe
-  the original line-up on an edit. `update_game` replaces all participants. The
-  function definitions live in SUPABASE_SETUP.md. Apply them once in the SQL
-  editor.
+  no dirty flag. `addGame` and `updateGame` go through the `save_game` and
+  `update_game` Postgres functions (`supabase.rpc`), which write the game and
+  its participants in **one transaction**. The client cannot write a half-game.
+  `update_game` replaces all participants. The definitions live in
+  SUPABASE_SETUP.md. Apply them once in the SQL editor.
 - **IDs alongside names**: the `decks` and `game_participants` tables carry
   `player_id` and `deck_id` foreign keys (into `players` and `decks`), next to
   their original `player` and `deck` text columns. The app never drops the text
@@ -128,9 +126,8 @@ work. An invalid hash normalizes to `#/`.
   slugs. This is what lets an added player own decks at all.
 - **Deck ids in the cache**: each entry in the `decksByPlayer` cache carries
   its `id`. `NewGameModal` resolves the `deck_id` of each participant out of the
-  cache by name. A deck that is added optimistically through `addDeckLocally`
-  must include the id that `addDeckToRegistry` returns. If it does not, a game
-  saved right after a quick-add gets a null `deck_id`.
+  cache by name. `addDeckLocally` throws if a deck arrives without an id, so an
+  optimistic quick-add can no longer save a game with a null `deck_id`.
 - **Error handling**: every query in `supabaseClient.js` goes through
   `unwrap(result, context)`. This function logs with that context and rethrows.
   Add a new query the same way. Do not re-inline the
@@ -143,11 +140,11 @@ work. An invalid hash normalizes to `#/`.
 - `adjustedWinRate` is for the **ranking** of decks. It uses a Bayesian prior of
   10 imaginary games at the 25% pod baseline. As a result, a small sample
   regresses to the mean, and a lucky 2-0 no longer outranks a proven 18-2.
-- `getWinRateTier` accepts **0-1 only**. There is no percentage heuristic.
-- `MIN_GAMES_FOR_BEST_DECK` (2 games) is the shared threshold before a deck can
-  be the "best" or the "worst". Both the per-player dashboard
-  (`getDynamicStats`) and the `bestDeck` in Global Stats use it, so they always
-  agree.
+- `getWinRateTier` throws a `RangeError` outside 0-1, so a percentage or a
+  NaN crashes instead of mislabeling a tier. A test covers it.
+- `MIN_GAMES_FOR_BEST_DECK` (2 games) gates the "best" and "worst" deck. Both
+  the dashboard and Global Stats import the one constant, so they cannot
+  disagree.
 
 
 ## Data Model

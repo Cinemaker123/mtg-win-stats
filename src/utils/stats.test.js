@@ -64,6 +64,12 @@ describe("getWinRateTier", () => {
     expect(getWinRateTier(0.5).tier).toBe("good"); // exactly 50% is not legendary
     expect(getWinRateTier(0.1).tier).toBe("struggling");
   });
+
+  it("throws on a percentage or a NaN instead of guessing a tier", () => {
+    expect(() => getWinRateTier(50)).toThrow(RangeError);
+    expect(() => getWinRateTier(NaN)).toThrow(RangeError);
+    expect(() => getWinRateTier(-0.1)).toThrow(RangeError);
+  });
 });
 
 describe("getDynamicStats", () => {
@@ -313,6 +319,16 @@ describe("player palette in theme.css", () => {
     // all. It must stay above the per-player rules so they override it.
     expect(css).toMatch(/\[data-player\]\s*\{[^}]*--player-accent/);
     expect(css).toMatch(/\[data-player\]\s*\{[^}]*--player-gradient/);
+  });
+
+  it("keeps decks in the realtime games table list", () => {
+    // AppData's GAMES_TABLES must include decks. A deck rename now touches
+    // only the decks table, so without it the cached games join keeps the old
+    // name until reload. Scan the source, not a mocked import.
+    const src = readFileSync(new URL("../hooks/AppData.jsx", import.meta.url), "utf8");
+    const line = src.match(/const GAMES_TABLES = \[([^\]]*)\]/);
+    expect(line).not.toBeNull();
+    expect(line[1]).toContain("decks");
   });
 
   it("holds no colour literal in any JavaScript file", () => {

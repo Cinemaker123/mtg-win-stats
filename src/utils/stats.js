@@ -90,6 +90,12 @@ export const WIN_RATE_TIERS = {
  * @returns {{tier: string, icon: string, label: string}}
  */
 export function getWinRateTier(wr) {
+  if (!(wr >= 0 && wr <= 1)) {
+    // Win rates are 0-1 numbers everywhere. A percentage (e.g. 50) or a NaN
+    // here means a caller skipped winRate()/adjustedWinRate(). Fail loudly
+    // instead of silently returning the "struggling" tier for a 50% deck.
+    throw new RangeError(`getWinRateTier expects a 0-1 win rate, got ${wr}`);
+  }
   if (wr > WIN_RATE_TIERS.LEGENDARY.min) {
     return {
       tier: "legendary",
