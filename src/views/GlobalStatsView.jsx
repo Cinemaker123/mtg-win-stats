@@ -153,6 +153,16 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
           </div>
         ) : (
           <>
+            {/* Player strength: adjusted win rate ranking */}
+            {stats.totalWinsAll > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Spielerstärke</div>
+                <div className={styles.card}>
+                  <PlayerStrengthChart playerStats={stats.playerStats} />
+                </div>
+              </div>
+            )}
+
             {/* Overall Stats */}
             <div className={styles.section}>
               <div className={styles.statsGrid}>
@@ -193,16 +203,6 @@ export function GlobalStatsView({ onBack, isDark, onToggleDark }) {
                 })}
               </div>
             </div>
-
-            {/* Player strength: adjusted win rate ranking */}
-            {stats.totalWinsAll > 0 && (
-              <div className={styles.section}>
-                <div className={styles.sectionTitle}>Spielerstärke</div>
-                <div className={styles.card}>
-                  <PlayerStrengthChart playerStats={stats.playerStats} />
-                </div>
-              </div>
-            )}
 
             {/* Activity vs. performance scatter */}
             {stats.allDecks.length > 0 && (
