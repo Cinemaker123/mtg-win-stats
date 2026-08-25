@@ -140,3 +140,15 @@ See the git history for the detailed commits:
 ```bash
 git log --oneline --all
 ```
+
+Completed in 2026-08 (review-driven cleanup):
+
+A code review raised eight points. Most were doc or test fixes. The one
+structural change is on the deck-write path.
+
+| Item | Change |
+|------|--------|
+| **player_id server-side** | A `set_deck_player_id` trigger fills `decks.player_id` from the slug on insert or update (SQL in SUPABASE_SETUP.md). The client stops sending `player_id`, and the whole slug-to-id cache (`getPlayerIdMap`, `playerIdMapPromise`) is deleted. `getPlayerSlugs` now reads slugs fresh. A stale cross-tab cache can no longer write a null `player_id`. |
+| **Modal tests** | `NewGameModal.test.jsx` covers the dirty-check (backdrop and Escape, touched and untouched) with Testing Library + jsdom. |
+| **Docs** | AGENTS.md notes pod-only dashboards and the deliberate client-side compute bound. `stats.js` marks its StatCard view-models as presentation, not math. README points to AGENTS.md for the modal-dirtiness rule instead of restating it. |
+| **Test home** | The `useRealtimeSync` cache test moved out of the theme-palette block into its own describe. |

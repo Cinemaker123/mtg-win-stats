@@ -40,35 +40,19 @@ function unwrap({ data, error }, context) {
 }
 
 /**
- * Fetch and cache the player slug -> id map from the `players` table.
- * Cached for the page's lifetime; `addPlayer` clears the cache so a newly
- * added player is resolvable straight away.
- * @returns {Promise<Object>} - { [slug]: id }
- */
-let playerIdMapPromise = null
-async function getPlayerIdMap() {
-  if (!playerIdMapPromise) {
-    playerIdMapPromise = supabase
-      .from(PLAYERS_TABLE)
-      .select('id, slug')
-      .then(({ data, error }) => {
-        if (error) {
-          playerIdMapPromise = null
-          console.error('Error fetching players:', error)
-          throw error
-        }
-        return Object.fromEntries((data || []).map(p => [p.slug, p.id]))
-      })
-  }
-  return playerIdMapPromise
-}
-
-/**
- * Every player slug known to the database, pod members included.
+ * Every player slug known to the database, pod members included. Read fresh
+ * each call. There is no client-side slug-to-id cache any more, because a
+ * `decks` trigger fills `player_id` from the slug in the database (see the
+ * deck-write functions below). A stale cache can therefore no longer write a
+ * null `player_id`.
  * @returns {Promise<string[]>} - slugs
  */
 export async function getPlayerSlugs() {
-  return Object.keys(await getPlayerIdMap())
+  const data = unwrap(
+    await supabase.from(PLAYERS_TABLE).select('slug'),
+    'Error fetching players'
+  )
+  return (data || []).map(p => p.slug)
 }
 
 /**
@@ -87,9 +71,6 @@ export async function addPlayer(name) {
       .upsert({ slug, name: trimmed }, { onConflict: 'slug', ignoreDuplicates: true }),
     'Error adding player'
   )
-  // The cached map predates this row, so every later player_id lookup would
-  // resolve to null without this.
-  playerIdMapPromise = null
   return slug
 }
 
@@ -236,12 +217,12 @@ export async function deleteGame(id) {
  *   existed (ignoreDuplicates skips the row, so there's nothing to return)
  */
 export async function addDeckToRegistry(player, name) {
-  const playerIdMap = await getPlayerIdMap()
+  // player_id is filled by the decks trigger from the slug, server-side.
   const data = unwrap(
     await supabase
       .from(TABLE_NAME)
       .upsert(
-        { player, player_id: playerIdMap[player] ?? null, name, wins: 0, losses: 0, updated_at: new Date().toISOString() },
+        { player, name, wins: 0, losses: 0, updated_at: new Date().toISOString() },
         { onConflict: 'player,name', ignoreDuplicates: true }
       )
       .select('id')
@@ -290,12 +271,11 @@ export async function deleteDeckById(id) {
  * @param {{name: string, wins: number, losses: number}} deck
  */
 export async function restoreDeckRow(player, deck) {
-  const playerIdMap = await getPlayerIdMap()
+  // player_id is filled by the decks trigger from the slug, server-side.
   unwrap(
     await supabase.from(TABLE_NAME).upsert(
       {
         player,
-        player_id: playerIdMap[player] ?? null,
         name: deck.name,
         wins: deck.wins,
         losses: deck.losses,

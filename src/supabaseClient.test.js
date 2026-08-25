@@ -137,15 +137,15 @@ describe("getDecksByPlayer", () => {
 });
 
 describe("addPlayer", () => {
-  it("clears the cached player-id map so the new player resolves right away", async () => {
+  it("reads player slugs fresh each call, so a new player resolves at once", async () => {
     h.state.tableResults.players = { data: [{ slug: "baum", id: "1" }], error: null };
 
-    await mod.getPlayerSlugs(); // populates the cache (1 fetch)
-    await mod.addPlayer("Gast"); // upsert + cache clear
-    await mod.getPlayerSlugs(); // must refetch, not reuse the stale cache
+    await mod.getPlayerSlugs(); // fetch 1
+    await mod.addPlayer("Gast"); // upsert
+    await mod.getPlayerSlugs(); // fetch 2 — no client cache to go stale
 
     const playersCalls = h.state.fromCalls.filter((t) => t === "players");
-    // fetch + upsert + refetch === 3; without the cache clear it would be 2.
+    // fetch + upsert + fetch === 3.
     expect(playersCalls).toHaveLength(3);
   });
 });
@@ -205,12 +205,13 @@ describe("deck writes (per-row)", () => {
   });
 
   it("restoreDeckRow upserts the deck with its counts (undo)", async () => {
-    h.state.tableResults.players = { data: [{ slug: "baum", id: "p1" }], error: null };
+    // No player_id in the payload: the decks trigger fills it server-side.
     await mod.restoreDeckRow("baum", { name: "Zombies", wins: 3, losses: 1 });
     const upsert = h.state.builderCalls.find((c) => c.table === "decks" && c.method === "upsert");
     expect(upsert.args[0]).toEqual(
-      expect.objectContaining({ player: "baum", player_id: "p1", name: "Zombies", wins: 3, losses: 1 }),
+      expect.objectContaining({ player: "baum", name: "Zombies", wins: 3, losses: 1 }),
     );
+    expect(upsert.args[0]).not.toHaveProperty("player_id");
     expect(upsert.args[1]).toEqual({ onConflict: "player,name" });
   });
 });

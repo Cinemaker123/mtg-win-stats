@@ -253,3 +253,37 @@ $$;
 Slug aufgelöst (unabhängig vom Client-Cache), `deck_id` kommt aus dem `deckId`,
 das der Client im AllDecks-Cache nachgeschlagen hat.
 
+
+## Deck-Writes: `player_id` serverseitig setzen (Trigger)
+
+Deck-Zeilen (`addDeckToRegistry`, `restoreDeckRow`) senden kein `player_id`
+mehr mit. Ein Trigger füllt es aus dem Slug, genau wie `save_game` es für
+Spiele tut. So kann ein veralteter Client-Cache keinen `player_id = null`
+mehr schreiben, wenn ein anderer Tab kurz vorher einen Spieler angelegt hat.
+
+Im **SQL Editor** ausführen:
+
+```sql
+create or replace function public.set_deck_player_id()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.player_id is null then
+    select id into new.player_id from public.players where slug = new.player;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_set_deck_player_id on public.decks;
+create trigger trg_set_deck_player_id
+  before insert or update on public.decks
+  for each row execute function public.set_deck_player_id();
+```
+
+`security definer` plus `set search_path = public` folgt der gleichen
+Härtung wie `save_game`/`update_game`. Der Trigger löst den Slug auch dann
+auf, wenn die `players`-RLS später verschärft wird.

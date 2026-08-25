@@ -93,9 +93,12 @@ work. An invalid hash normalizes to `#/`.
   `deck` text columns. **Never drop the text columns.** `getGames()` prefers the
   live name through the `deck_id` join, but `deck_id` is `ON DELETE SET NULL`,
   so when a registry deck is deleted the stored text becomes a permanent
-  historical snapshot instead of a dangling reference. `getPlayerIdMap()` caches
-  the slug-to-id lookup so deck writes keep `player_id` populated. Games resolve
-  `player_id` on the server, so participant rows do not need a fresh cache.
+  historical snapshot instead of a dangling reference. `player_id` is resolved
+  in the database, never on the client: a `decks` trigger fills it from the
+  slug on a deck write, and `save_game` / `update_game` fill it for games.
+  There is no client-side slug-to-id cache, so no stale cache can write a null
+  `player_id` when another tab just added a player. The trigger SQL lives in
+  SUPABASE_SETUP.md. Apply it once.
 - **Realtime**: `useRealtimeSync` maps each table to the query keys it
   invalidates. A `decks` change invalidates **both** `["decks"]` and `["games"]`,
   because the games list shows the live deck name through its join, so a rename
