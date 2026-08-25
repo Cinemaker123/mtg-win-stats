@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 // Hooks
 import { useDarkMode } from "./hooks/useDarkMode.js";
 import { AppDataProvider } from "./hooks/AppData.jsx";
+import { useRealtimeSync } from "./data/useRealtimeSync.js";
 
 // Components
 import { RollingD20 } from "./components/RollingD20.jsx";
@@ -41,6 +42,7 @@ function parseHash() {
 }
 
 export default function App() {
+  useRealtimeSync();
   const [route, setRoute] = useState(parseHash);
   const [isDark, setIsDark] = useDarkMode();
   const [showDie, setShowDie] = useState(false);
