@@ -98,7 +98,8 @@
 
 .legend {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 8px 16px;
   margin-bottom: 14px;
 }
 
@@ -112,6 +113,8 @@
   width: 10px;
   height: 10px;
   border-radius: 3px;
+  /* Resolved from the data-tier attribute the caller sets (theme.css). */
+  background: var(--tier-color);
 }
 
 .legendLabel {

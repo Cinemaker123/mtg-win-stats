@@ -4,10 +4,19 @@ import { Logo } from "../../components/Logo.jsx";
 import { StatCard } from "../../components/StatCard.jsx";
 import {
   winRate, adjustedWinRate, getDynamicStats, getWinRateTier,
-  formatPct, POD_BASELINE_WR,
+  formatPct, POD_BASELINE_WR, WIN_RATE_TIERS,
 } from "../../utils/stats.js";
 import { DeckPropType } from "../../data/queries.js";
 import styles from "../TrackerView.module.css";
+
+// Legend order follows the bar colours below: gold (best) > green > red
+// (below the pod baseline). The labels come from WIN_RATE_TIERS, so the legend
+// cannot drift from the tiers getWinRateTier() assigns to the bars.
+const LEGEND_TIERS = [
+  { tier: "legendary", label: WIN_RATE_TIERS.LEGENDARY.label },
+  { tier: "good", label: WIN_RATE_TIERS.GOOD.label },
+  { tier: "struggling", label: WIN_RATE_TIERS.STRUGGLING.label },
+];
 
 /**
  * Dashboard tab showing statistics and deck overview
@@ -51,10 +60,10 @@ export function DashboardTab({ decks, games, player }) {
           </div>
           <div className={styles.card}>
             <div className={styles.legend}>
-              {[["var(--color-success)","Siege"],["var(--color-error)","Niederlagen"]].map(([c,l]) => (
-                <div key={l} className={styles.legendItem}>
-                  <div className={styles.legendColor} style={{ background: c }} />
-                  <span className={styles.legendLabel}>{l}</span>
+              {LEGEND_TIERS.map(({ tier, label }) => (
+                <div key={tier} className={styles.legendItem}>
+                  <div className={styles.legendColor} data-tier={tier} />
+                  <span className={styles.legendLabel}>{label}</span>
                 </div>
               ))}
             </div>
